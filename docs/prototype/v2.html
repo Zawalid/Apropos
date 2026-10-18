@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cue density and icon comparison</title>
+<title>Apropos density and icon comparison</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
 :root{--ease-out:cubic-bezier(0.23,1,0.32,1);--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",sans-serif}
@@ -99,7 +99,7 @@ kbd{font-family:var(--font);font-size:11.5px;min-width:20px;height:20px;padding:
 </div>
 <div id="win"><i class="b" style="width:30%"></i><i class="b" style="width:70%"></i><i class="b" style="width:55%"></i><i class="b" style="width:80%"></i><i class="b" style="width:40%"></i></div>
 
-<div id="panel" role="dialog" aria-label="Cue panel">
+<div id="panel" role="dialog" aria-label="Apropos panel">
  <div class="search"><i class="ti ti-search s"></i><input id="q" placeholder="Search Claude commands" autocomplete="off" spellcheck="false" aria-label="Search"><span class="pchip"><span class="tile logo" style="--tile:22px;border-radius:6px"><i class="ti ti-asterisk"></i></span>Claude</span></div>
  <div class="ctx" id="ctx"></div>
  <div class="lw" id="lw"><div class="inner" id="inner"><div class="hl" id="hl"></div></div></div>
@@ -137,7 +137,7 @@ function all(){
 function render(){
  const p=$('panel');p.className=`L-${L} I-${I}`;
  document.documentElement.dataset.theme=T;
- $('ctx').innerHTML=L==='cur'?`<span class="chip app"><span class="tile logo" style="--tile:18px;border-radius:5px"><i class="ti ti-asterisk"></i></span>Claude</span><span class="chip"><i class="ti ti-file-text"></i>Claude</span>`:L==='new'?`<span class="chip app"><span class="tile logo" style="--tile:16px;border-radius:5px"><i class="ti ti-asterisk"></i></span>Claude</span><span class="chip"><i class="ti ti-app-window"></i>Cue M0 foundation build</span>`:'';
+ $('ctx').innerHTML=L==='cur'?`<span class="chip app"><span class="tile logo" style="--tile:18px;border-radius:5px"><i class="ti ti-asterisk"></i></span>Claude</span><span class="chip"><i class="ti ti-file-text"></i>Claude</span>`:L==='new'?`<span class="chip app"><span class="tile logo" style="--tile:16px;border-radius:5px"><i class="ti ti-asterisk"></i></span>Claude</span><span class="chip"><i class="ti ti-app-window"></i>Apropos M0 foundation build</span>`:'';
  const q=$('q').value.trim();let list=all();
  if(q){list=list.map(x=>({...x,m:score(q,x.t)})).filter(x=>x.m).sort((a,b)=>b.m.sc-a.m.sc);list.forEach(x=>x.grp='')}
  const inner=$('inner');inner.querySelectorAll('.sec,.row,.empty').forEach(n=>n.remove());rows=[];let cur=null,h='';

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cue settings prototype</title>
+<title>Apropos settings prototype</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
 :root{
@@ -179,7 +179,7 @@ const APPCOL={Arc:'#7a5cff',Claude:'#d9774a',Figma:'#1c1c1c',Finder:'#3b9bff',Sa
 /* search catalog: id (anchor), title, page, section, words */
 const CAT=[
  ['login','Open at login','general','Startup','startup launch boot'],['menubar','Show in menu bar','general','Startup','icon status'],
- ['hotkey','Open Cue','general','Startup','hotkey shortcut keyboard'],['closeblur','Close when Cue loses focus','general','Panel','dismiss blur'],
+ ['hotkey','Open Apropos','general','Startup','hotkey shortcut keyboard'],['closeblur','Close when Apropos loses focus','general','Panel','dismiss blur'],
  ['reset','Reset search after','general','Panel','query clear timeout'],['alts','Show alternate commands','general','Panel','option variants'],
  ['theme','Theme','appearance','Look','dark light mode color'],['size','Interface size','appearance','Look','density compact large text'],
  ['icons','Row icons','appearance','Look','glyph logo symbol'],['motion','Reduce motion','appearance','Look','animation'],
@@ -188,7 +188,7 @@ const CAT=[
  ['ax','Accessibility','privacy','Access','permission'],['ignore','Never read these apps','privacy','Ignored apps','password bank secret'],
  ['ranking','Reset learned ranking','privacy','Learned data','usage suggestions'],['history','Clear history','privacy','Learned data','recent'],
  ['hidden','Hidden commands','privacy','Learned data','unhide'],['export','Export settings','privacy','Settings file','backup json'],['import','Import settings','privacy','Settings file','restore json'],
- ['updates','Check for updates','updates','Updates','sparkle version'],['version','Version','about','Cue','build']];
+ ['updates','Check for updates','updates','Updates','sparkle version'],['version','Version','about','Apropos','build']];
 
 /* history */
 let page='general',back=[],fwd=[],slideFrom=null;
@@ -213,11 +213,11 @@ const keys=a=>a.map(k=>`<kbd>${k}</kbd>`).join('');
 
 const VIEW={
  general:()=>sec('',
-   row('login','Open at login','Start Cue when you log in.',sw('login',S.login),0,'login')+
-   row('menubar','Show in menu bar','Keep the Cue icon in the menu bar.',sw('menubar',S.menubar),0,'menubar')+
-   row('hotkey','Open Cue','Cue runs alongside your launcher. Pick a shortcut it does not use.',`<div class="rec"><button class="pill" id="recbtn">${keys(S.hotkey)}</button></div>`,0,'hotkey'))+
+   row('login','Open at login','Start Apropos when you log in.',sw('login',S.login),0,'login')+
+   row('menubar','Show in menu bar','Keep the Apropos icon in the menu bar.',sw('menubar',S.menubar),0,'menubar')+
+   row('hotkey','Open Apropos','Apropos runs alongside your launcher. Pick a shortcut it does not use.',`<div class="rec"><button class="pill" id="recbtn">${keys(S.hotkey)}</button></div>`,0,'hotkey'))+
   sec('Panel',
-   row('closeblur','Close when Cue loses focus','',sw('closeblur',S.closeblur),0,'closeblur')+
+   row('closeblur','Close when Apropos loses focus','',sw('closeblur',S.closeblur),0,'closeblur')+
    row('reset','Reset search after','Keep what you typed if you reopen the panel within this time.',menu('reset',OPT.reset,S.reset),0,'reset')+
    row('alts','Show alternate commands','List Option-key variants, such as Empty Trash Securely, as their own rows.',sw('alts',S.alts),0,'alts')),
  appearance:()=>sec('',
@@ -228,16 +228,16 @@ const VIEW={
  context:()=>sec('',row('sense','Sense context','Read the frontmost app\'s document, URL and selection. Everything stays on this Mac.',sw('sense',S.sense),0,'sense'))+
   `<div style="display:contents;${S.sense?'':'opacity:.5;pointer-events:none'}">`+
   sec('Chips',`<div class="row" data-a="chips"><div class="chipsel">${CHIPS.map(([k,t])=>`<button class="cs" role="checkbox" aria-checked="${S.chips[k]}" data-chip="${k}"><i class="ti ti-check"></i>${t}</button>`).join('')}</div></div>`,'Which pieces of context appear in the chip row under the search field.')+
-  sec('Apps',Object.keys(S.apps).map((n,i)=>`<div class="row apps" data-a="${i?'app'+n:'apps'}"><span class="ic">${n[0]}</span><div class="l"><div class="t">${n}</div></div><div class="r">${sw('app:'+n,S.apps[n])}</div></div>`).join(''),'Turn an app off and Cue reads nothing from it beyond the menu.')+`</div>`,
- privacy:()=>sec('Access',row('ax','Accessibility','Lets Cue read and press menu items.','<span class="ok"><i class="ti ti-circle-check-filled"></i></span> <span style="font-size:12.5px;color:var(--text2)">Allowed</span>'))+
-  sec('Never read these apps',S.ignore.map((n,i)=>`<div class="row" ${i?'':'data-a="ignore"'}><div class="l"><div class="t">${n}</div></div><div class="r"><button class="btn" data-rm="${n}">Remove</button></div></div>`).join('')+row('addign','Add an app','',`<button class="btn" id="addign"><i class="ti ti-plus"></i>Choose</button>`),'Password managers and banks. Cue reads nothing in them, not even the document title.')+
+  sec('Apps',Object.keys(S.apps).map((n,i)=>`<div class="row apps" data-a="${i?'app'+n:'apps'}"><span class="ic">${n[0]}</span><div class="l"><div class="t">${n}</div></div><div class="r">${sw('app:'+n,S.apps[n])}</div></div>`).join(''),'Turn an app off and Apropos reads nothing from it beyond the menu.')+`</div>`,
+ privacy:()=>sec('Access',row('ax','Accessibility','Lets Apropos read and press menu items.','<span class="ok"><i class="ti ti-circle-check-filled"></i></span> <span style="font-size:12.5px;color:var(--text2)">Allowed</span>'))+
+  sec('Never read these apps',S.ignore.map((n,i)=>`<div class="row" ${i?'':'data-a="ignore"'}><div class="l"><div class="t">${n}</div></div><div class="r"><button class="btn" data-rm="${n}">Remove</button></div></div>`).join('')+row('addign','Add an app','',`<button class="btn" id="addign"><i class="ti ti-plus"></i>Choose</button>`),'Password managers and banks. Apropos reads nothing in them, not even the document title.')+
   sec('Learned data',
    row('ranking','Reset learned ranking','Which commands you use most in each app.','<button class="btn danger" data-act="ranking">Reset</button>')+
    row('history','Clear history','The recent commands in the menu bar menu.','<button class="btn danger" data-act="history">Clear</button>')+
    row('hidden','Hidden commands','Nothing is hidden in Finder.',''))+
   sec('Settings file',row('export','Export settings','Save your settings as a JSON file.','<button class="btn">Export</button>')+row('import','Import settings','Replace your settings with a saved file.','<button class="btn">Import</button>')),
- updates:()=>sec('',row('updates','Check for updates automatically','Ask the update server whether a new version exists.',sw('updates',S.updates),0,'updates')+row('checknow','Check now','Version 0.1.0 (1)','<button class="btn">Check for Updates</button>'),'Cue only contacts the update server when you ask it to or turn this on.'),
- about:()=>`<div class="hero"><div class="logo"><i class="ti ti-command"></i></div><b>Cue</b><span data-a="version">Version 0.1.0 (1)</span><span>What you can do right now, in this app, with this selection.</span></div>`+
+ updates:()=>sec('',row('updates','Check for updates automatically','Ask the update server whether a new version exists.',sw('updates',S.updates),0,'updates')+row('checknow','Check now','Version 0.1.0 (1)','<button class="btn">Check for Updates</button>'),'Apropos only contacts the update server when you ask it to or turn this on.'),
+ about:()=>`<div class="hero"><div class="logo"><i class="ti ti-command"></i></div><b>Apropos</b><span data-a="version">Version 0.1.0 (1)</span><span>What you can do right now, in this app, with this selection.</span></div>`+
   sec('Diagnostics',[['Accessibility access',1,'Allowed'],['Context sensing',S.sense,S.sense?'On':'Off'],['Settings file',1,'Saved']].map(([t,ok,v])=>`<div class="row"><i class="ti ${ok?'ti-circle-check-filled ok':'ti-alert-triangle-filled bad'}"></i><div class="l"><div class="t">${t}</div></div><div class="r" style="font-size:12px;color:var(--text2)">${v}</div></div>`).join(''))
 };
 

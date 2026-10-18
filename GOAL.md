@@ -1,11 +1,11 @@
 # M0 goal prompt (paste after /goal)
 
-Build milestone M0 (Foundation) of Cue, a native macOS command center. Read CLAUDE.md, docs/design.md and
+Build milestone M0 (Foundation) of Apropos, a native macOS command center. Read CLAUDE.md, docs/design.md and
 docs/roadmap.md first, then study /Users/walid/Personal/Projects/Lopper for the project layout, XcodeGen setup,
 scripts/dev.sh, CI workflow and docs conventions, and mirror them.
 
 Deliver:
-1. Scaffold: Swift 6 package with a `Cue` core library and tests, an XcodeGen app target (App/project.yml) for a
+1. Scaffold: Swift 6 package with a `Apropos` core library and tests, an XcodeGen app target (App/project.yml) for a
    macOS 14+ menu-bar-only app, scripts/dev.sh (build, relaunch, --watch, --logs), swift-format config use,
    GitHub Actions CI that builds and runs tests, CHANGELOG.md, CONTRIBUTING.md.
 2. Global hotkey (default Option+Space, configurable) that toggles a borderless floating panel: instant open, smooth

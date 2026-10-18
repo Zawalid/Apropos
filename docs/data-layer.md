@@ -1,6 +1,6 @@
 # The data layer
 
-Everything the UI reads and writes besides the live menu. All of it lives in the `Cue` package, is unit-tested, and
+Everything the UI reads and writes besides the live menu. All of it lives in the `Apropos` package, is unit-tested, and
 stays on the Mac.
 
 | Piece | Where | File on disk |
@@ -11,7 +11,9 @@ stays on the Mac.
 | Usage, pins, hides, aliases, symbol choices | `Sources/Apropos/Usage` | `usage.json` |
 | Row symbols | `Sources/Apropos/Commands/Symbol*.swift`, `Resources/SymbolPacks` | optional `packs/*.json` |
 
-All files sit in `~/Library/Application Support/Cue/`.
+All files sit in `~/Library/Application Support/Apropos/`. Data from the former name (Cue) is copied there once at
+launch by `LegacyMigration`: the old folder is never changed or deleted, an existing new folder is never overwritten,
+and a `migrated-from-cue` marker stops a second run.
 
 ## Command identity
 
@@ -43,7 +45,7 @@ detected from the snapshot; reading `AXMenuItemPrimaryUIElement` would catch the
 ## Usage store
 
 JSON rather than SQLite: one small record per command ever run (a count and the last ten times), pruned after a year
-idle, read once at launch, written in the background, and a person can open the file and see what Cue learned.
+idle, read once at launch, written in the background, and a person can open the file and see what Apropos learned.
 
 ```json
 {

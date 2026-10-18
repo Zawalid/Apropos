@@ -1,4 +1,4 @@
-# Contributing to Cue
+# Contributing to Apropos
 
 ## Set up
 
@@ -14,7 +14,7 @@ adding or removing files. See [docs/development.md](docs/development.md) for the
 
 1. Run the core tests: `swift test`.
 2. Check formatting: `swift format lint --strict --recursive Sources Tests App/AproposApp Package.swift`.
-3. Add a test with the change. Logic belongs in the `Cue` package and is tested there against fixtures, never against
+3. Add a test with the change. Logic belongs in the `Apropos` package and is tested there against fixtures, never against
    a live app. Views stay thin.
 
 ## Style

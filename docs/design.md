@@ -1,4 +1,4 @@
-# Cue: design
+# Apropos: design
 
 Working name. Written 2026-10-18 from the brainstorm with Walid. Items marked (call) are the author's guesses, not
 decisions made by Walid.
@@ -16,8 +16,8 @@ adopted App Intents.
 
 ## Positioning (decided 2026-10-18)
 
-Cue runs alongside Raycast, not instead of it. Raycast stays the launcher (apps, files, clipboard, windows, snippets).
-Cue is the context companion: it answers "what can I do right now, in this app, with this selection". It has its
+Apropos runs alongside Raycast, not instead of it. Raycast stays the launcher (apps, files, clipboard, windows, snippets).
+Apropos is the context companion: it answers "what can I do right now, in this app, with this selection". It has its
 own hotkey (default Option+Space, Raycast's is Command+Space) and never launches apps or manages the clipboard.
 
 ## Goals

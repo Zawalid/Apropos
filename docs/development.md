@@ -1,4 +1,4 @@
-# Developing Cue
+# Developing Apropos
 
 Run everything from the repository root.
 
@@ -48,7 +48,7 @@ save rebuilds, re-signs and relaunches the app in a few seconds.
 
 ## Accessibility access and signing
 
-Cue reads and presses other apps' menus, which needs Accessibility access. macOS ties that grant to the app's code
+Apropos reads and presses other apps' menus, which needs Accessibility access. macOS ties that grant to the app's code
 signature, and an ad hoc signature changes with every build, so the grant would be lost each time. Sign Debug builds
 with a stable certificate:
 
@@ -61,9 +61,9 @@ One time, so re-signing never prompts: open Keychain Access, find the certificat
 choose Get Info, Access Control, and select Allow all applications to access this item. Without it `codesign` asks for
 your login password on every build, and `--watch` stalls on the dialog.
 
-Grant access once in System Settings, Privacy & Security, Accessibility. If an entry looks enabled but Cue still says
+Grant access once in System Settings, Privacy & Security, Accessibility. If an entry looks enabled but Apropos still says
 it has no access, it is a stale entry from a build with a different signature: remove it with the minus button and
-let Cue add itself again.
+let Apropos add itself again.
 
 ## Tests
 
@@ -94,7 +94,7 @@ lets a script drive the palette without synthesizing keystrokes.
 
 - Menus an app fills in lazily (parts of Xcode's) only appear once the app has built them.
 - Items that are hidden alternates (for example Empty Trash with Option) are listed as separate commands.
-- A menu item that opens a modal sheet can keep its app busy past the accessibility timeout; Cue treats the
+- A menu item that opens a modal sheet can keep its app busy past the accessibility timeout; Apropos treats the
   timeout as delivered.
 
 ## Agent runs are isolated

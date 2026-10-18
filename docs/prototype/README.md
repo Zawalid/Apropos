@@ -1,6 +1,6 @@
 # Design prototype
 
-Throwaway HTML prototype of the Cue panel: glass look, context chips, app switching, fuzzy search, actions menu
+Throwaway HTML prototype of the Apropos panel: glass look, context chips, app switching, fuzzy search, actions menu
 and the record-to-command flow. Not product code. It exists to judge look and motion before building them natively.
 
 Run it:

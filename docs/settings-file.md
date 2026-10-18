@@ -1,12 +1,12 @@
 # The settings file
 
-Cue keeps its settings in one readable JSON file:
+Apropos keeps its settings in one readable JSON file:
 
 ```
-~/Library/Application Support/Cue/settings.json
+~/Library/Application Support/Apropos/settings.json
 ```
 
-Edit it while Cue is closed, or use the Settings window. Keys are sorted, so diffs stay small. Earlier versions are
+Edit it while Apropos is closed, or use the Settings window. Keys are sorted, so diffs stay small. Earlier versions are
 kept in `history/` next to it (the last 10), and Settings can export and import the file.
 
 ## Schema version 1
@@ -56,9 +56,9 @@ Usage data (pins, hidden commands, aliases, run counts) is not in this file. It 
   and the app flushes on quit.
 - Before a write replaces the file, the old one is copied into `history/settings-<UTC timestamp>.json`; only the last
   10 are kept. Restoring a version first archives the current file, so a restore can be undone.
-- A file that is not valid JSON is copied to `settings.json.broken-<date>` and Cue starts with defaults.
-- A file written by a newer Cue is used as far as it is understood, unknown settings and top-level keys are kept when
-  Cue saves, its `schemaVersion` is not lowered, and a copy is kept as `settings.json.v<N>-backup`.
+- A file that is not valid JSON is copied to `settings.json.broken-<date>` and Apropos starts with defaults.
+- A file written by a newer Apropos is used as far as it is understood, unknown settings and top-level keys are kept when
+  Apropos saves, its `schemaVersion` is not lowered, and a copy is kept as `settings.json.v<N>-backup`.
 - A file that exists but cannot be read (permissions) is never overwritten.
 
 ## Using it from code

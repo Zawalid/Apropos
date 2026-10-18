@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cue design prototype</title>
+<title>Apropos design prototype</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
 :root{
@@ -152,18 +152,18 @@ kbd{font-family:var(--font);font-size:11.5px;min-width:20px;height:20px;padding:
 <div id="hint">Option+Space toggles the panel with no animation, like Raycast. Arrows, Return, Escape, Cmd+K actions, Cmd+R record, L light or dark. Switch the app below to watch the context change.</div>
 
 <div id="dock" role="group" aria-label="Frontmost app"></div>
-<button id="open" type="button">Open Cue <kbd>⌥</kbd><kbd>Space</kbd></button>
+<button id="open" type="button">Open Apropos <kbd>⌥</kbd><kbd>Space</kbd></button>
 
 <div id="toast" role="status"><span class="tile"><i class="ti ti-check"></i></span><div><div id="toastT"></div><small id="toastS"></small></div></div>
 
-<div id="panel" role="dialog" aria-label="Cue command panel">
+<div id="panel" role="dialog" aria-label="Apropos command panel">
   <div class="search"><i class="ti ti-search" aria-hidden="true"></i><input id="q" placeholder="Search or type a command" autocomplete="off" spellcheck="false" aria-label="Search commands"></div>
   <div class="ctx" id="ctx" aria-label="Current context"></div>
   <div class="listwrap" id="lw"><div class="inner" id="inner"><div class="hl" id="hl"></div></div></div>
 
   <div id="rec">
     <div class="rhead"><span class="rdot" id="rdot"></span><span id="rtitle">Recording in Figma</span><span class="timer" id="timer">0:00</span></div>
-    <div class="rsub" id="rsub">Do the task once. Cue records what you click, not where.</div>
+    <div class="rsub" id="rsub">Do the task once. Apropos records what you click, not where.</div>
     <div class="steps" id="steps"></div>
     <div class="name" id="name">
       <label for="cname">Command name</label>
@@ -202,21 +202,21 @@ const APPS={
    {k:'rec',t:'Save to reading list and tag',s:'Reading list, tag later',i:'ti-bookmark',key:'⌥R',msg:'Saved and tagged'},
    {k:'menu',t:'History: Reopen last closed tab',s:'History menu',i:'ti-history',key:'⇧⌘T',msg:'Reopened tab'},
    {k:'menu',t:'View: Enter reader',s:'View menu',i:'ti-book',key:'⇧⌘R',msg:'Reader on'}]},
- xcode:{name:'Xcode',icon:'ti-hammer',color:'#4C8DF6',title:'PanelView.swift, Cue',
+ xcode:{name:'Xcode',icon:'ti-hammer',color:'#4C8DF6',title:'PanelView.swift, Apropos',
   ctx:[['ti-file-code','PanelView.swift'],['ti-git-branch','feat/panel'],['ti-device-desktop','My Mac, Debug']],
   items:[
-   {k:'now',t:'Build and run',s:'Scheme Cue',i:'ti-player-play',key:'⌘R',msg:'Build succeeded in 4.1s'},
-   {k:'now',t:'Run tests',s:'CueTests',i:'ti-flask',key:'⌘U',msg:'38 tests passed'},
-   {k:'now',t:'Open this folder in Terminal',s:'Sources/Cue/Panel',i:'ti-terminal-2',tag:['ti-arrows-exchange','Xcode + Terminal'],msg:'Opened Terminal at Panel'},
+   {k:'now',t:'Build and run',s:'Scheme Apropos',i:'ti-player-play',key:'⌘R',msg:'Build succeeded in 4.1s'},
+   {k:'now',t:'Run tests',s:'AproposTests',i:'ti-flask',key:'⌘U',msg:'38 tests passed'},
+   {k:'now',t:'Open this folder in Terminal',s:'Sources/Apropos/Panel',i:'ti-terminal-2',tag:['ti-arrows-exchange','Xcode + Terminal'],msg:'Opened Terminal at Panel'},
    {k:'now',t:'Reveal in Finder',s:'PanelView.swift',i:'ti-folder-search',key:'⌥⌘R',msg:'Revealed in Finder'},
    {k:'rec',t:'Archive and upload to TestFlight',s:'7 steps',i:'ti-rocket',key:'⌥T',msg:'Archive started'},
    {k:'menu',t:'Product: Clean build folder',s:'Product menu',i:'ti-trash',key:'⇧⌘K',msg:'Build folder cleaned'},
    {k:'menu',t:'Editor: Re-indent',s:'Editor menu',i:'ti-indent-increase',key:'⌃I',msg:'Re-indented'}]},
- finder:{name:'Finder',icon:'ti-folder',color:'#5AC8FA',title:'Cue',
-  ctx:[['ti-folder','~/Projects/Cue'],['ti-click','3 items selected'],['ti-git-branch','main']],
+ finder:{name:'Finder',icon:'ti-folder',color:'#5AC8FA',title:'Apropos',
+  ctx:[['ti-folder','~/Projects/Apropos'],['ti-click','3 items selected'],['ti-git-branch','main']],
   items:[
-   {k:'now',t:'New file here',s:'In Cue',i:'ti-file-plus',msg:'Created untitled'},
-   {k:'now',t:'Open in Terminal',s:'~/Projects/Cue',i:'ti-terminal-2',msg:'Opened Terminal'},
+   {k:'now',t:'New file here',s:'In Apropos',i:'ti-file-plus',msg:'Created untitled'},
+   {k:'now',t:'Open in Terminal',s:'~/Projects/Apropos',i:'ti-terminal-2',msg:'Opened Terminal'},
    {k:'now',t:'Copy path',s:'3 items',i:'ti-copy',key:'⌥⌘C',msg:'Copied 3 paths'},
    {k:'now',t:'Compress 3 items',s:'Zip',i:'ti-file-zip',msg:'Created Archive.zip'},
    {k:'rec',t:'Rename with date prefix',s:'Selected items',i:'ti-calendar',key:'⌥D',msg:'Renamed 3 items'},
@@ -320,7 +320,7 @@ let rt,steps=[];
 function startRec(){
  if(app!=='figma')setApp('figma');
  mode='rec';$('panel').classList.add('rec');popOn=false;$('pop').classList.remove('on');
- $('steps').innerHTML='';$('name').classList.remove('on');$('rdot').style.display='';$('rtitle').textContent='Recording in '+APPS[app].name;$('rsub').textContent='Do the task once. Cue records what you click, not where.';
+ $('steps').innerHTML='';$('name').classList.remove('on');$('rdot').style.display='';$('rtitle').textContent='Recording in '+APPS[app].name;$('rsub').textContent='Do the task once. Apropos records what you click, not where.';
  let s=0;$('timer').textContent='0:00';rt=setInterval(()=>{s++;$('timer').textContent='0:0'+Math.min(s,9)},1000);
  const seq=[['ti-photo-down','Menu: Export selection as PNG','Figma'],['ti-brand-slack','Switch to Slack','Slack'],['ti-hash','Open channel #design','Slack'],['ti-send','Paste and press Send','Slack']];
  seq.forEach((x,i)=>setTimeout(()=>{if(mode!=='rec')return;
