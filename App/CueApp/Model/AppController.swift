@@ -50,30 +50,40 @@ final class AppController {
 
     func start() {
         permission.startMonitoring()
-        tracker.start()
+        if !(AgentMode.isOn && ProcessInfo.processInfo.environment["CUE_FIXTURE_COMMANDS"] != nil) { tracker.start() }
         let panel = PanelController(
             model: palette, tracker: tracker, permission: permission, settings: settings, context: context,
             usage: usage, openSettings: { [weak self] in self?.showSettings() })
-        statusItem = StatusItemController(controller: self)
+        if AgentMode.isOn {
+            // Automated runs stay invisible: no dock icon, status item, hotkey or welcome window.
+            NSApp.setActivationPolicy(.accessory)
+        } else {
+            statusItem = StatusItemController(controller: self)
+        }
         self.panel = panel
         #if DEBUG
             if let name = ProcessInfo.processInfo.environment["CUE_FIXTURE_COMMANDS"] {
                 let fixtures = DebugFixtures.commands(named: name)
                 menus.seed(fixtures)
+                if AgentMode.isOn { tracker.pin(DebugFixtures.targetApp(named: name)) }
                 if ProcessInfo.processInfo.environment["CUE_FIXTURE_USAGE"] != nil {
                     DebugFixtures.seedUsage(usage, commands: fixtures)
                 }
             }
-            DebugSnapshot.installRemoteControl(panel: panel, model: palette)
-            DebugSnapshot.installSettingsControl(controller: self)
-            if let name = ProcessInfo.processInfo.environment["CUE_APPEARANCE"] {
-                NSApp.appearance = NSAppearance(named: name == "light" ? .aqua : .darkAqua)
+            if AgentMode.isOn {
+                DebugSnapshot.installRemoteControl(panel: panel, model: palette)
+                DebugSnapshot.installSettingsControl(controller: self)
+                if let name = ProcessInfo.processInfo.environment["CUE_APPEARANCE"] {
+                    NSApp.appearance = NSAppearance(named: name == "light" ? .aqua : .darkAqua)
+                }
             }
         #endif
-        let hotKey = GlobalHotKey { [weak panel] in panel?.toggle() }
-        self.hotKey = hotKey
-        isHotKeyRegistered = hotKey.register(combo)
-        if !permission.isTrusted { showOnboarding() }
+        if !AgentMode.isOn {
+            let hotKey = GlobalHotKey { [weak panel] in panel?.toggle() }
+            self.hotKey = hotKey
+            isHotKeyRegistered = hotKey.register(combo)
+            showWelcomeOnce()
+        }
         NotificationCenter.default.addObserver(
             forName: .cueSettingsChanged, object: nil, queue: .main
         ) { [weak self] _ in
@@ -120,6 +130,15 @@ final class AppController {
 
     var settingsWindow: NSWindow? { settingsController?.currentWindow }
 
+    /// The welcome window is for the first launch only. After that, missing access shows in the panel and the menu bar
+    /// item instead of reopening a window on every start.
+    private func showWelcomeOnce() {
+        let key = "hasSeenWelcome"
+        guard !permission.isTrusted, !UserDefaults.standard.bool(forKey: key) else { return }
+        UserDefaults.standard.set(true, forKey: key)
+        showOnboarding()
+    }
+
     func showOnboarding() {
         let content = PermissionView(permission: permission, style: .full)
             .frame(width: 520, height: 420)
@@ -139,7 +158,8 @@ final class AppController {
     }
 
     private func present(_ window: NSWindow) {
-        NSApp.activate()
+        if !AgentMode.isOn { NSApp.activate() }
         window.makeKeyAndOrderFront(nil)
+        AgentMode.conceal(window)
     }
 }

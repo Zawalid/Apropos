@@ -201,7 +201,7 @@ final class SettingsModel {
 
     private func applyAppearance() {
         #if DEBUG
-            if ProcessInfo.processInfo.environment["CUE_APPEARANCE"] != nil { return }
+            if AgentMode.isOn, ProcessInfo.processInfo.environment["CUE_APPEARANCE"] != nil { return }
         #endif
         switch appearance {
         case .system: NSApp?.appearance = nil

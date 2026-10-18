@@ -2,24 +2,49 @@
 # Captures the palette and Settings pages in dark and light into build/shots/, for visual review.
 #
 #   scripts/shots.sh             build once, then capture everything
-#   scripts/shots.sh --no-build  reuse the last build (build/dev)
+#   scripts/shots.sh --no-build  reuse the last build (build/agent)
 #
-# Uses the Debug build's remote control: environment variables seed fixture commands and context (so Accessibility
-# access is not needed) and a distributed notification opens the panel or a Settings page. Each image is a snapshot of
-# Cue's own window, so the glass shows no backdrop. Files are named panel-<state>-<mode>.png and
+# Runs entirely in agent mode (CUE_AGENT=1): a separate Debug build in build/agent, started as its own process with
+# no status item, hotkey, welcome window or activation, and fully transparent windows. It never touches the app
+# you run with scripts/dev.sh, never brings another app to the front and never opens anything on your screen. It
+# stops only the process it started. Fixture commands and context mean Accessibility access is not needed. Each image
+# is drawn from the window's own views, so the glass shows no backdrop. Files are named panel-<state>-<mode>.png and
 # settings-<page>-<mode>.png.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-APP="build/dev/Build/Products/Debug/Cue.app"
+APP="build/agent/Build/Products/Debug/Cue.app"
+BIN="$APP/Contents/MacOS/Cue"
 OUT="$PWD/build/shots"
-FRONT="${CUE_SHOTS_APP:-Finder}"
+LOCK="build/shots.lock"
+AGENT_PID=""
 
 if [ "${1:-}" != "--no-build" ]; then
-  scripts/dev.sh >/dev/null
+  (cd App && xcodegen generate >/dev/null)
+  mkdir -p build
+  if ! xcodebuild build -project App/Cue.xcodeproj -scheme Cue -configuration Debug \
+      -destination 'platform=macOS' -derivedDataPath build/agent -quiet 2>build/agent-errors.log; then
+    echo "build failed:"
+    grep -E "error:" build/agent-errors.log | head -10
+    exit 1
+  fi
 fi
-pkill -x Cue 2>/dev/null || true
-mkdir -p "$OUT"
+
+# One capture run at a time, so two sessions never fight over build/shots.
+mkdir -p build "$OUT"
+if ! mkdir "$LOCK" 2>/dev/null; then
+  echo "another scripts/shots.sh run is active ($LOCK exists); wait for it or remove the lock if it crashed"
+  exit 1
+fi
+stop_agent() {
+  if [ -n "$AGENT_PID" ]; then
+    kill "$AGENT_PID" 2>/dev/null || true
+    wait "$AGENT_PID" 2>/dev/null || true
+    AGENT_PID=""
+  fi
+}
+cleanup() { stop_agent; rmdir "$LOCK" 2>/dev/null || true; }
+trap cleanup EXIT
 
 # The remote control is a distributed notification; a tiny compiled helper posts it (osascript's bridge does not).
 POST="$PWD/build/cue-post"
@@ -37,27 +62,27 @@ fi
 # post <notification suffix> [object]
 post() { "$POST" "$@"; }
 
-# launch <mode> [open --env arguments...]
+# launch <mode> [KEY=VALUE ...]: starts one agent process with a fresh data directory, so shots never depend on the
+# real settings and usage files.
 launch() {
   local mode="$1"
   shift
-  pkill -x Cue 2>/dev/null || true
-  sleep 0.6
-  # A fresh data directory per launch keeps the shots independent of the real settings and usage files.
+  stop_agent
   local data
   data="$(mktemp -d "${TMPDIR:-/tmp}/cue-shots.XXXXXX")"
-  open --env CUE_APPEARANCE="$mode" --env CUE_SNAPSHOT_DIR="$OUT" --env CUE_DATA_DIR="$data" "$@" "$APP"
+  env CUE_AGENT=1 CUE_APPEARANCE="$mode" CUE_SNAPSHOT_DIR="$OUT" CUE_DATA_DIR="$data" "$@" "$BIN" >/dev/null 2>&1 &
+  AGENT_PID=$!
   sleep 2
 }
 
 STATES=(
   "list|"
-  "empty-search|--env CUE_PREVIEW_QUERY="
-  "no-results|--env CUE_PREVIEW_QUERY=zzqx"
-  "loading|--env CUE_PREVIEW_STATE=loading"
-  "permission|--env CUE_PREVIEW_STATE=permission"
-  "error|--env CUE_PREVIEW_STATE=failed"
-  "popover|--env CUE_PREVIEW_ACTIONS=1"
+  "empty-search|CUE_PREVIEW_QUERY="
+  "no-results|CUE_PREVIEW_QUERY=zzqx"
+  "loading|CUE_PREVIEW_STATE=loading"
+  "permission|CUE_PREVIEW_STATE=permission"
+  "error|CUE_PREVIEW_STATE=failed"
+  "popover|CUE_PREVIEW_ACTIONS=1"
 )
 
 for mode in dark light; do
@@ -65,16 +90,14 @@ for mode in dark light; do
     label="${entry%%|*}"
     extra="${entry#*|}"
     # shellcheck disable=SC2086
-    launch "$mode" --env CUE_FIXTURE_COMMANDS=finder --env CUE_FIXTURE_CONTEXT=1 --env CUE_FIXTURE_USAGE=1 \
-      --env CUE_SNAPSHOT_NAME="panel-$label-$mode" $extra
-    osascript -e "tell application \"$FRONT\" to activate"
-    sleep 1.2
+    launch "$mode" CUE_FIXTURE_COMMANDS=finder CUE_FIXTURE_USAGE=1 \
+      CUE_SNAPSHOT_NAME="panel-$label-$mode" $extra
     post toggle
     sleep 2
     echo "panel-$label-$mode"
   done
 
-  launch "$mode" --env CUE_FIXTURE_COMMANDS=finder
+  launch "$mode" CUE_FIXTURE_COMMANDS=finder
   for page in general appearance context privacyAndData updates about; do
     post settings "$page"
     sleep 1.6
@@ -82,5 +105,4 @@ for mode in dark light; do
     echo "settings-$page-$mode"
   done
 done
-pkill -x Cue 2>/dev/null || true
 echo "done: $OUT"

@@ -51,7 +51,7 @@ final class PanelController: NSObject {
         panel.setContentSize(PanelPlacement.size)
 
         #if DEBUG
-            if let name = ProcessInfo.processInfo.environment["CUE_APPEARANCE"] {
+            if AgentMode.isOn, let name = ProcessInfo.processInfo.environment["CUE_APPEARANCE"] {
                 panel.appearance = NSAppearance(named: name == "light" ? .aqua : .darkAqua)
             }
         #endif
@@ -82,6 +82,7 @@ final class PanelController: NSObject {
         closeActions(animated: false)
         position()
         panel.makeKeyAndOrderFront(nil)
+        AgentMode.conceal(panel)
         panel.invalidateShadow()
         state.focusToken += 1
         CueLog.panel.info(

@@ -10,18 +10,12 @@
             guard let dir = ProcessInfo.processInfo.environment["CUE_SNAPSHOT_DIR"] else { return }
             Task {
                 try? await Task.sleep(for: .milliseconds(700))
-                guard
-                    let image = CGWindowListCreateImage(
-                        .null, .optionIncludingWindow, CGWindowID(panel.windowNumber), [.bestResolution])
-                else { return }
-                let rep = NSBitmapImageRep(cgImage: image)
+                guard let png = png(of: panel) else { return }
                 let stamp =
                     ProcessInfo.processInfo.environment["CUE_SNAPSHOT_NAME"]
                     ?? "palette-\(Int(Date().timeIntervalSince1970))"
                 try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
-                if let png = rep.representation(using: .png, properties: [:]) {
-                    try? png.write(to: URL(fileURLWithPath: "\(dir)/\(stamp).png"))
-                }
+                try? png.write(to: URL(fileURLWithPath: "\(dir)/\(stamp).png"))
                 let top = model.results.prefix(12).map {
                     "\($0.command.breadcrumb) > \($0.command.title) \($0.command.shortcut?.display ?? "")"
                 }
@@ -36,14 +30,35 @@
     extension DebugSnapshot {
         /// Writes a PNG of any window of this app into CUE_SNAPSHOT_DIR.
         static func capture(_ window: NSWindow, name: String) {
-            guard let dir = ProcessInfo.processInfo.environment["CUE_SNAPSHOT_DIR"],
-                let image = CGWindowListCreateImage(
-                    .null, .optionIncludingWindow, CGWindowID(window.windowNumber), [.bestResolution])
+            guard let dir = ProcessInfo.processInfo.environment["CUE_SNAPSHOT_DIR"], let png = png(of: window)
             else { return }
             try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
-            if let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) {
-                try? png.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))
-            }
+            try? png.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))
+        }
+
+        /// A PNG drawn from the window's own views, so it works while the window is fully transparent and needs no
+        /// screen recording permission. The desktop behind the glass is not part of it.
+        static func png(of window: NSWindow) -> Data? {
+            guard let view = window.contentView?.superview ?? window.contentView,
+                let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds)
+            else { return nil }
+            view.cacheDisplay(in: view.bounds, to: rep)
+            // The glass has no backdrop here, so lay the capture on a flat stand-in for it. Otherwise light text on
+            // a transparent PNG is unreadable in a viewer.
+            let dark = window.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            let backdrop = dark ? NSColor(srgbRed: 0.105, green: 0.115, blue: 0.11, alpha: 1)
+                : NSColor(srgbRed: 0.93, green: 0.945, blue: 0.94, alpha: 1)
+            guard let image = rep.cgImage,
+                let context = CGContext(
+                    data: nil, width: rep.pixelsWide, height: rep.pixelsHigh, bitsPerComponent: 8, bytesPerRow: 0,
+                    space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            else { return rep.representation(using: .png, properties: [:]) }
+            let bounds = CGRect(x: 0, y: 0, width: rep.pixelsWide, height: rep.pixelsHigh)
+            context.setFillColor(backdrop.cgColor)
+            context.fill(bounds)
+            context.draw(image, in: bounds)
+            guard let flat = context.makeImage() else { return rep.representation(using: .png, properties: [:]) }
+            return NSBitmapImageRep(cgImage: flat).representation(using: .png, properties: [:])
         }
 
         /// Notification "com.zawalid.cue.debug.settings" (object = page name) opens that Settings page and snapshots it.

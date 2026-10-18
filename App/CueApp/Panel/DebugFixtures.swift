@@ -1,9 +1,23 @@
 #if DEBUG
+    import AppKit
     import Cue
 
     /// Debug builds only: CUE_FIXTURE_COMMANDS=finder|safari|xcode seeds a realistic command list so the palette can be
     /// checked without Accessibility access. Titles keep the noise real menus carry (ellipses, update counts).
     enum DebugFixtures {
+        /// The app a fixture list pretends to belong to, so automated runs need not bring the real app to the front.
+        @MainActor
+        static func targetApp(named name: String) -> TargetApp {
+            let (bundle, title): (String, String)
+            switch name {
+            case "safari": (bundle, title) = ("com.apple.Safari", "Safari")
+            case "xcode": (bundle, title) = ("com.apple.dt.Xcode", "Xcode")
+            default: (bundle, title) = ("com.apple.finder", "Finder")
+            }
+            let pid = NSRunningApplication.runningApplications(withBundleIdentifier: bundle).first?.processIdentifier ?? 0
+            return TargetApp(pid: pid, bundleID: bundle, name: title)
+        }
+
         static func commands(named name: String) -> [Command] {
             let spec: [(path: [String], title: String, key: KeyShortcut?, enabled: Bool, checked: Bool)]
             let cmd = ModifierSet.command

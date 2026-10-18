@@ -54,6 +54,11 @@ public final class FrontmostAppTracker {
         activated(NSWorkspace.shared.frontmostApplication)
     }
 
+    /// Pins the target without following the real frontmost app, for previews and automated runs.
+    public func pin(_ target: TargetApp) {
+        app = target
+    }
+
     /// Re-attaches the AX observer, for when access was granted after the app became the target.
     public func reattach() {
         observedPID = nil

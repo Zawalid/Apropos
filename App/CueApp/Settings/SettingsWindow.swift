@@ -43,8 +43,9 @@ final class SettingsWindowController {
         if let page { navigation.page = page }
         let window = window ?? makeWindow()
         self.window = window
-        NSApp.activate()
+        if !AgentMode.isOn { NSApp.activate() }
         window.makeKeyAndOrderFront(nil)
+        AgentMode.conceal(window)
     }
 
     private func makeWindow() -> NSWindow {
