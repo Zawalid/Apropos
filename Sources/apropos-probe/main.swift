@@ -21,6 +21,13 @@ import Apropos
 //     locator would match in the app it names. Read-only: nothing is pressed, typed or brought to the front. Titles of
 //     the live menus are never printed. With --wait it first waits so you can switch to the app.
 //
+//   swift run apropos-probe --record-state   print the two permissions a recording needs and what it would do
+//     read-only: it asks macOS for the two states without prompting, creates no event tap and reads no app.
+//   swift run apropos-probe --record-live [seconds]   MANUAL USE ONLY: record for a few seconds and print the draft
+//     This is the only way the command line creates a live event tap. It needs Accessibility and Input Monitoring for
+//     the terminal, listens for 20 seconds by default (at most 120), then prints the steps it would save. The output
+//     contains the names of the menu items you chose, so do not paste it anywhere. Typed text is never recorded.
+//
 // Needs Accessibility access for the terminal (or whatever launched it).
 
 let arguments = Array(CommandLine.arguments.dropFirst())
@@ -58,6 +65,66 @@ if arguments.first == "--predict-eval" {
     let span = (events.last?.time ?? 0) - (events.first?.time ?? 0)
     print("source: \(source), \(events.count) events over \(Int(span / 86_400)) days")
     print(evaluator.run(events).render())
+    exit(0)
+}
+
+if arguments.first == "--record-state" {
+    let status = RecordingPermission().status()
+    print("Recording permissions (read only: nothing was requested, no event tap was created)")
+    for kind in RecordingPermissionKind.allCases {
+        print("  \(kind.title): \(status.isGranted(kind) ? "allowed" : "not allowed")")
+        print("    allows: \(kind.whatItAllows)")
+        print("    recording uses it: \(kind.whyRecording)")
+    }
+    print("Can record: \(status.canRecord ? "yes" : "no")")
+    if !status.canRecord {
+        print(RecordingPermissionCopy.missing(status.missing))
+        for kind in status.missing { print("  System Settings > Privacy & Security > \(kind.title)") }
+    }
+    let limits = RecordingLimits()
+    print("Limits: \(Int(limits.maxDuration)) seconds and \(limits.maxSteps) steps per recording")
+    print("Never stored:")
+    for line in RecordingPermissionCopy.neverStored { print("  - \(line)") }
+    exit(status.canRecord ? 0 : 2)
+}
+
+if arguments.first == "--record-live" {
+    let status = RecordingPermission().status()
+    guard status.canRecord else {
+        print(RecordingPermissionCopy.missing(status.missing))
+        print("Nothing was started. Run --record-state to see what is missing.")
+        exit(2)
+    }
+    let seconds = min(max(Double(arguments.dropFirst().first ?? "") ?? 20, 3), 120)
+    let services = RecordingServices(
+        system: LiveRecordingSystem(), hitTester: LiveHitTester(), menus: LiveMenuInspector(),
+        keyLayout: LiveKeyLayout())
+    let engine = RecordingEngine(
+        services: services,
+        configuration: RecordingConfiguration(
+            limits: RecordingLimits(maxDuration: seconds), privacy: ContextPrivacy.load(),
+            ownBundleID: "com.zawalid.apropos"))
+    let recorder = Recorder(engine: engine, source: LiveCaptureSource())
+    print("Recording for \(Int(seconds)) seconds. Choose menu items or use shortcuts in the app in front. Typing is not recorded.")
+    guard recorder.begin() == .recording else {
+        print("Could not start: \(recorder.state)")
+        exit(1)
+    }
+    try? await Task.sleep(for: .seconds(seconds + 0.5))
+    let draft = recorder.finish()
+    print("State: \(recorder.state)")
+    for item in draft.items {
+        let badge = item.fragility.map { " [\($0.title)]" } ?? ""
+        print("  \(item.summary)\(badge)")
+    }
+    for note in draft.skipped { print("  skipped: \(note.text)") }
+    if draft.isEmpty { print("  nothing was recorded") }
+    do {
+        let validated = try draft.validated(dropTextEntries: true)
+        print("Valid: \(validated.steps.count) steps, \(validated.fragility.title.lowercased())")
+    } catch {
+        print("Not saveable: \(error)")
+    }
     exit(0)
 }
 
