@@ -41,12 +41,18 @@ public enum SettingsImportError: Error, Equatable {
 @MainActor
 @Observable
 public final class SettingsStore {
-    /// `~/Library/Application Support/Cue/settings.json`.
-    public static var defaultURL: URL {
-        let base =
-            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+    /// The folder inside Application Support that holds every file the app writes.
+    public static let folderName = "Apropos"
+
+    /// `~/Library/Application Support`.
+    public static var supportDirectory: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
-        return base.appendingPathComponent("Cue/settings.json")
+    }
+
+    /// `~/Library/Application Support/Apropos/settings.json`.
+    public static var defaultURL: URL {
+        supportDirectory.appendingPathComponent("\(folderName)/settings.json")
     }
 
     public let url: URL

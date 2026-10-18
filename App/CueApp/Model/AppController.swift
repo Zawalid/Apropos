@@ -25,6 +25,7 @@ final class AppController {
     @ObservationIgnored private var onboardingWindow: NSWindow?
 
     convenience init() {
+        Self.runLegacyMigration()
         var settingsURL = SettingsStore.defaultURL
         var usageURL = UsageStore.defaultURL
         #if DEBUG
@@ -37,6 +38,20 @@ final class AppController {
         self.init(
             settings: SettingsModel(store: SettingsStore(url: settingsURL)), usageStore: UsageStore(url: usageURL),
             permission: AccessibilityPermission(), tracker: FrontmostAppTracker(), defaults: .standard)
+    }
+
+    /// Brings data from the former name over before any store opens. Debug runs that redirect their data skip it, so
+    /// experiments never read or write the real folders.
+    private static func runLegacyMigration() {
+        #if DEBUG
+            if ProcessInfo.processInfo.environment["CUE_DATA_DIR"] != nil || AgentMode.isOn { return }
+        #endif
+        guard let domain = Bundle.main.bundleIdentifier else { return }
+        let outcome = LegacyMigration(
+            supportDirectory: SettingsStore.supportDirectory, folderName: SettingsStore.folderName,
+            defaults: .standard, domain: domain
+        ).run()
+        CueLog.app.info("\(outcome.summary, privacy: .public)")
     }
 
     /// The pieces are passed in so previews can build a controller over in-memory stores and a fixed permission.

@@ -62,7 +62,7 @@ struct UsageFile: Codable {
 @MainActor
 @Observable
 public final class UsageStore {
-    /// `~/Library/Application Support/Cue/usage.json`.
+    /// `~/Library/Application Support/Apropos/usage.json`.
     public static var defaultURL: URL {
         SettingsStore.defaultURL.deletingLastPathComponent().appendingPathComponent("usage.json")
     }

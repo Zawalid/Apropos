@@ -100,7 +100,7 @@ public struct SymbolPackLibrary: Sendable {
         return SymbolPackLibrary(packs: load(urls: urls.sorted { $0.lastPathComponent < $1.lastPathComponent }))
     }
 
-    /// Bundled packs, then every valid `*.json` in `directory` (for example `Application Support/Cue/packs`). Files that
+    /// Bundled packs, then every valid `*.json` in `directory` (for example `Application Support/Apropos/packs`). Files that
     /// cannot be read or have a newer schema version are skipped.
     public static func bundled(plus directory: URL?) -> SymbolPackLibrary {
         var packs = bundled().packs
