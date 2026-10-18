@@ -9,7 +9,7 @@ let package = Package(
         .executable(name: "apropos-probe", targets: ["AproposProbe"]),
     ],
     targets: [
-        .target(name: "Apropos", resources: [.copy("Resources/SymbolPacks")]),
+        .target(name: "Apropos", resources: [.copy("Resources/SymbolPacks"), .copy("Resources/ActionPacks")]),
         .executableTarget(name: "AproposProbe", dependencies: ["Apropos"], path: "Sources/apropos-probe"),
         .testTarget(name: "AproposTests", dependencies: ["Apropos"]),
     ]

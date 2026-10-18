@@ -1,0 +1,646 @@
+{
+  "schemaVersion": 1,
+  "name": "Built-in",
+  "actions": [
+    {
+      "id": "ctx:text.upper",
+      "title": "UPPERCASE",
+      "subtitle": "Change the selection to capital letters",
+      "symbol": "textformat.size.larger",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.upper"
+      },
+      "output": "replaceSelection",
+      "keywords": [
+        "capitals",
+        "caps"
+      ]
+    },
+    {
+      "id": "ctx:text.lower",
+      "title": "lowercase",
+      "subtitle": "Change the selection to small letters",
+      "symbol": "textformat.size.smaller",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.lower"
+      },
+      "output": "replaceSelection"
+    },
+    {
+      "id": "ctx:text.title",
+      "title": "Title Case",
+      "subtitle": "Capitalize the first letter of each word",
+      "symbol": "textformat",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.title"
+      },
+      "output": "replaceSelection"
+    },
+    {
+      "id": "ctx:text.camel",
+      "title": "camelCase",
+      "subtitle": "Join words with a lowercase first word",
+      "symbol": "chevron.left.forwardslash.chevron.right",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.camel"
+      },
+      "output": "replaceSelection",
+      "keywords": [
+        "identifier",
+        "variable"
+      ]
+    },
+    {
+      "id": "ctx:text.snake",
+      "title": "snake_case",
+      "subtitle": "Lowercase words joined with underscores",
+      "symbol": "minus",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.snake"
+      },
+      "output": "replaceSelection",
+      "keywords": [
+        "identifier",
+        "underscore"
+      ]
+    },
+    {
+      "id": "ctx:text.kebab",
+      "title": "kebab-case",
+      "subtitle": "Lowercase words joined with dashes",
+      "symbol": "minus.circle",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.kebab"
+      },
+      "output": "replaceSelection",
+      "keywords": [
+        "identifier",
+        "dash",
+        "slug"
+      ]
+    },
+    {
+      "id": "ctx:text.trim",
+      "title": "Trim whitespace",
+      "subtitle": "Remove blanks at both ends",
+      "symbol": "scissors",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.trim"
+      },
+      "output": "replaceSelection",
+      "keywords": [
+        "strip"
+      ]
+    },
+    {
+      "id": "ctx:text.sort-lines",
+      "title": "Sort lines",
+      "subtitle": "Order the lines alphabetically",
+      "symbol": "arrow.up.arrow.down",
+      "requires": [
+        "selectedText"
+      ],
+      "conditions": [
+        "selectionIsMultiline"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.sortLines"
+      },
+      "output": "replaceSelection"
+    },
+    {
+      "id": "ctx:text.unique-lines",
+      "title": "Remove duplicate lines",
+      "subtitle": "Keep the first of each repeated line",
+      "symbol": "rectangle.stack.badge.minus",
+      "requires": [
+        "selectedText"
+      ],
+      "conditions": [
+        "selectionIsMultiline"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.uniqueLines"
+      },
+      "output": "replaceSelection",
+      "keywords": [
+        "dedupe"
+      ]
+    },
+    {
+      "id": "ctx:text.join-lines",
+      "title": "Join lines",
+      "subtitle": "Put the lines on one line",
+      "symbol": "text.alignleft",
+      "requires": [
+        "selectedText"
+      ],
+      "conditions": [
+        "selectionIsMultiline"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.joinLines"
+      },
+      "output": "replaceSelection",
+      "keywords": [
+        "merge",
+        "unwrap"
+      ]
+    },
+    {
+      "id": "ctx:text.count",
+      "title": "Count words and characters",
+      "subtitle": "Show the size of the selection",
+      "symbol": "number",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.count"
+      },
+      "output": "notify",
+      "keywords": [
+        "length",
+        "statistics"
+      ]
+    },
+    {
+      "id": "ctx:text.quote",
+      "title": "Wrap in quotes",
+      "subtitle": "Surround the selection with curly quotes",
+      "symbol": "quote.opening",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.quote"
+      },
+      "output": "replaceSelection"
+    },
+    {
+      "id": "ctx:text.code-block",
+      "title": "Wrap as code block",
+      "subtitle": "Surround the selection with triple backticks",
+      "symbol": "curlybraces",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.codeBlock"
+      },
+      "output": "replaceSelection",
+      "keywords": [
+        "markdown",
+        "fence"
+      ]
+    },
+    {
+      "id": "ctx:text.md-quote",
+      "title": "Markdown quote",
+      "subtitle": "Prefix each line with a quote mark",
+      "symbol": "text.quote",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.markdownQuote"
+      },
+      "output": "replaceSelection",
+      "keywords": [
+        "blockquote"
+      ]
+    },
+    {
+      "id": "ctx:text.url-encode",
+      "title": "URL encode",
+      "subtitle": "Percent-encode the selection",
+      "symbol": "link.badge.plus",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.urlEncode"
+      },
+      "output": "replaceSelection",
+      "keywords": [
+        "percent"
+      ]
+    },
+    {
+      "id": "ctx:text.url-decode",
+      "title": "URL decode",
+      "subtitle": "Turn percent-encoding back into text",
+      "symbol": "link",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.urlDecode"
+      },
+      "output": "replaceSelection",
+      "keywords": [
+        "percent"
+      ]
+    },
+    {
+      "id": "ctx:text.base64-encode",
+      "title": "Base64 encode",
+      "subtitle": "Encode the selection as Base64",
+      "symbol": "lock",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.base64Encode"
+      },
+      "output": "replaceSelection"
+    },
+    {
+      "id": "ctx:text.base64-decode",
+      "title": "Base64 decode",
+      "subtitle": "Decode a Base64 selection",
+      "symbol": "lock.open",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.base64Decode"
+      },
+      "output": "replaceSelection"
+    },
+    {
+      "id": "ctx:text.json-pretty",
+      "title": "Format JSON",
+      "subtitle": "Indent and sort the keys",
+      "symbol": "text.alignleft",
+      "requires": [
+        "selectedText"
+      ],
+      "conditions": [
+        "selectionIsJSON"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.jsonPretty"
+      },
+      "output": "replaceSelection",
+      "keywords": [
+        "pretty",
+        "beautify"
+      ]
+    },
+    {
+      "id": "ctx:text.json-minify",
+      "title": "Minify JSON",
+      "subtitle": "Remove all spacing",
+      "symbol": "arrow.down.right.and.arrow.up.left",
+      "requires": [
+        "selectedText"
+      ],
+      "conditions": [
+        "selectionIsJSON"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.jsonMinify"
+      },
+      "output": "replaceSelection",
+      "keywords": [
+        "compact"
+      ]
+    },
+    {
+      "id": "ctx:text.search-web",
+      "title": "Search the web",
+      "subtitle": "Search for the selection with your default engine",
+      "symbol": "magnifyingglass",
+      "requires": [
+        "selectedText"
+      ],
+      "backend": {
+        "type": "urlScheme",
+        "url": "x-web-search://?{text}"
+      },
+      "output": "none",
+      "keywords": [
+        "google",
+        "lookup"
+      ]
+    },
+    {
+      "id": "ctx:text.open-link",
+      "title": "Open as link",
+      "subtitle": "Open the selected address in your browser",
+      "symbol": "safari",
+      "requires": [
+        "selectedText"
+      ],
+      "conditions": [
+        "selectionIsURL"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "text.openLink"
+      },
+      "output": "none",
+      "keywords": [
+        "url",
+        "browser"
+      ]
+    },
+    {
+      "id": "ctx:files.copy-path",
+      "title": "Copy path",
+      "subtitle": "Copy the full path of the selected files",
+      "symbol": "doc.on.doc",
+      "requires": [
+        "selectedFiles"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "files.paths"
+      },
+      "output": "clipboard",
+      "keywords": [
+        "location"
+      ]
+    },
+    {
+      "id": "ctx:files.copy-name",
+      "title": "Copy name",
+      "subtitle": "Copy the name of the selected files",
+      "symbol": "textformat.abc",
+      "requires": [
+        "selectedFiles"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "files.names"
+      },
+      "output": "clipboard",
+      "keywords": [
+        "filename"
+      ]
+    },
+    {
+      "id": "ctx:files.reveal",
+      "title": "Reveal in Finder",
+      "subtitle": "Show the selected files in a Finder window",
+      "symbol": "folder",
+      "requires": [
+        "selectedFiles"
+      ],
+      "backend": {
+        "type": "shell",
+        "executable": "/usr/bin/open",
+        "arguments": [
+          "-R",
+          "{files}"
+        ]
+      },
+      "output": "none",
+      "keywords": [
+        "show"
+      ]
+    },
+    {
+      "id": "ctx:files.terminal",
+      "title": "Open in Terminal here",
+      "subtitle": "Open a Terminal window in that folder",
+      "symbol": "terminal",
+      "requires": [
+        "selectedFiles"
+      ],
+      "backend": {
+        "type": "shell",
+        "executable": "/usr/bin/open",
+        "arguments": [
+          "-a",
+          "Terminal",
+          "{directory}"
+        ]
+      },
+      "output": "none",
+      "keywords": [
+        "shell",
+        "command line",
+        "cd"
+      ]
+    },
+    {
+      "id": "ctx:files.zip",
+      "title": "Compress to zip",
+      "subtitle": "Create a zip archive next to the files",
+      "symbol": "doc.zipper",
+      "requires": [
+        "selectedFiles"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "files.zip"
+      },
+      "output": "notify",
+      "keywords": [
+        "archive",
+        "compress"
+      ],
+      "timeout": 120
+    },
+    {
+      "id": "ctx:files.sha256",
+      "title": "Copy SHA-256",
+      "subtitle": "Copy the checksum of the selected files",
+      "symbol": "number.circle",
+      "requires": [
+        "selectedFiles"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "files.sha256"
+      },
+      "output": "clipboard",
+      "keywords": [
+        "checksum",
+        "hash"
+      ],
+      "timeout": 60
+    },
+    {
+      "id": "ctx:page.copy-url",
+      "title": "Copy URL",
+      "subtitle": "Copy the address of this page",
+      "symbol": "link",
+      "requires": [
+        "pageURL"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "page.url"
+      },
+      "output": "clipboard",
+      "keywords": [
+        "address",
+        "link"
+      ]
+    },
+    {
+      "id": "ctx:page.copy-markdown-link",
+      "title": "Copy as Markdown link",
+      "subtitle": "Copy [title](address) for this page",
+      "symbol": "link.badge.plus",
+      "requires": [
+        "pageURL"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "page.markdownLink"
+      },
+      "output": "clipboard",
+      "keywords": [
+        "link"
+      ]
+    },
+    {
+      "id": "ctx:page.copy-title",
+      "title": "Copy page title",
+      "subtitle": "Copy the title of this page",
+      "symbol": "textformat",
+      "requires": [
+        "pageURL"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "page.title"
+      },
+      "output": "clipboard"
+    },
+    {
+      "id": "ctx:folder.terminal",
+      "title": "Open folder in Terminal",
+      "subtitle": "Open a Terminal window in this folder",
+      "symbol": "terminal",
+      "requires": [
+        "folder"
+      ],
+      "backend": {
+        "type": "shell",
+        "executable": "/usr/bin/open",
+        "arguments": [
+          "-a",
+          "Terminal",
+          "{directory}"
+        ]
+      },
+      "output": "none",
+      "keywords": [
+        "shell",
+        "cd"
+      ]
+    },
+    {
+      "id": "ctx:git.copy-branch",
+      "title": "Copy branch name",
+      "subtitle": "Copy the current git branch",
+      "symbol": "arrow.triangle.branch",
+      "requires": [
+        "gitRepo"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "git.branch"
+      },
+      "output": "clipboard",
+      "keywords": [
+        "git"
+      ],
+      "group": "folder"
+    },
+    {
+      "id": "ctx:git.copy-hash",
+      "title": "Copy short commit hash",
+      "subtitle": "Copy the hash of the latest commit",
+      "symbol": "number",
+      "requires": [
+        "gitRepo"
+      ],
+      "backend": {
+        "type": "shell",
+        "executable": "/usr/bin/git",
+        "arguments": [
+          "--no-optional-locks",
+          "-C",
+          "{repo}",
+          "rev-parse",
+          "--short",
+          "HEAD"
+        ]
+      },
+      "output": "clipboard",
+      "keywords": [
+        "git",
+        "sha"
+      ],
+      "group": "folder"
+    },
+    {
+      "id": "ctx:git.open-remote",
+      "title": "Open repository on the web",
+      "subtitle": "Open the remote's website for this repository",
+      "symbol": "safari",
+      "requires": [
+        "gitRepo"
+      ],
+      "backend": {
+        "type": "function",
+        "name": "git.openRemote"
+      },
+      "output": "none",
+      "keywords": [
+        "git",
+        "github",
+        "gitlab",
+        "remote"
+      ],
+      "group": "folder"
+    }
+  ]
+}
