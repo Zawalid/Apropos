@@ -249,6 +249,32 @@
         }
     }
 
+    // MARK: Menu bar popover
+
+    /// The popover the menu bar icon opens, on a glass card as the real popover has.
+    struct MenuPopoverPreview: View {
+        let app: TargetApp?
+        let chips: [String]
+        let recents: [UsageController.Recent]
+        let hasAccess: Bool
+        let pending: Int
+
+        @State private var header = ContextHeaderModel()
+
+        var body: some View {
+            MenuPopoverView(
+                header: header, recents: recents, hotKey: .default, hasAccess: hasAccess, pendingCommands: pending,
+                actions: MenuPopoverActions()
+            )
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Brand.line))
+            .onAppear {
+                header.app = app
+                header.chips = chips
+            }
+        }
+    }
+
     // MARK: Menu bar menu
 
     /// The menu bar menu drawn in SwiftUI from the same `MenuBarContent` the real `NSMenu` is built from, so a change

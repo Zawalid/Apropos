@@ -132,16 +132,16 @@
 
         // Menu bar menu
 
-        static let menuBar = PreviewScene(id: "menubar-menu", size: CGSize(width: 340, height: 420), backdrop: true) {
+        static let menuBar = PreviewScene(id: "menubar-menu", size: CGSize(width: 360, height: 460), backdrop: true) {
             AnyView(
-                MenuBarMenuPreview(
+                MenuPopoverPreview(
                     app: DebugFixtures.targetApp(named: "finder"), chips: ["Projects", "3 items"],
-                    recents: MenuBarMenuPreview.sampleRecents, hasAccess: true))
+                    recents: MenuBarMenuPreview.sampleRecents, hasAccess: true, pending: 0))
         }
         static let menuBarFresh = PreviewScene(
-            id: "menubar-menu-no-access", size: CGSize(width: 340, height: 360), backdrop: true
+            id: "menubar-menu-no-access", size: CGSize(width: 360, height: 400), backdrop: true
         ) {
-            AnyView(MenuBarMenuPreview(app: nil, chips: [], recents: [], hasAccess: false))
+            AnyView(MenuPopoverPreview(app: nil, chips: [], recents: [], hasAccess: false, pending: 2))
         }
 
         // Settings

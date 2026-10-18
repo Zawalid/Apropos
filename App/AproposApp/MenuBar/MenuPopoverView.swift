@@ -134,6 +134,7 @@ struct MenuPopoverView: View {
                 RecentRow(recent: recent) { actions.runRecent(recent) }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
         .padding(.top, 14)
         .padding(.bottom, 8)
