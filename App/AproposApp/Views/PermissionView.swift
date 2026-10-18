@@ -1,7 +1,7 @@
 import Apropos
 import SwiftUI
 
-/// Explains why Cue needs Accessibility access, sends the person to System Settings, and flips to a confirmation the
+/// Explains why Apropos needs Accessibility access, sends the person to System Settings, and flips to a confirmation the
 /// moment access arrives (the model polls, so no restart is needed).
 struct PermissionView: View {
     enum Style { case compact, full }
@@ -27,11 +27,11 @@ struct PermissionView: View {
             Image(systemName: "hand.raised.fill")
                 .font(.system(size: style == .full ? 38 : 28, weight: .light))
                 .foregroundStyle(Theme.accentText)
-            Text("Cue needs Accessibility access")
+            Text("Apropos needs Accessibility access")
                 .font(.system(size: style == .full ? 20 : 15, weight: .semibold))
                 .foregroundStyle(Theme.text)
             Text(
-                "To list an app's menu commands and run them, macOS requires you to allow Cue under Accessibility. Cue reads menu names only, on this Mac, and nothing leaves it."
+                "To list an app's menu commands and run them, macOS requires you to allow Apropos under Accessibility. Apropos reads menu names only, on this Mac, and nothing leaves it."
             )
             .font(.system(size: 13))
             .foregroundStyle(Theme.text2)
@@ -39,8 +39,8 @@ struct PermissionView: View {
             .frame(maxWidth: 420)
             VStack(alignment: .leading, spacing: 5) {
                 step("1", "Open System Settings, Privacy & Security, Accessibility.")
-                step("2", "Turn on Cue in the list. Add it with the + button if it is missing.")
-                step("3", "Come back. Cue notices on its own.")
+                step("2", "Turn on Apropos in the list. Add it with the + button if it is missing.")
+                step("3", "Come back. Apropos notices on its own.")
             }
             .padding(.top, 2)
             HStack(spacing: Theme.Spacing.sm) {

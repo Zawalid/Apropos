@@ -98,7 +98,7 @@ public enum ContextGap: Equatable, Sendable {
     case timedOut
 }
 
-/// The frontmost app and what Cue could learn about what the person is doing in it.
+/// The frontmost app and what Apropos could learn about what the person is doing in it.
 public struct ContextSnapshot: Equatable, Sendable {
     public var appName: String
     public var bundleID: String?

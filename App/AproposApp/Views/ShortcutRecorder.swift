@@ -28,40 +28,24 @@ struct ShortcutRecorder: View {
                         }
                     }
                 }
-                .frame(minWidth: 100, minHeight: 26)
+                .frame(minWidth: 110, minHeight: 30)
                 .padding(.horizontal, 10)
                 .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous).fill(
-                        isRecording ? Theme.accentSoft : Theme.chip)
+                    RoundedRectangle(cornerRadius: 9, style: .continuous).fill(
+                        isRecording ? Theme.accentSoft : Theme.Settings.chip)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(isRecording ? Theme.accentText : Theme.chipEdge, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .strokeBorder(isRecording ? Theme.accentText : .clear, lineWidth: 1)
                 )
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .focusable()
-            .aproposFocusRing(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .aproposFocusRing(RoundedRectangle(cornerRadius: 9, style: .continuous))
             .accessibilityLabel("Global shortcut, \(combo.display)")
             if let hint {
                 Text(hint).font(.system(size: 12)).foregroundStyle(Theme.cautionText)
-            } else if combo != .default && !isRecording {
-                Button {
-                    onChange(.default)
-                } label: {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Theme.text2)
-                        .frame(width: 26, height: 26)
-                        .background(Circle().fill(Theme.chip))
-                        .overlay(Circle().strokeBorder(Theme.chipEdge, lineWidth: 1))
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .focusable()
-                .aproposFocusRing(Circle())
-                .accessibilityLabel("Reset shortcut to default")
             }
         }
         .onDisappear { stop() }

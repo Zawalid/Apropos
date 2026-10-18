@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Colors and metrics shared by every Cue surface. They follow the interactive prototype in `docs/prototype`: a
+/// Colors and metrics shared by every Apropos surface. They follow the interactive prototype in `docs/prototype`: a
 /// green-tinted glass, neutral selection and one mint accent (deep emerald in light mode) used sparingly.
 enum Theme {
     enum Spacing {

@@ -35,7 +35,9 @@ struct GeneralPage: View {
                 isOn: Binding(get: { settings.launchAtLogin }, set: { settings.setLaunchAtLogin($0) }))
             SettingToggleRow(id: .showInMenuBar, isOn: $settings.showInMenuBar)
             SettingsRow(
-                title: title(.openHotKey), detail: "Cue runs alongside your launcher. Pick a shortcut it does not use."
+                title: title(.openHotKey),
+                detail: "Apropos runs alongside your launcher. Pick a shortcut it does not use.",
+                settingID: .openHotKey
             ) {
                 ShortcutRecorder(
                     combo: controller.combo, onRecordingChange: { controller.setRecording($0) },
@@ -56,7 +58,8 @@ struct GeneralPage: View {
             SettingToggleRow(id: .closeOnFocusLoss, isOn: $settings.closeOnFocusLoss)
             SettingsRow(
                 title: title(.resetQueryAfterSeconds),
-                detail: "Keep what you typed if you reopen the panel within this time."
+                detail: "Keep what you typed if you reopen the panel within this time.",
+                settingID: .resetQueryAfterSeconds
             ) {
                 ValueMenu(options: options, selection: $settings.resetQuerySeconds)
             }
@@ -81,16 +84,16 @@ struct AppearancePage: View {
     var body: some View {
         @Bindable var settings = settings
         SettingsSection {
-            SettingsRow(title: title(.theme)) {
+            SettingsRow(title: title(.theme), settingID: .theme) {
                 ValueMenu(
                     options: AppearanceMode.allCases.map { ($0, $0.title) }, selection: $settings.appearance)
             }
             .settingsAnchor(SettingID.theme.rawValue)
-            SettingsRow(title: title(.interfaceSize), detail: detail(.interfaceSize)) {
+            SettingsRow(title: title(.interfaceSize), detail: detail(.interfaceSize), settingID: .interfaceSize) {
                 SizePicker(selection: $settings.interfaceSize)
             }
             .settingsAnchor(SettingID.interfaceSize.rawValue)
-            SettingsRow(title: title(.rowIcons), detail: detail(.rowIcons)) {
+            SettingsRow(title: title(.rowIcons), detail: detail(.rowIcons), settingID: .rowIcons) {
                 ValueMenu(
                     options: RowIconStyle.allCases.map { ($0, $0.title) }, selection: $settings.rowIcons)
             }
@@ -145,25 +148,27 @@ struct ContextPage: View {
 
     var body: some View {
         @Bindable var settings = settings
-        SettingsSection(footer: "Everything Cue reads stays on this Mac.") {
+        SettingsSection(footer: "Everything Apropos reads stays on this Mac.") {
             SettingToggleRow(id: .contextSensing, isOn: $settings.contextSensing)
         }
         SettingsSection(title: title(.contextChips), footer: detail(.contextChips)) {
-            ForEach(SettingsRegistry.contextChipOptions, id: \.value) { option in
-                if let kind = ContextKind(rawValue: option.value) {
-                    SettingsRow(title: option.title) {
-                        AproposToggle(
+            FlowLayout(spacing: 8) {
+                ForEach(SettingsRegistry.contextChipOptions, id: \.value) { option in
+                    if let kind = ContextKind(rawValue: option.value) {
+                        ChipToggle(
                             title: option.title,
                             isOn: Binding(
                                 get: { settings.isChipShown(kind) }, set: { settings.setChip(kind, shown: $0) }))
                     }
                 }
             }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .settingsAnchor(SettingID.contextChips.rawValue)
         .opacity(settings.contextSensing ? 1 : 0.5)
         .disabled(!settings.contextSensing)
-        SettingsSection(title: "Apps", footer: "Turn an app off and Cue reads nothing from it beyond the menu.") {
+        SettingsSection(title: "Apps", footer: "Turn an app off and Apropos reads nothing from it beyond the menu.") {
             if apps.isEmpty {
                 SettingsRow(title: "No apps to list") { EmptyView() }
             }
@@ -229,7 +234,7 @@ struct PrivacyPage: View {
 
     var body: some View {
         SettingsSection(title: "Access") {
-            SettingsRow(title: "Accessibility", detail: "Lets Cue read and press menu items.") {
+            SettingsRow(title: "Accessibility", detail: "Lets Apropos read and press menu items.") {
                 if controller.permission.isTrusted {
                     Label("Allowed", systemImage: "checkmark.circle.fill")
                         .font(.system(size: 12.5, weight: .medium))
@@ -338,7 +343,7 @@ struct UpdatesPage: View {
 
     var body: some View {
         @Bindable var settings = settings
-        SettingsSection(footer: "Cue only contacts the update server when you ask it to or turn this on.") {
+        SettingsSection(footer: "Apropos only contacts the update server when you ask it to or turn this on.") {
             SettingToggleRow(id: .checkForUpdates, isOn: $settings.checkForUpdates)
             SettingsRow(title: "Check now", detail: "Version \(AboutPage.version)") {
                 Button("Check for Updates") { settings.checkForUpdatesNow() }.buttonStyle(SecondaryButtonStyle())
@@ -354,14 +359,17 @@ struct AboutPage: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            Image(nsImage: NSApp.applicationIconImage)
-                .resizable()
-                .frame(width: 56, height: 56)
+            Image(systemName: "command")
+                .font(.system(size: 30, weight: .medium))
+                .foregroundStyle(Theme.accentInk)
+                .frame(width: 60, height: 60)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.accent))
+                .padding(.bottom, 6)
                 .accessibilityHidden(true)
-            Text("Cue").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.text)
+            Text("Apropos").font(.system(size: 18, weight: .semibold)).foregroundStyle(Theme.text)
             Text("Version \(Self.version)")
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.text2)
+                .font(.system(size: 12.5))
+                .foregroundStyle(Theme.text3)
                 .settingsAnchor("version")
             Text("What you can do right now, in this app, with this selection.")
                 .font(.system(size: 12))
@@ -398,5 +406,42 @@ struct AboutPage: View {
         let short = info?["CFBundleShortVersionString"] as? String ?? "0"
         let build = info?["CFBundleVersion"] as? String ?? "0"
         return "\(short) (\(build))"
+    }
+}
+
+/// A pill that toggles one kind of context: filled with the accent tint and a check when on.
+private struct ChipToggle: View {
+    let title: String
+    @Binding var isOn: Bool
+
+    @State private var hovering = false
+
+    var body: some View {
+        Button {
+            isOn.toggle()
+        } label: {
+            HStack(spacing: 6) {
+                if isOn {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Theme.accentText)
+                }
+                Text(title)
+                    .font(.system(size: 13))
+                    .foregroundStyle(isOn ? Theme.text : Theme.text3)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 30)
+            .background(
+                Capsule().fill(isOn ? Theme.accentSoft : (hovering ? Theme.Settings.chipHover : Theme.Settings.chip))
+            )
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .aproposFocusRing(Capsule())
+        .accessibilityLabel(title)
+        .accessibilityValue(isOn ? "On" : "Off")
+        .accessibilityAddTraits(.isToggle)
     }
 }

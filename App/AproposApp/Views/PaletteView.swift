@@ -188,11 +188,11 @@ private struct PaletteContentView: View {
         case .noApp:
             StatusView(
                 symbol: "app.dashed", title: "No app in front",
-                detail: "Switch to an app and open Cue again to see its commands.")
+                detail: "Switch to an app and open Apropos again to see its commands.")
         case .noCommands(let name):
             StatusView(
                 symbol: "menubar.rectangle", title: "No menu commands",
-                detail: "\(name) does not expose a menu bar Cue can read.")
+                detail: "\(name) does not expose a menu bar Apropos can read.")
         case .failed(let message):
             StatusView(
                 symbol: "exclamationmark.triangle", title: "Could not read menus", detail: message,

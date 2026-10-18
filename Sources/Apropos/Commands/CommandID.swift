@@ -6,7 +6,7 @@ import Foundation
 /// The value is readable on purpose, so a hand-edited file is understandable:
 /// `com.apple.finder|file>new folder|⇧⌘N`. It is built from the bundle identifier, the normalized menu trail and
 /// title, and, only where two commands would otherwise collide, the shortcut and then an ordinal. A shortcut is not
-/// part of every identity because users remap them, and that must not erase what Cue learned.
+/// part of every identity because users remap them, and that must not erase what Apropos learned.
 public struct CommandID: RawRepresentable, Hashable, Codable, Sendable, Comparable, CustomStringConvertible {
     public let rawValue: String
 

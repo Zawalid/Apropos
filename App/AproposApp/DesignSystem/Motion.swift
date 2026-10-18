@@ -76,7 +76,7 @@ private struct AproposReduceMotionKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// True when the system asks for reduced motion or Cue's own setting does.
+    /// True when the system asks for reduced motion or Apropos's own setting does.
     var aproposReduceMotion: Bool {
         get { self[AproposReduceMotionKey.self] }
         set { self[AproposReduceMotionKey.self] = newValue }

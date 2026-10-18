@@ -139,7 +139,7 @@ public struct SettingDefinition: Sendable, Identifiable {
     }
 }
 
-/// The list of every setting Cue has. Add a setting here and it appears in the file, the store and the search.
+/// The list of every setting Apropos has. Add a setting here and it appears in the file, the store and the search.
 public enum SettingsRegistry {
     public static let all: [SettingDefinition] = general + appearance + context + privacy + updates
 
@@ -181,7 +181,7 @@ public enum SettingsRegistry {
         SettingOption("selectionCount", "Selection count"),
     ]
 
-    /// Password managers and similar apps. Cue reads nothing in them. Browsers cannot be listed here: a bank in a
+    /// Password managers and similar apps. Apropos reads nothing in them. Browsers cannot be listed here: a bank in a
     /// browser tab is the same app as any other page.
     public static let defaultIgnoreList: [String] = [
         "com.1password.1password",
@@ -199,18 +199,18 @@ public enum SettingsRegistry {
 
     private static let general: [SettingDefinition] = [
         SettingDefinition(
-            id: .openAtLogin, title: "Open at login", detail: "Start Cue when you log in.",
+            id: .openAtLogin, title: "Open at login", detail: "Start Apropos when you log in.",
             keywords: ["startup", "launch", "login item", "boot"], page: .general, type: .bool,
             defaultValue: .bool(false)),
         SettingDefinition(
-            id: .showInMenuBar, title: "Show in menu bar", detail: "Keep the Cue icon in the menu bar.",
+            id: .showInMenuBar, title: "Show in menu bar", detail: "Keep the Apropos icon in the menu bar.",
             keywords: ["status item", "icon", "tray"], page: .general, type: .bool, defaultValue: .bool(true)),
         SettingDefinition(
-            id: .openHotKey, title: "Open Cue", detail: "The shortcut that opens the panel.",
+            id: .openHotKey, title: "Open Apropos", detail: "The shortcut that opens the panel.",
             keywords: ["hotkey", "shortcut", "keyboard", "global"], page: .general, type: .hotkey,
             defaultValue: .hotkey(.default)),
         SettingDefinition(
-            id: .closeOnFocusLoss, title: "Close when Cue loses focus",
+            id: .closeOnFocusLoss, title: "Close when Apropos loses focus",
             detail: "Dismiss the panel when you click elsewhere.", keywords: ["dismiss", "hide", "blur", "click away"],
             page: .general, type: .bool, defaultValue: .bool(true)),
         SettingDefinition(
@@ -251,7 +251,7 @@ public enum SettingsRegistry {
             defaultValue: .bool(true)),
         SettingDefinition(
             id: .contextDisabledApps, title: "Apps with context off",
-            detail: "Bundle identifiers of apps where Cue reads nothing but the menu.",
+            detail: "Bundle identifiers of apps where Apropos reads nothing but the menu.",
             keywords: ["per app", "disable", "exclude", "bundle"], page: .context, type: .stringList,
             defaultValue: .stringList([])),
         SettingDefinition(
@@ -264,7 +264,7 @@ public enum SettingsRegistry {
     private static let privacy: [SettingDefinition] = [
         SettingDefinition(
             id: .contextIgnoreList, title: "Never read these apps",
-            detail: "Password managers and banks. Cue reads nothing in them, not even the document title.",
+            detail: "Password managers and banks. Apropos reads nothing in them, not even the document title.",
             keywords: ["password", "bank", "secret", "ignore", "block", "bundle"], page: .privacyAndData,
             type: .stringList, defaultValue: .stringList(defaultIgnoreList)),
     ]

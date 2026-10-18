@@ -1,7 +1,7 @@
 import Apropos
 import Foundation
 
-/// One chip under the search field: the app first, then what Cue knows about the moment.
+/// One chip under the search field: the app first, then what Apropos knows about the moment.
 struct ContextChip: Identifiable, Equatable {
     enum Leading: Equatable {
         case appIcon(pid_t)
@@ -39,7 +39,7 @@ enum ContextChips {
             switch app.bundleID {
             case "com.apple.finder":
                 return [
-                    ("folder", "~/Projects/Cue"), ("cursorarrow.click", "3 items selected"),
+                    ("folder", "~/Projects/Apropos"), ("cursorarrow.click", "3 items selected"),
                     ("arrow.triangle.branch", "main"),
                 ]
             case "com.apple.Safari":

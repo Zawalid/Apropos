@@ -1,8 +1,8 @@
 import Foundation
 
-/// Which apps Cue may sense. Everything stays on the Mac; this only narrows what is read.
+/// Which apps Apropos may sense. Everything stays on the Mac; this only narrows what is read.
 public struct ContextPrivacy: Equatable, Sendable {
-    /// Apps where Cue reads nothing beyond the app name.
+    /// Apps where Apropos reads nothing beyond the app name.
     public var disabledBundleIDs: Set<String>
     /// Apps where context is read but the selected text never is.
     public var selectionBlockedBundleIDs: Set<String>

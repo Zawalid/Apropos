@@ -7,7 +7,7 @@
 #
 # Builds go to build/dev (ignored by git), so the app path is stable and Xcode's own build is untouched.
 #
-# Cue needs Accessibility access, and macOS ties that grant to the app's code signature. An ad hoc signature changes
+# Apropos needs Accessibility access, and macOS ties that grant to the app's code signature. An ad hoc signature changes
 # on every build, so the grant would be lost each time and the welcome screen would come back. After each build this
 # script re-signs the app with a stable identity: APROPOS_SIGN_IDENTITY if set, otherwise the first code signing
 # certificate in your keychain (see `security find-identity -v -p codesigning`). With no certificate it falls back to

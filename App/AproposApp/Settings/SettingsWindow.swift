@@ -52,7 +52,7 @@ enum SettingsCatalog {
         Action(
             title: "Check for updates now", keywords: "version upgrade", page: .updates, section: "Updates",
             anchor: "checknow"),
-        Action(title: "Version", keywords: "about build", page: .about, section: "Cue", anchor: "version"),
+        Action(title: "Version", keywords: "about build", page: .about, section: "Apropos", anchor: "version"),
     ]
 
     static func search(_ query: String) -> [SettingsHit] {
@@ -131,7 +131,7 @@ struct SettingsRoot: View {
     @State private var highlightedHit = 0
     @FocusState private var searchFocused: Bool
     @Namespace private var selection
-    @Environment(\.cueReduceMotion) private var reduceMotion
+    @Environment(\.aproposReduceMotion) private var reduceMotion
 
     init(controller: AppController, settings: SettingsModel, navigation: SettingsNavigation, initialQuery: String = "")
     {
@@ -240,7 +240,9 @@ struct SettingsRoot: View {
                 .lineLimit(1)
             Spacer(minLength: 4)
             HStack(spacing: 3) {
-                ForEach(Array(controller.combo.caps.enumerated()), id: \.offset) { KeyCap(text: $0.element, small: true) }
+                ForEach(Array(controller.combo.caps.enumerated()), id: \.offset) {
+                    KeyCap(text: $0.element, small: true)
+                }
             }
         }
         .padding(.horizontal, 8)
@@ -268,10 +270,15 @@ struct SettingsRoot: View {
                             PageTile(page: hit.page)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(hit.title).font(.system(size: 13.5)).foregroundStyle(Theme.text)
-                                Text(hit.isPage ? "Page" : [hit.page.title, hit.section].compactMap { $0 }.joined(separator: " \u{203A} "))
-                                    .font(.system(size: 11.5))
-                                    .foregroundStyle(Theme.text3)
-                                    .lineLimit(1)
+                                Text(
+                                    hit.isPage
+                                        ? "Page"
+                                        : [hit.page.title, hit.section].compactMap { $0 }.joined(
+                                            separator: " \u{203A} ")
+                                )
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(Theme.text3)
+                                .lineLimit(1)
                             }
                             Spacer(minLength: 0)
                         }

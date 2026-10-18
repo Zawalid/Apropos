@@ -9,7 +9,7 @@ public enum MenuReadError: Error, Sendable, Equatable {
 
     public var message: String {
         switch self {
-        case .notTrusted: "Cue needs Accessibility access to read menus."
+        case .notTrusted: "Apropos needs Accessibility access to read menus."
         case .noMenuBar: "This app has no menu bar."
         case .unresponsive: "The app did not answer in time."
         case .failed(let code): "The app's menus could not be read (error \(code))."

@@ -2,7 +2,7 @@ import AppKit
 import ApplicationServices
 import Observation
 
-/// Whether Cue may use the Accessibility API, kept live. macOS has no callback for this, so the model listens for the
+/// Whether Apropos may use the Accessibility API, kept live. macOS has no callback for this, so the model listens for the
 /// system's distributed notification and also polls while access is missing, which makes the UI recover the moment
 /// the person flips the switch in System Settings.
 @MainActor
@@ -46,7 +46,7 @@ public final class AccessibilityPermission {
         updatePolling()
     }
 
-    /// Asks macOS to show its own "would like to control this computer" prompt, which also adds Cue to the list.
+    /// Asks macOS to show its own "would like to control this computer" prompt, which also adds Apropos to the list.
     public func requestPrompt() {
         let key = "AXTrustedCheckOptionPrompt"
         let options = [key: true] as CFDictionary

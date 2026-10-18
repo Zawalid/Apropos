@@ -15,7 +15,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         self.controller = controller
         super.init()
         if let button = statusItem.button {
-            let image = NSImage(systemSymbolName: "command.square", accessibilityDescription: "Cue")
+            let image = NSImage(systemSymbolName: "command.square", accessibilityDescription: "Apropos")
             image?.isTemplate = true
             button.image = image
         }
@@ -138,13 +138,13 @@ enum MenuBarContent {
             list.append(.recent(recent, title: title))
         }
         list.append(.separator)
-        list.append(.action(.open, title: "Open Cue (\(hotKey))", key: ""))
+        list.append(.action(.open, title: "Open Apropos (\(hotKey))", key: ""))
         if !hasAccess { list.append(.action(.allowAccess, title: "Allow Accessibility Access\u{2026}", key: "")) }
         list.append(.separator)
         list.append(.action(.settings, title: "Settings\u{2026}", key: ","))
         list.append(.action(.checkForUpdates, title: "Check for Updates\u{2026}", key: ""))
         list.append(.separator)
-        list.append(.action(.quit, title: "Quit Cue", key: "q"))
+        list.append(.action(.quit, title: "Quit Apropos", key: "q"))
         return list
     }
 }
@@ -156,7 +156,7 @@ final class ContextHeaderModel {
     var chips: [String] = []
 }
 
-/// The first row of the menu: the app in front and what Cue sees in it.
+/// The first row of the menu: the app in front and what Apropos sees in it.
 struct ContextHeaderView: View {
     let model: ContextHeaderModel
 
@@ -171,7 +171,7 @@ struct ContextHeaderView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(model.app?.name ?? "No app in front")
                     .font(.system(size: 13, weight: .semibold))
-                Text(model.chips.isEmpty ? "Cue sees only the app" : model.chips.joined(separator: "  \u{00B7}  "))
+                Text(model.chips.isEmpty ? "Apropos sees only the app" : model.chips.joined(separator: "  \u{00B7}  "))
                     .font(.system(size: 11.5))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

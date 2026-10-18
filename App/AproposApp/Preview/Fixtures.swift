@@ -145,7 +145,7 @@
                 ContextItem(kind: kind, label: label, symbol: ContextItem.symbol(for: kind))
             }
             switch app {
-            case "safari": return [item(.url, "github.com/zawalid/cue"), item(.selection, "Selected text")]
+            case "safari": return [item(.url, "github.com/zawalid/apropos"), item(.selection, "Selected text")]
             case "xcode": return [item(.document, "PaletteView.swift"), item(.branch, "main")]
             default: return [item(.folder, "Projects"), item(.selectionCount, "3 items")]
             }

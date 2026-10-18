@@ -17,7 +17,7 @@ public struct TargetApp: Identifiable, Equatable, Sendable {
 }
 
 /// Follows the frontmost app. NSWorkspace says which app is in front; an AXObserver on that app says when its window
-/// or document changes, which is when its menus can change. Cue's own windows never count as the target, so the
+/// or document changes, which is when its menus can change. Apropos's own windows never count as the target, so the
 /// palette keeps showing the app the person came from.
 @MainActor
 @Observable

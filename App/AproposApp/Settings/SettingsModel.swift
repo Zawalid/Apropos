@@ -177,7 +177,7 @@ final class SettingsModel {
     func checkForUpdatesNow() {
         let alert = NSAlert()
         alert.messageText = "Updates are not set up yet"
-        alert.informativeText = "Cue will check for updates once the updater ships."
+        alert.informativeText = "Apropos will check for updates once the updater ships."
         alert.runModal()
     }
 

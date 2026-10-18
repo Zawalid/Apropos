@@ -4,7 +4,7 @@ import SwiftUI
 /// The glass look. On macOS 26 it is the system's Liquid Glass; before that, a behind-window blur with the same tint
 /// and hairline, so the two read as one design.
 extension View {
-    /// A glass surface in `shape`: material, Cue's tint, a hairline whose top edge catches light, and no fill
+    /// A glass surface in `shape`: material, Apropos's tint, a hairline whose top edge catches light, and no fill
     /// outside the shape.
     func aproposGlass<S: InsettableShape>(in shape: S, tinted: Bool = true) -> some View {
         modifier(AproposGlass(shape: shape, tinted: tinted))

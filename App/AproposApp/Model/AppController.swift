@@ -167,7 +167,7 @@ final class AppController {
     func showOnboarding() {
         let content = PermissionView(permission: permission, style: .full)
             .frame(width: 520, height: 420)
-        let window = onboardingWindow ?? makeWindow(title: "Welcome to Cue", content: content)
+        let window = onboardingWindow ?? makeWindow(title: "Welcome to Apropos", content: content)
         onboardingWindow = window
         present(window)
     }

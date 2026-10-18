@@ -18,7 +18,7 @@ struct FloatingFooter: View {
             }
             .buttonStyle(RoundGlassButtonStyle())
             .focusable()
-            .accessibilityLabel("Open Cue settings")
+            .accessibilityLabel("Open Apropos settings")
             .help("Settings")
             Spacer(minLength: 0)
             if let error = model.runError {

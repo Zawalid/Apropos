@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// What Cue has learned about one command. Only the identity and times are stored, never what was typed or selected.
+/// What Apropos has learned about one command. Only the identity and times are stored, never what was typed or selected.
 struct UsageRecord: Codable, Equatable {
     var runs: Int
     /// The last few run times, oldest first, at most `Frecency.sampleLimit`.
@@ -53,7 +53,7 @@ struct UsageFile: Codable {
 /// Local store of what the user runs, pins, hides and renames.
 ///
 /// JSON rather than SQLite: the data is small (one record per command ever run, ten timestamps each, pruned after a
-/// year idle), it is read once at launch and written in the background, a person can open it and see exactly what Cue
+/// year idle), it is read once at launch and written in the background, a person can open it and see exactly what Apropos
 /// learned, and it needs no schema migrations or library. The same atomic-write approach as the settings file.
 ///
 /// Privacy: a record is a command identity (bundle id plus menu path and title) and times. Query text and selection

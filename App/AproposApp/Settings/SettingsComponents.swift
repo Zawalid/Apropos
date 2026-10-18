@@ -267,7 +267,9 @@ struct ValueMenu<Value: Hashable>: View {
             .padding(.leading, 10)
             .padding(.trailing, 8)
             .frame(height: 28)
-            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(hovering ? Theme.Settings.chip : .clear))
+            .background(
+                RoundedRectangle(cornerRadius: 9, style: .continuous).fill(hovering ? Theme.Settings.chip : .clear)
+            )
             .contentShape(Rectangle())
         }
         .menuStyle(.button)
