@@ -23,7 +23,8 @@ public final class PaletteModel {
     public var results: [RankedCommand] {
         let key = CacheKey(
             revision: menus.revision, query: query, rankerRevision: rankerRevision, contextRevision: contextRevision,
-            predictionRevision: predictionRevision, targetPID: tracker.app?.pid)
+            predictionRevision: predictionRevision, targetPID: tracker.app?.pid, sendRevision: sendCenter?.revision ?? 0
+        )
         if key != cacheKey {
             computeResults()
             cacheKey = key
@@ -73,6 +74,10 @@ public final class PaletteModel {
     /// A context action waiting for the person to confirm it. The view asks, then calls `confirmPending()` or
     /// `cancelPending()`.
     public private(set) var pendingConfirmation: Command?
+    /// What the last send-to row did: "Sent to Notes". Cleared when a new command starts.
+    public private(set) var lastSend: SendOutcome?
+    /// The row that last sent successfully, for the caller to record in the usage store. Ids only.
+    public private(set) var lastSentCommand: Command?
 
     @ObservationIgnored private let menus: AppMenuModel
     @ObservationIgnored private let tracker: FrontmostAppTracker
@@ -82,6 +87,8 @@ public final class PaletteModel {
     @ObservationIgnored private var contextPID: pid_t?
     @ObservationIgnored private var contextRevision = 0
     @ObservationIgnored private var openHook: ((TargetApp?) -> Void)?
+    @ObservationIgnored private var sendCenter: SendToCenter?
+    @ObservationIgnored private var queryBeforeSendLevel = ""
     @ObservationIgnored private var contextRunner:
         (@MainActor (Command, TargetApp?, Bool) async -> Result<ActionOutcome, ActionError>)?
     @ObservationIgnored private var pinnedCount = 0
@@ -103,6 +110,7 @@ public final class PaletteModel {
         let contextRevision: Int
         let predictionRevision: Int
         let targetPID: pid_t?
+        let sendRevision: Int
     }
 
     public init(
@@ -152,6 +160,42 @@ public final class PaletteModel {
         contextRunner = runner
     }
 
+    /// Connects the send-to layer: its rows are listed beside the context actions, and its destination list replaces the
+    /// results while open.
+    public func attachSend(_ center: SendToCenter) { sendCenter = center }
+
+    /// The destination list that is open, for the breadcrumb chip. Nil at the top level.
+    public var sendLevel: SendLevel? { sendCenter?.level }
+
+    /// A send waiting for the confirming Return: show its one-line preview.
+    public var sendPending: SendPending? { sendCenter?.pending }
+
+    /// The send-to rows listed now, only while the app they were built for is the target.
+    private var activeSendCommands: [Command] {
+        guard let center = sendCenter, let pid = tracker.app?.pid, pid == center.pid else { return [] }
+        return center.rootCommands
+    }
+
+    /// Context actions followed, in each group, by that group's send rows.
+    private func listed(context: [Command], send: [Command]) -> [Command] {
+        guard !send.isEmpty else { return context }
+        var result = context
+        var groups: [String] = []
+        for command in send {
+            let group = command.path.first ?? ""
+            if !groups.contains(group) { groups.append(group) }
+        }
+        for group in groups {
+            let rows = send.filter { ($0.path.first ?? "") == group }
+            if let last = result.lastIndex(where: { ($0.path.first ?? "") == group }) {
+                result.insert(contentsOf: rows, at: last + 1)
+            } else {
+                result.append(contentsOf: rows)
+            }
+        }
+        return result
+    }
+
     /// The context actions currently listed.
     private var activeContextCommands: [Command] {
         guard let pid = tracker.app?.pid, pid == contextPID else { return [] }
@@ -159,13 +203,17 @@ public final class PaletteModel {
     }
 
     private func computeResults() {
-        let commands = activeContextCommands + menus.commands
-        let base = ranker.rank(commands, query: query)
         pinnedCount = 0
         suggestedCount = 0
         predictedRows = 0
         predictionReasons = [:]
         predictedRowIDs = []
+        if let center = sendCenter, center.isInDestinationList {
+            cachedResults = ranker.rank(center.levelCommands, query: query)
+            return
+        }
+        let commands = listed(context: activeContextCommands, send: activeSendCommands) + menus.commands
+        let base = ranker.rank(commands, query: query)
         guard query.trimmingCharacters(in: .whitespaces).isEmpty else {
             cachedResults = base
             return
@@ -203,7 +251,10 @@ public final class PaletteModel {
     public var targetApp: TargetApp? { tracker.app }
 
     public var content: PaletteContent {
-        switch menus.state {
+        if sendCenter?.isInDestinationList == true {
+            return results.isEmpty ? .noMatches(query: query.trimmingCharacters(in: .whitespaces)) : .results
+        }
+        return switch menus.state {
         case .needsPermission: .needsPermission
         case .noApp: .noApp
         case .loading: .loading
@@ -228,6 +279,9 @@ public final class PaletteModel {
         runError = nil
         lastOutcome = nil
         pendingConfirmation = nil
+        lastSend = nil
+        lastSentCommand = nil
+        sendCenter?.beginSession(for: tracker.app)
         selectedID = nil
         // Context from the last time the panel was open may be gone. Actions come back when the fresh snapshot lands,
         // so a stale selection can never be acted on.
@@ -275,7 +329,9 @@ public final class PaletteModel {
     public func run(_ command: Command) async -> Bool {
         runError = nil
         lastOutcome = nil
+        lastSend = nil
         if case .contextAction = command.source { return await runContextAction(command, confirmed: false) }
+        if case .sendTo = command.source { return await runSend(command) }
         let outcome: Result<Void, CommandRunError>
         if let runner {
             outcome = await runner(command)
@@ -314,14 +370,79 @@ public final class PaletteModel {
         }
     }
 
-    /// Runs the action that was waiting for confirmation. Returns true when the palette can close.
+    /// Whether the row is part of the send-to layer, which keeps the panel open until a send finishes.
+    public func isSendRow(_ command: Command) -> Bool {
+        if case .sendTo = command.source { return true }
+        return false
+    }
+
+    /// Whether something waits for the confirming Return (a context action or a send).
+    public var hasPendingConfirmation: Bool { pendingConfirmation != nil || sendCenter?.pending != nil }
+
+    private func runSend(_ command: Command) async -> Bool {
+        guard let center = sendCenter else {
+            runError = ActionError.notApplicable.message
+            return false
+        }
+        return handle(await center.perform(command), command: command)
+    }
+
+    private func handle(_ step: SendStep, command: Command) -> Bool {
+        switch step {
+        case .enteredLevel:
+            queryBeforeSendLevel = query
+            query = ""
+            selectedID = nil
+            return false
+        case .needsConfirmation:
+            return false
+        case .sent(let outcome, let sent):
+            lastSend = outcome
+            lastSentCommand = sent
+            return true
+        case .failed(.cancelled):
+            return false
+        case .failed(let error):
+            runError = error.message
+            return false
+        }
+    }
+
+    /// Runs the action or send that was waiting for confirmation. Returns true when the palette can close.
     @discardableResult
     public func confirmPending() async -> Bool {
+        runError = nil
+        if let center = sendCenter, let pending = center.pending {
+            guard let step = await center.confirmPending() else { return false }
+            return handle(step, command: pending.command)
+        }
         guard let command = pendingConfirmation else { return false }
         return await runContextAction(command, confirmed: true)
     }
 
-    public func cancelPending() { pendingConfirmation = nil }
+    public func cancelPending() {
+        pendingConfirmation = nil
+        sendCenter?.goBackFromPending()
+    }
+
+    /// Escape: cancels a confirmation, else leaves the destination list. Returns false when there was nothing to leave
+    /// and the caller should close the panel.
+    @discardableResult
+    public func goBack() -> Bool {
+        runError = nil
+        if pendingConfirmation != nil {
+            pendingConfirmation = nil
+            return true
+        }
+        guard let center = sendCenter else { return false }
+        let wasInList = center.isInDestinationList && center.pending == nil
+        guard center.goBack() else { return false }
+        if wasInList {
+            query = queryBeforeSendLevel
+            selectedID = nil
+        }
+        return true
+    }
 
     public func setRunner(_ runner: @escaping @MainActor (Command) async -> Result<Void, CommandRunError>) {
         self.runner = runner

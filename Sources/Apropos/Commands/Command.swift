@@ -52,6 +52,8 @@ public enum CommandSource: Sendable, Hashable {
     case menuItem(bundleID: String?)
     /// A context action: it works on what Apropos senses (selection, files, page, folder), in any app.
     case contextAction(ActionID)
+    /// A row of the send-to layer: "Send selection to...", or a destination for one kind of payload.
+    case sendTo(SendTarget)
 }
 
 /// An Option-key variant of a menu item, such as Empty Trash Securely next to Empty Trash. It is a second way to run
@@ -124,6 +126,8 @@ public struct Command: Identifiable, Sendable {
                 self.stableID = CommandID.base(bundleID: bundle, path: path, title: title)
             case .contextAction(let action):
                 self.stableID = CommandID(rawValue: action.rawValue)
+            case .sendTo(let target):
+                self.stableID = target.commandID
             }
         }
     }

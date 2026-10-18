@@ -104,6 +104,8 @@ public struct Destination: Sendable, Identifiable, Equatable {
     public var timeout: TimeInterval
     /// A sentence added to the failure message when this destination fails, for the likely cause.
     public var failureHint: String?
+    /// True when the title already reads as an action ("Copy to Downloads"), so a direct row does not add "Send ... to".
+    public var titleIsAction: Bool
     public var review: DestinationReview
     public var origin: DestinationOrigin
 
@@ -112,7 +114,8 @@ public struct Destination: Sendable, Identifiable, Equatable {
         appBundleID: String? = nil, accepts: Set<PayloadKind>, variants: [DestinationVariant] = [],
         handler: DestinationHandler = .engine, confirmation: DestinationConfirmation = .none,
         previewVerb: String? = nil, maxTextCharacters: Int? = nil, timeout: TimeInterval = 15,
-        failureHint: String? = nil, review: DestinationReview = .approved, origin: DestinationOrigin = .bundled
+        failureHint: String? = nil, titleIsAction: Bool = false, review: DestinationReview = .approved,
+        origin: DestinationOrigin = .bundled
     ) {
         self.id = id
         self.title = title
@@ -128,6 +131,7 @@ public struct Destination: Sendable, Identifiable, Equatable {
         self.maxTextCharacters = maxTextCharacters
         self.timeout = timeout
         self.failureHint = failureHint
+        self.titleIsAction = titleIsAction
         self.review = review
         self.origin = origin
     }
@@ -137,7 +141,7 @@ public struct Destination: Sendable, Identifiable, Equatable {
     /// Whether this destination takes this payload at all (kind and size), ignoring whether its app is installed.
     public func accepts(_ payload: Payload) -> Bool {
         guard accepts.contains(payload.kind) else { return false }
-        if handler == .shareMenu { return true }
+        if handler != .engine { return true }
         return variant(for: payload) != nil
     }
 

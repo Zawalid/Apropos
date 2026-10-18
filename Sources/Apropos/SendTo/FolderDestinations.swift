@@ -39,7 +39,8 @@ public enum FolderDestinations {
             symbol: move ? "folder.badge.minus" : "folder.badge.plus", keywords: ["folder", "copy", "move", name],
             accepts: [.files, .folder], variants: [files, whole], confirmation: move ? .preview : .none,
             previewVerb: "Move into \(name)", timeout: 60,
-            failureHint: "A file with that name may already be there, or the folder is gone.", origin: .bundled)
+            failureHint: "A file with that name may already be there, or the folder is gone.", titleIsAction: true,
+            origin: .bundled)
     }
 
     /// The row that asks for a folder first: "Copy to a folder...".
@@ -49,7 +50,7 @@ public enum FolderDestinations {
             title: move ? "Move to a folder..." : "Copy to a folder...",
             subtitle: "Choose where, then it is remembered", symbol: "folder.badge.questionmark",
             keywords: ["folder", "copy", "move", "choose"], accepts: [.files, .folder],
-            handler: .chooseFolder(move: move), origin: .bundled)
+            handler: .chooseFolder(move: move), titleIsAction: true, origin: .bundled)
     }
 
     /// Braces in a path are literal text in a template.
