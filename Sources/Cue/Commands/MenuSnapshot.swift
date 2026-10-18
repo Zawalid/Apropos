@@ -48,6 +48,22 @@ public enum MenuCommandMapper {
             guard !title.isEmpty else { continue }
             collect(top.children, path: [title], indexPath: [index], bundleID: bundleID, into: &result)
         }
+        return assignStableIDs(result, bundleID: bundleID)
+    }
+
+    /// Gives every command its saved-data identity, unique within the app.
+    private static func assignStableIDs(_ commands: [Command], bundleID: String?) -> [Command] {
+        let entries = commands.enumerated().map { position, command in
+            (
+                base: CommandID.base(
+                    bundleID: bundleID, path: command.path, title: command.title, shortcut: command.shortcut,
+                    position: position),
+                shortcut: command.shortcut
+            )
+        }
+        let ids = CommandIdentity.disambiguate(entries)
+        var result = commands
+        for index in result.indices { result[index].stableID = ids[index] }
         return result
     }
 

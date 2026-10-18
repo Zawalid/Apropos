@@ -63,10 +63,13 @@ public struct Command: Identifiable, Sendable {
     public let isChecked: Bool
     public let source: CommandSource
     public let target: (any CommandTarget)?
+    /// The identity to save anything under. Unlike `id` it survives relaunches and app updates.
+    public internal(set) var stableID: CommandID
 
     public init(
         id: String, title: String, path: [String], shortcut: KeyShortcut? = nil, isEnabled: Bool = true,
-        isChecked: Bool = false, source: CommandSource, target: (any CommandTarget)? = nil
+        isChecked: Bool = false, source: CommandSource, target: (any CommandTarget)? = nil,
+        stableID: CommandID? = nil
     ) {
         self.id = id
         self.title = title
@@ -76,6 +79,15 @@ public struct Command: Identifiable, Sendable {
         self.isChecked = isChecked
         self.source = source
         self.target = target
+        if let stableID {
+            self.stableID = stableID
+        } else {
+            let bundleID: String?
+            switch source {
+            case .menuItem(let bundle): bundleID = bundle
+            }
+            self.stableID = CommandID.base(bundleID: bundleID, path: path, title: title)
+        }
     }
 
     /// The menu trail as one line, for example `File › Open Recent`.
