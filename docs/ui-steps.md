@@ -5,6 +5,8 @@ step that fails. It is phase 1 of record-to-command ([recording-spike.md](record
 recorder. A recorder will later write the same format, and until then you author steps by hand or from menu commands the
 palette already knows.
 
+To chain menu steps with other kinds of step (an action, a send, a link, a Shortcut) see [sequences.md](sequences.md).
+
 A steps command is an ordinary command. It has the same `id`, `title`, `symbol`, `apps`, `confirm`, `timeout`, aliases,
 hotkey, ranking and usage as any other, and it is stored the same way (`UserCommandStore`, a pack file, import and
 export). Only its backend is new.

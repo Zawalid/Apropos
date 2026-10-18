@@ -155,3 +155,25 @@ struct SequenceCommandTests {
         #expect(rig.actions.opened.isEmpty)
     }
 }
+
+@MainActor
+@Suite("Sequence documentation")
+struct SequenceDocumentationTests {
+    /// The example command in docs/sequences.md loads exactly as written, so the doc cannot drift from the format.
+    @Test func theExampleInTheDocumentLoads() throws {
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("docs/sequences.md")
+        let text = try String(contentsOf: url, encoding: .utf8)
+        let blocks = text.components(separatedBy: "```json\n").dropFirst().compactMap {
+            $0.components(separatedBy: "\n```").first
+        }
+        let block = try #require(blocks.first { $0.contains("\"type\": \"sequence\"") })
+        let command = try UserCommandStore.decode(Data(block.utf8), functions: .builtin)
+        #expect(command.title == "Shout and note" && command.aliases == ["shout"])
+        let backend = try #require(command.sequenceBackend)
+        #expect(backend.steps.count == 2)
+        let plan = SequencePlanner.plan(backend, catalogue: bundledCatalogue())
+        #expect(plan.isRunnable && !plan.requiresConfirmation)
+        #expect(command.requires == [.selectedText] && command.timeout == backend.suggestedTimeout)
+    }
+}

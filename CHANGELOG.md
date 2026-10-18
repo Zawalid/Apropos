@@ -12,6 +12,15 @@ work lands.
   left untouched. macOS treats the renamed app as new, so grant Accessibility again and remove the stale Cue entry.
 
 ### Added
+- Sequences: chain steps of different kinds into one command, with the result of each step passed to the next. Add any
+  runnable row to a draft from the Command-K popover (menu items, context actions, your commands, destinations); the list
+  then opens with a Sequence draft row and a chip in the search field, and the draft level in the same panel lists the steps
+  with delete and move by keyboard, Run and Save as command. By default a step reads the result of the step before it, so
+  uppercase then send to Notes sends the capitals; a step can read the selection instead or ask you for text when it runs.
+  Anything that leaves a trace outside Apropos is listed in one confirmation before the first step; a failure names the
+  step and stops the run (or goes on, per step). A saved sequence is an ordinary user command, with an alias, a shortcut
+  key, a link and Shortcuts. Imported sequences wait for your approval, and every value passed between steps is held to the
+  action engine's injection rules. No new permission. See docs/sequences.md.
 - Send to: a keyboard-first "send this to..." layer. With a selection, a page, files or a folder in front, the palette
   lists Send selection to... in the matching group, plus direct rows for the destinations you use most (counted per kind
   of thing). The row opens a destination list in the same panel, with a chip for the level and Escape to go back. Built in:

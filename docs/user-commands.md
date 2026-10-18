@@ -50,6 +50,8 @@ notification; the other commands still load.
   `urlScheme`, `keyPress`; variables `{text}`, `{files}`, `{file}`, `{directory}`, `{url}`, `{title}`, `{folder}`,
   `{branch}`, `{repo}`, `{document}`). Differences from built-in actions: `requires` may be empty (a command that only
   opens a link needs no context), and the group is always "Your commands".
+- `backend` may also be `{ "type": "sequence", "sequence": { "version": 1, "steps": [...] } }`: several steps of
+  different kinds with values passed between them, built in the palette and described in [sequences.md](sequences.md).
 - `apps`: empty `include` means every app; otherwise only those bundle identifiers.
 - `aliases`: up to 8 short names (lowercase letters, digits, `-` and `_`). Typing an alias ranks the command first. An alias
   belongs to one command.
