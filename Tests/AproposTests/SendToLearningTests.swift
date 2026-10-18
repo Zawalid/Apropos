@@ -23,7 +23,8 @@ struct SendToLearningTests {
     }
 
     @Test func aSendIsRecordedInTheUsageStoreAsAnIdAndATime() throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("apropos-learn-\(UUID().uuidString).json")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "apropos-learn-\(UUID().uuidString).json")
         defer { try? FileManager.default.removeItem(at: url) }
         let store = UsageStore(url: url, writeDelay: .zero)
         let sent = command(.destination("dest:notes", .text))
@@ -43,7 +44,8 @@ struct SendToLearningTests {
         defer { try? FileManager.default.removeItem(at: url) }
         let log = SequenceLog(url: url, writeDelay: .zero)
         let sent = command(.destination("dest:mail", .text))
-        let event = try #require(log.recordRun(sent.stableID, app: "com.apple.Safari", contextKinds: [.selection, .url]))
+        let event = try #require(
+            log.recordRun(sent.stableID, app: "com.apple.Safari", contextKinds: [.selection, .url]))
         let data = try JSONEncoder().encode(event)
         let json = String(decoding: data, as: UTF8.self)
         #expect(json.contains("send:text>dest:mail"))
@@ -53,7 +55,8 @@ struct SendToLearningTests {
     }
 
     @Test func resettingLearnedRankingForgetsTheRecentDestinations() throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("apropos-reset-\(UUID().uuidString).json")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "apropos-reset-\(UUID().uuidString).json")
         defer { try? FileManager.default.removeItem(at: url) }
         let store = UsageStore(url: url, writeDelay: .zero)
         let sent = command(.destination("dest:notes", .text))
