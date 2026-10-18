@@ -33,17 +33,17 @@ struct Lossy<Value: Decodable>: Decodable {
 @MainActor
 public final class SequenceLog {
     /// `~/Library/Application Support/Apropos/sequence.json` next to the usage file.
-    public static func url(besides usageURL: URL) -> URL {
+    public nonisolated static func url(besides usageURL: URL) -> URL {
         usageURL.deletingLastPathComponent().appendingPathComponent("sequence.json")
     }
 
     /// A command that ran this long after the previous one starts a new sequence.
-    public static let sessionWindow: TimeInterval = 600
+    public nonisolated static let sessionWindow: TimeInterval = 600
     /// Events older than this are dropped at launch and on rotation.
-    public static let maxAge: TimeInterval = 400 * 86_400
+    public nonisolated static let maxAge: TimeInterval = 400 * 86_400
     /// The most events kept. Rotation drops the oldest ones, in steps so it does not run on every append.
-    public static let maxEvents = 40_000
-    static let rotationSlack = 2_000
+    public nonisolated static let maxEvents = 40_000
+    nonisolated static let rotationSlack = 2_000
 
     public let url: URL
     public private(set) var events: [RunEvent] = []
