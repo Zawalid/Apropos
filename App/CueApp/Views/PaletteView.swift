@@ -15,6 +15,7 @@ struct PaletteActions {
 struct PaletteView: View {
     let model: PaletteModel
     let state: PanelState
+    let context: ContextModel
     let permission: AccessibilityPermission
     let actions: PaletteActions
 
@@ -24,7 +25,7 @@ struct PaletteView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
-                SearchHeader(model: model, searchFocused: $searchFocused)
+                SearchHeader(model: model, context: context, searchFocused: $searchFocused)
                 PaletteContentView(model: model, permission: permission, actions: actions)
             }
             FloatingFooter(
@@ -51,6 +52,7 @@ struct PaletteView: View {
 
 private struct SearchHeader: View {
     let model: PaletteModel
+    let context: ContextModel
     var searchFocused: FocusState<Bool>.Binding
 
     var body: some View {
@@ -72,7 +74,7 @@ private struct SearchHeader: View {
             .padding(.horizontal, 22)
             .padding(.top, 20)
             .padding(.bottom, 14)
-            ChipRow(app: model.targetApp)
+            ChipRow(app: model.targetApp, items: context.itemsPID == model.targetApp?.pid ? context.items : [])
                 .padding(.horizontal, 22)
                 .padding(.bottom, 12)
         }
@@ -86,9 +88,10 @@ private struct SearchHeader: View {
 
 private struct ChipRow: View {
     let app: TargetApp?
+    let items: [ContextItem]
 
     var body: some View {
-        let chips = ContextChips.chips(for: app)
+        let chips = ContextChips.chips(for: app, items: items)
         HStack(spacing: 6) {
             ForEach(Array(chips.enumerated()), id: \.element.id) { index, chip in
                 ContextChipView(chip: chip).chipRise(index: index)

@@ -8,6 +8,7 @@ import SwiftUI
 final class PanelController: NSObject {
     private let panel = PalettePanel()
     private let state = PanelState()
+    private let context = ContextModel()
     private let model: PaletteModel
     private var resignObserver: NSObjectProtocol?
     private var clickMonitor: Any?
@@ -22,7 +23,7 @@ final class PanelController: NSObject {
         super.init()
 
         let root = PaletteView(
-            model: model, state: state, permission: permission,
+            model: model, state: state, context: context, permission: permission,
             actions: PaletteActions(
                 run: { [weak self] in self?.runSelected() },
                 runCommand: { [weak self] command in self?.run(command) },
@@ -59,6 +60,7 @@ final class PanelController: NSObject {
     /// Opening is ordering a ready window to the front: no animation, the content is already drawn.
     func show() {
         model.prepareForOpen()
+        context.refresh(for: model.targetApp)
         closeActions(animated: false)
         position()
         panel.makeKeyAndOrderFront(nil)

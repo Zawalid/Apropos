@@ -23,7 +23,7 @@ enum ContextChips {
         var chips = [ContextChip(id: "app-\(app.pid)", leading: .appIcon(app.pid), text: app.name)]
         chips += items.map { ContextChip(id: $0.kind.rawValue, leading: .symbol($0.symbol), text: $0.label) }
         #if DEBUG
-            if ProcessInfo.processInfo.environment["CUE_FIXTURE_CONTEXT"] != nil {
+            if items.isEmpty, ProcessInfo.processInfo.environment["CUE_FIXTURE_CONTEXT"] != nil {
                 chips += fixtures(for: app).enumerated().map { index, pair in
                     ContextChip(id: "fx-\(index)", leading: .symbol(pair.0), text: pair.1)
                 }
