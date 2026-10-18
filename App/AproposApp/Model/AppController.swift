@@ -18,6 +18,7 @@ final class AppController {
     let actions: ContextActionCenter
     let userCommands: UserCommandStore
     let commandHotKeys = CommandHotKeyManager()
+    @ObservationIgnored private(set) lazy var external = ExternalRequestHandler(controller: self)
     private(set) var combo: HotKeyCombo
     private(set) var isHotKeyRegistered = true
 
@@ -94,6 +95,7 @@ final class AppController {
         userCommands.reservedHotKeys = { [weak self] in self.map { [$0.combo] } ?? [] }
         userCommands.onChange = { [weak self] in self?.userCommandsChanged() }
         userCommands.reload()
+        IntegrationHub.controller = self
         permission.startMonitoring()
         if !(AgentMode.isOn && ProcessInfo.processInfo.environment["APROPOS_FIXTURE_COMMANDS"] != nil) { tracker.start() }
         let panel = PanelController(
@@ -176,6 +178,15 @@ final class AppController {
     }
 
     func togglePanel() { panel?.toggle() }
+
+    /// Opens the panel, optionally with a query typed in (from `apropos://search`).
+    func showPanel(query: String?) {
+        panel?.show()
+        if let query { palette.query = query }
+    }
+
+    /// Links opened with the apropos scheme.
+    func handleExternal(_ urls: [URL]) { external.handle(urls) }
 
     func setCombo(_ new: HotKeyCombo) {
         combo = new

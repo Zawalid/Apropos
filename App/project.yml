@@ -29,6 +29,11 @@ targets:
         # Menu-bar-only: no Dock icon, no main menu bar of its own.
         LSUIElement: true
         NSHumanReadableCopyright: Copyright 2026 Walid Zakan
+        # apropos://run, apropos://open and apropos://search (see docs/integrations.md).
+        CFBundleURLTypes:
+          - CFBundleURLName: com.zawalid.apropos
+            CFBundleURLSchemes:
+              - apropos
     settings:
       base:
         PRODUCT_NAME: Apropos

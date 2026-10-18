@@ -19,6 +19,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller.start()
     }
 
+    func application(_ application: NSApplication, open urls: [URL]) {
+        controller.handleExternal(urls)
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         controller.flush()
     }
