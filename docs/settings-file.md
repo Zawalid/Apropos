@@ -47,8 +47,8 @@ Value shapes: bool is `true`/`false`, choices are strings, numbers are whole num
 are string arrays, a hotkey is `{ "keyCode": <virtual key code>, "modifiers": ["control", "option", "shift", "command"] }`
 and needs at least one modifier. An illegal stored value falls back to the default; the rest of the file is still used.
 
-Usage data (pins, hidden commands, aliases, run counts) is not in this file. See the usage store notes in
-[design.md](design.md) once added; it lives in `usage.json` beside this file.
+Usage data (pins, hidden commands, aliases, run counts) is not in this file. It lives in `usage.json` beside it; see
+[data-layer.md](data-layer.md).
 
 ## Safety guarantees
 
