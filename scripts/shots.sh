@@ -13,8 +13,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-APP="build/agent/Build/Products/Debug/Cue.app"
-BIN="$APP/Contents/MacOS/Cue"
+APP="build/agent/Build/Products/Debug/Apropos.app"
+BIN="$APP/Contents/MacOS/Apropos"
 OUT="$PWD/build/shots"
 LOCK="build/shots.lock"
 AGENT_PID=""
@@ -22,7 +22,7 @@ AGENT_PID=""
 if [ "${1:-}" != "--no-build" ]; then
   (cd App && xcodegen generate >/dev/null)
   mkdir -p build
-  if ! xcodebuild build -project App/Cue.xcodeproj -scheme Cue -configuration Debug \
+  if ! xcodebuild build -project App/Apropos.xcodeproj -scheme Apropos -configuration Debug \
       -destination 'platform=macOS' -derivedDataPath build/agent -quiet 2>build/agent-errors.log; then
     echo "build failed:"
     grep -E "error:" build/agent-errors.log | head -10
@@ -47,16 +47,16 @@ cleanup() { stop_agent; rmdir "$LOCK" 2>/dev/null || true; }
 trap cleanup EXIT
 
 # The remote control is a distributed notification; a tiny compiled helper posts it (osascript's bridge does not).
-POST="$PWD/build/cue-post"
+POST="$PWD/build/apropos-post"
 if [ ! -x "$POST" ]; then
-  cat > build/cue-post.swift <<'SWIFT'
+  cat > build/apropos-post.swift <<'SWIFT'
 import Foundation
 let args = CommandLine.arguments
 DistributedNotificationCenter.default().postNotificationName(
     Notification.Name("com.zawalid.cue.debug." + args[1]), object: args.count > 2 ? args[2] : nil, userInfo: nil,
     deliverImmediately: true)
 SWIFT
-  swiftc -O build/cue-post.swift -o "$POST"
+  swiftc -O build/apropos-post.swift -o "$POST"
 fi
 
 # post <notification suffix> [object]

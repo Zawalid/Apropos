@@ -5,6 +5,6 @@ DerivedData/
 .DS_Store
 
 build/
-App/Cue.xcodeproj/
+App/Apropos.xcodeproj/
 
 .claude/worktrees/

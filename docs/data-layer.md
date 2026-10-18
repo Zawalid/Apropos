@@ -5,11 +5,11 @@ stays on the Mac.
 
 | Piece | Where | File on disk |
 |---|---|---|
-| Settings | `Sources/Cue/Settings` | `settings.json` (see [settings-file.md](settings-file.md)) |
-| Command identity | `Sources/Cue/Commands/CommandID.swift` | none, it is a key |
-| Option-key alternates | `Sources/Cue/Commands/MenuSnapshot.swift` | none |
-| Usage, pins, hides, aliases, symbol choices | `Sources/Cue/Usage` | `usage.json` |
-| Row symbols | `Sources/Cue/Commands/Symbol*.swift`, `Resources/SymbolPacks` | optional `packs/*.json` |
+| Settings | `Sources/Apropos/Settings` | `settings.json` (see [settings-file.md](settings-file.md)) |
+| Command identity | `Sources/Apropos/Commands/CommandID.swift` | none, it is a key |
+| Option-key alternates | `Sources/Apropos/Commands/MenuSnapshot.swift` | none |
+| Usage, pins, hides, aliases, symbol choices | `Sources/Apropos/Usage` | `usage.json` |
+| Row symbols | `Sources/Apropos/Commands/Symbol*.swift`, `Resources/SymbolPacks` | optional `packs/*.json` |
 
 All files sit in `~/Library/Application Support/Cue/`.
 

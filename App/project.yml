@@ -1,11 +1,11 @@
-name: Cue
+name: Apropos
 options:
   bundleIdPrefix: com.zawalid
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
 packages:
-  Cue:
+  Apropos:
     path: ..
 settings:
   base:
@@ -15,65 +15,65 @@ settings:
     CODE_SIGN_IDENTITY: "-"
     CODE_SIGN_STYLE: Manual
 targets:
-  CueApp:
+  AproposApp:
     type: application
     platform: macOS
     sources:
-      - CueApp
+      - AproposApp
     dependencies:
-      - package: Cue
-        product: Cue
+      - package: Apropos
+        product: Apropos
     info:
-      path: CueApp/Info.plist
+      path: AproposApp/Info.plist
       properties:
         # Menu-bar-only: no Dock icon, no main menu bar of its own.
         LSUIElement: true
         NSHumanReadableCopyright: Copyright 2026 Walid Zakan
     settings:
       base:
-        PRODUCT_NAME: Cue
-        PRODUCT_MODULE_NAME: CueApp
+        PRODUCT_NAME: Apropos
+        PRODUCT_MODULE_NAME: AproposApp
         PRODUCT_BUNDLE_IDENTIFIER: com.zawalid.cue
         MARKETING_VERSION: 0.1.0
         CURRENT_PROJECT_VERSION: 1
         # One signed binary: a separate debug dylib signed differently from the app fails to load under hardened runtime.
         ENABLE_DEBUG_DYLIB: NO
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Cue
+        INFOPLIST_KEY_CFBundleDisplayName: Apropos
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
   # Debug-only command line tool: draws every preview scene to PNGs (scripts/render-previews.sh). It compiles the app's
   # sources without the @main entry point and never launches the app.
-  CuePreviewRender:
+  AproposPreviewRender:
     type: tool
     platform: macOS
     sources:
-      - path: CueApp
+      - path: AproposApp
         excludes:
-          - CueApp.swift
+          - AproposApp.swift
           - Info.plist
           - Assets.xcassets
       - PreviewRender
     dependencies:
-      - package: Cue
-        product: Cue
+      - package: Apropos
+        product: Apropos
     settings:
       base:
-        PRODUCT_NAME: CuePreviewRender
-        PRODUCT_MODULE_NAME: CuePreviewRender
+        PRODUCT_NAME: AproposPreviewRender
+        PRODUCT_MODULE_NAME: AproposPreviewRender
         PRODUCT_BUNDLE_IDENTIFIER: com.zawalid.cue.previewrender
         GENERATE_INFOPLIST_FILE: YES
         ENABLE_HARDENED_RUNTIME: NO
 schemes:
-  CuePreviewRender:
+  AproposPreviewRender:
     build:
       targets:
-        CuePreviewRender: all
+        AproposPreviewRender: all
     run:
       config: Debug
-  Cue:
+  Apropos:
     build:
       targets:
-        CueApp: all
+        AproposApp: all
     run:
       config: Debug

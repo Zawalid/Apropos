@@ -7,10 +7,10 @@ Run everything from the repository root.
 The fastest loop needs no app launch, no code signing and no Accessibility access:
 
 ```bash
-cd App && xcodegen generate && open Cue.xcodeproj
+cd App && xcodegen generate && open Apropos.xcodeproj
 ```
 
-Open `App/CueApp/Preview/Previews.swift`, then show the canvas with **Option-Command-Return**. Each `#Preview` is one
+Open `App/AproposApp/Preview/Previews.swift`, then show the canvas with **Option-Command-Return**. Each `#Preview` is one
 screen in one state, drawn in dark (left) and light (right): the palette with a Finder, Safari and Xcode list, empty
 search, no results, loading, permission missing, a failed menu read and a failed command, the Cmd+K actions popover,
 matched letters highlighted, context chips, the three interface sizes, the three row icon styles, the menu bar menu, and
@@ -31,7 +31,7 @@ scripts/render-previews.sh                  # build, then write build/previews/<
 scripts/render-previews.sh --no-build palette-finder   # reuse the build, one scene
 ```
 
-This runs the `CuePreviewRender` command line tool, a separate process that never launches the app. Offscreen images lay
+This runs the `AproposPreviewRender` command line tool, a separate process that never launches the app. Offscreen images lay
 the glass on a flat stand-in, so judge the glass itself in the real app.
 
 ## See changes fast
@@ -72,13 +72,13 @@ swift test
 ```
 
 Core logic (fuzzy matcher, menu mapping, ranking, palette model, hotkey and placement) is tested against fixtures in
-`Tests/CueTests/Fixtures.swift`; no test touches a live app.
+`Tests/AproposTests/Fixtures.swift`; no test touches a live app.
 
 ## Inspect a live app without the UI
 
 ```bash
-swift run cue-probe com.apple.finder                       # list its commands
-swift run cue-probe com.apple.finder --run "View > as List" # press one
+swift run apropos-probe com.apple.finder                       # list its commands
+swift run apropos-probe com.apple.finder --run "View > as List" # press one
 ```
 
 The terminal needs Accessibility access for this.

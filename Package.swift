@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "Cue",
+    name: "Apropos",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "Cue", targets: ["Cue"]),
-        .executable(name: "cue-probe", targets: ["CueProbe"]),
+        .library(name: "Apropos", targets: ["Apropos"]),
+        .executable(name: "apropos-probe", targets: ["AproposProbe"]),
     ],
     targets: [
-        .target(name: "Cue", resources: [.copy("Resources/SymbolPacks")]),
-        .executableTarget(name: "CueProbe", dependencies: ["Cue"], path: "Sources/cue-probe"),
-        .testTarget(name: "CueTests", dependencies: ["Cue"]),
+        .target(name: "Apropos", resources: [.copy("Resources/SymbolPacks")]),
+        .executableTarget(name: "AproposProbe", dependencies: ["Apropos"], path: "Sources/apropos-probe"),
+        .testTarget(name: "AproposTests", dependencies: ["Apropos"]),
     ]
 )

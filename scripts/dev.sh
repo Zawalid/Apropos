@@ -15,7 +15,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-APP="build/dev/Build/Products/Debug/Cue.app"
+APP="build/dev/Build/Products/Debug/Apropos.app"
 MODE="${1:-once}"
 IDENTITY="${CUE_SIGN_IDENTITY:-}"
 if [ -z "$IDENTITY" ]; then
@@ -26,7 +26,7 @@ build_and_open() {
   local started=$SECONDS
   (cd App && xcodegen generate >/dev/null)
   if ! xcodebuild build \
-      -project App/Cue.xcodeproj -scheme Cue -configuration Debug \
+      -project App/Apropos.xcodeproj -scheme Apropos -configuration Debug \
       -destination 'platform=macOS' -derivedDataPath build/dev -quiet \
       CODE_SIGN_IDENTITY="-" 2>build/dev-errors.log; then
     echo "build failed:"
@@ -39,7 +39,7 @@ build_and_open() {
     echo "no code signing identity found: the app is ad hoc signed and Accessibility must be re-granted after each build"
   fi
   # Stops only the copy this script builds, never an agent run from build/agent.
-  pkill -f "$PWD/$APP/Contents/MacOS/Cue" 2>/dev/null || true
+  pkill -f "$PWD/$APP/Contents/MacOS/Apropos" 2>/dev/null || true
   sleep 0.3
   open "$APP"
   echo "relaunched in $((SECONDS - started))s"
@@ -47,7 +47,7 @@ build_and_open() {
 
 # A fingerprint of every source file the app depends on; changes when anything is saved.
 fingerprint() {
-  find App/CueApp Sources/Cue \( -name '*.swift' -o -name '*.yml' -o -name '*.json' \) 2>/dev/null \
+  find App/AproposApp Sources/Apropos \( -name '*.swift' -o -name '*.yml' -o -name '*.json' \) 2>/dev/null \
     | sort | xargs stat -f '%N %m' 2>/dev/null | shasum | cut -d' ' -f1
 }
 
@@ -69,7 +69,7 @@ case "$MODE" in
     ;;
   --logs)
     build_and_open
-    exec /usr/bin/log stream --style compact --predicate 'process == "Cue"'
+    exec /usr/bin/log stream --style compact --predicate 'process == "Apropos"'
     ;;
   *)
     build_and_open

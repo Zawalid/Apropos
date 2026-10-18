@@ -22,7 +22,7 @@ kept in `history/` next to it (the last 10), and Settings can export and import 
 ```
 
 Only values that differ from the default are written. A default changed in a later release therefore reaches everyone
-who never touched that setting. `SettingsRegistry` (`Sources/Cue/Settings`) is the list of every setting, with its
+who never touched that setting. `SettingsRegistry` (`Sources/Apropos/Settings`) is the list of every setting, with its
 page, type, default and search keywords.
 
 | Key | Page | Type | Default |

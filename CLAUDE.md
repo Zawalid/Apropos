@@ -6,7 +6,7 @@ for what to build next.
 
 ## Stack
 - Swift 6, SwiftUI plus AppKit, macOS 14+
-- Core logic lives in a Swift package (`Sources/Cue`), the app target is generated with XcodeGen (`App/project.yml`)
+- Core logic lives in a Swift package (`Sources/Apropos`), the app target is generated with XcodeGen (`App/project.yml`)
 - Accessibility API for menu and UI reading, App Intents and AppleScript as action backends
 - Distributed directly (not the Mac App Store, accessibility is incompatible with the sandbox), updates via Sparkle
 
@@ -20,7 +20,7 @@ for what to build next.
 - Commit subjects are lowercase `feat:` / `fix:` / `chore:` lines, no AI attribution lines
 
 ## UI work starts in previews
-Check UI changes in the Xcode previews first (`App/CueApp/Preview/Previews.swift`, Option-Command-Return), not by
+Check UI changes in the Xcode previews first (`App/AproposApp/Preview/Previews.swift`, Option-Command-Return), not by
 relaunching the app. Add or update a scene in `PreviewCatalog` for any screen or state you change, and look at it with
 `scripts/render-previews.sh` (PNGs in `build/previews/`, no app launched). See Live previews in
 [docs/development.md](docs/development.md). Only what needs the real app (hotkey, real glass, live Accessibility) waits
