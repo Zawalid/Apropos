@@ -21,8 +21,10 @@ final class UsageController {
     private static let recentsKey = "aproposRecentCommands"
 
     let store: UsageStore
-    /// The order commands ran in, for next-action prediction. Its own file next to the usage file.
-    let sequence: SequenceLog
+    /// What usually comes next, learned from the order commands ran in. The log has its own file next to the usage file.
+    let prediction: PredictionEngine
+    /// Kinds of context present in the app in front, set by the panel. Kinds only, never values.
+    @ObservationIgnored var contextKinds: () -> [ContextKind] = { [] }
     private(set) var recents: [Recent]
 
     @ObservationIgnored private let palette: PaletteModel
@@ -33,10 +35,11 @@ final class UsageController {
 
     init(store: UsageStore, palette: PaletteModel, defaults: UserDefaults = .standard) {
         self.store = store
-        sequence = SequenceLog(url: SequenceLog.url(besides: store.url))
+        prediction = PredictionEngine(log: SequenceLog(url: SequenceLog.url(besides: store.url)))
         self.palette = palette
         self.defaults = defaults
         resolver = store.symbolResolver()
+        prediction.setPrior(store.frecencyPrior())
         if let data = defaults.data(forKey: Self.recentsKey),
             let stored = try? JSONDecoder().decode([Recent].self, from: data)
         {
@@ -44,12 +47,29 @@ final class UsageController {
         } else {
             recents = []
         }
+        palette.setPredictor { [weak self] commands in self?.predictions(for: commands) ?? [] }
     }
 
     // MARK: Ranking
 
     func refreshRanker() {
         palette.setRanker(CommandRanker(signal: store.rankingSignal()))
+        prediction.setPrior(store.frecencyPrior())
+    }
+
+    // MARK: Usually next
+
+    /// The rows for "Usually next" given the commands that can be offered now.
+    private func predictions(for commands: [Command]) -> [Prediction] {
+        var titles: [CommandID: String] = [:]
+        for command in commands { titles[command.stableID] = command.displayTitle }
+        return prediction.rows(app: palette.targetApp?.bundleID, candidates: titles, contextKinds: contextKinds())
+    }
+
+    /// Not now on a predicted command: it is offered less until the person runs it again.
+    func dismissPrediction(_ command: Command) {
+        prediction.dismiss(command.stableID, app: palette.targetApp?.bundleID, contextKinds: contextKinds())
+        palette.refreshPredictions()
     }
 
     func recordRun(
@@ -58,7 +78,8 @@ final class UsageController {
         guard UsageStore.isRecordable(command) else { return }
         store.recordRun(of: command)
         if SequenceLog.isRecordable(command) {
-            sequence.recordRun(command.stableID, app: appBundleID, contextKinds: contextKinds)
+            prediction.recordRun(
+                command.stableID, title: command.displayTitle, app: appBundleID, contextKinds: contextKinds)
         }
         let entry = Recent(
             stableID: command.stableID.rawValue, title: command.displayTitle, appName: appName ?? "",
@@ -99,7 +120,7 @@ final class UsageController {
 
     func flush() {
         store.flush()
-        sequence.flush()
+        prediction.log.flush()
     }
 
     // MARK: Symbols

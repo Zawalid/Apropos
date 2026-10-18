@@ -18,6 +18,8 @@ final class ContextModel {
 
     /// Called on the main actor whenever new items arrive.
     @ObservationIgnored var onChange: (() -> Void)?
+    /// Called when the kinds of context found differ from the last snapshot, so predictions can be asked again.
+    @ObservationIgnored var onKindsChange: (() -> Void)?
     @ObservationIgnored private let settings: SettingsModel
 
     init(settings: SettingsModel, service: ContextService = ContextService()) {
@@ -54,7 +56,11 @@ final class ContextModel {
             let snapshot = await sensing.snapshot(for: app)
             guard !Task.isCancelled, let self else { return }
             self.itemsPID = app.pid
-            self.senseKinds = snapshot.items.map(\.kind)
+            let kinds = snapshot.items.map(\.kind)
+            if kinds != self.senseKinds {
+                self.senseKinds = kinds
+                self.onKindsChange?()
+            }
             self.items = snapshot.items.filter { visible.contains($0.kind) }
             self.onChange?()
         }

@@ -11,6 +11,8 @@ struct CommandRow: View {
     @Environment(SettingsModel.self) private var settings
     /// False under a section header that already names the first menu.
     var showsFullPath = true
+    /// Why the row is under Usually next, shown in place of the menu path.
+    var reason: String?
 
     var body: some View {
         let command = ranked.command
@@ -57,6 +59,7 @@ struct CommandRow: View {
 
     private var subtitle: String {
         let command = ranked.command
+        if let reason { return reason }
         if showsFullPath { return command.displaySubtitle(appName: appName) }
         return command.path.dropFirst().joined(separator: " > ")
     }

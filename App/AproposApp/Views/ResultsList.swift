@@ -4,12 +4,12 @@ import SwiftUI
 /// One line of the list: a section header or a command. Heights are fixed so the selection highlight can be placed by
 /// arithmetic, which is what lets a single highlight slide between rows.
 private enum ListEntry: Identifiable {
-    case section(id: String, title: String)
+    case section(id: String, title: String, keys: [String])
     case row(RankedCommand, index: Int, fullPath: Bool)
 
     var id: String {
         switch self {
-        case .section(let id, _): "section-\(id)"
+        case .section(let id, _, _): "section-\(id)"
         case .row(let ranked, _, _): ranked.id
         }
     }
@@ -53,13 +53,13 @@ struct ResultsList: View {
                     LazyVStack(spacing: 0) {
                         ForEach(entries) { entry in
                             switch entry {
-                            case .section(_, let title):
-                                SectionHeader(title: title, height: metrics.section)
+                            case .section(_, let title, let keys):
+                                SectionHeader(title: title, height: metrics.section, keys: keys)
                             case .row(let ranked, let index, let fullPath):
                                 CommandRow(
                                     ranked: ranked, symbol: symbols[ranked.id] ?? "command",
                                     appName: model.targetApp?.name, appPID: model.targetApp?.pid,
-                                    showsFullPath: fullPath
+                                    showsFullPath: fullPath, reason: model.predictionReason(forRowID: ranked.id)
                                 )
                                 .rowRise(index: index, entrance: entrance)
                                 .id(ranked.id)
@@ -107,7 +107,8 @@ struct ResultsList: View {
         let results = model.results
         let grouped = model.query.trimmingCharacters(in: .whitespaces).isEmpty
         let leading = model.leadingGroups
-        let leadingCount = leading.pinned + leading.suggested
+        let predicted = model.predictedCount
+        let leadingCount = leading.pinned + predicted + leading.suggested
         // A title shared by several menus (or one that only makes sense inside its menu) shows its path.
         var titleCounts: [String: Int] = [:]
         for ranked in results { titleCounts[ranked.command.displayTitle.lowercased(), default: 0] += 1 }
@@ -117,15 +118,17 @@ struct ResultsList: View {
             var fullPath = true
             if grouped {
                 if index == 0 && leading.pinned > 0 {
-                    entries.append(.section(id: "pinned", title: "Pinned"))
-                } else if index == leading.pinned && leading.suggested > 0 {
-                    entries.append(.section(id: "suggested", title: "Suggested for this moment"))
+                    entries.append(.section(id: "pinned", title: "Pinned", keys: []))
+                } else if index == leading.pinned && predicted > 0 {
+                    entries.append(.section(id: "predicted", title: "Usually next", keys: ["⌘", "↩"]))
+                } else if index == leading.pinned + predicted && leading.suggested > 0 {
+                    entries.append(.section(id: "suggested", title: "Suggested for this moment", keys: []))
                 }
                 if index >= leadingCount {
                     let group = ranked.command.path.first ?? "Menu"
                     if group != currentGroup {
                         currentGroup = group
-                        entries.append(.section(id: "\(index)-\(group)", title: group))
+                        entries.append(.section(id: "\(index)-\(group)", title: group, keys: []))
                     }
                     fullPath =
                         CommandDisplay.isAmbiguous(title: ranked.command.title)
@@ -152,16 +155,22 @@ struct ResultsList: View {
 private struct SectionHeader: View {
     let title: String
     let height: CGFloat
+    /// Key caps at the trailing edge, for a group that has its own shortcut.
+    var keys: [String] = []
 
     var body: some View {
-        Text(title)
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(Theme.text3)
-            .padding(.horizontal, 10)
-            .padding(.top, 10)
-            .frame(
-                maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .leading
-            )
-            .accessibilityAddTraits(.isHeader)
+        HStack(spacing: 4) {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Theme.text3)
+            Spacer(minLength: 0)
+            ForEach(keys, id: \.self) { KeyCap(text: $0, small: true) }
+        }
+        .padding(.horizontal, 10)
+        .padding(.top, 10)
+        .frame(
+            maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .leading
+        )
+        .accessibilityAddTraits(.isHeader)
     }
 }
