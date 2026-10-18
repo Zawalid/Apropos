@@ -13,3 +13,7 @@ App/Apropos.xcodeproj/
 
 # recording spike build output
 scratch/recording-spike/build/
+
+# third-party design references, local only
+docs/identity/inspiration/*
+!docs/identity/inspiration/README.md
