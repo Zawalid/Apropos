@@ -92,6 +92,11 @@ final class UsageController {
             prediction.recordRun(
                 command.stableID, title: command.displayTitle, app: appBundleID, contextKinds: contextKinds)
         }
+        // Send-to rows are not offered again from the menu bar: a destination's title means little out of context.
+        if case .sendTo = command.source {
+            refreshRanker()
+            return
+        }
         let entry = Recent(
             stableID: command.stableID.rawValue, title: command.displayTitle, appName: appName ?? "",
             bundleID: command.stableID.bundleID, date: Date())

@@ -36,6 +36,12 @@ public struct ProcessOutput: Sendable, Equatable {
     public let standardErrorByteCount: Int
 
     public var text: String { String(decoding: standardOutput, as: UTF8.self) }
+
+    public init(status: Int32, standardOutput: Data, standardErrorByteCount: Int) {
+        self.status = status
+        self.standardOutput = standardOutput
+        self.standardErrorByteCount = standardErrorByteCount
+    }
 }
 
 public enum ProcessRunError: Error, Equatable, Sendable {
@@ -99,7 +105,9 @@ public enum ProcessRunner {
             environment["HOME"] = NSHomeDirectory()
             for (key, value) in request.environment { environment[key] = value }
             process.environment = environment
-            if let directory = request.workingDirectory { process.currentDirectoryURL = URL(fileURLWithPath: directory) }
+            if let directory = request.workingDirectory {
+                process.currentDirectoryURL = URL(fileURLWithPath: directory)
+            }
 
             let outPipe = Pipe()
             let errPipe = Pipe()

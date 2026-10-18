@@ -20,6 +20,9 @@ final class PanelController: NSObject {
 
     var isVisible: Bool { panel.isVisible }
 
+    /// The view the Share menu anchors to.
+    var anchorView: NSView? { panel.contentView }
+
     init(
         model: PaletteModel, tracker: FrontmostAppTracker, permission: AccessibilityPermission,
         settings: SettingsModel, context: ContextModel, usage: UsageController, openSettings: @escaping () -> Void,
@@ -135,16 +138,24 @@ final class PanelController: NSObject {
         )
         if state.actionsOpen { return handleActions(key) }
         switch key {
-        case .close: hide()
+        case .close:
+            // Escape goes back one level first: it cancels a confirmation, then leaves the destination list.
+            if !model.goBack() { hide() }
         case .run: runSelected()
         case .runPrediction:
             guard let command = model.topPrediction else { return false }
             run(command)
         case .actions: toggleActions()
         case .settings: actionsOpenSettings()
-        case .move(let delta): model.moveSelection(by: delta)
-        case .first: model.selectFirst()
-        case .last: model.selectLast()
+        case .move(let delta):
+            model.cancelPending()
+            model.moveSelection(by: delta)
+        case .first:
+            model.cancelPending()
+            model.selectFirst()
+        case .last:
+            model.cancelPending()
+            model.selectLast()
         }
         return true
     }
@@ -231,13 +242,53 @@ final class PanelController: NSObject {
     func runSelectedForDebug() { runSelected() }
 
     private func runSelected() {
+        if model.sendPending != nil {
+            confirmSend()
+            return
+        }
         guard let command = model.selected?.command else { return }
         run(command)
+    }
+
+    /// Send-to rows keep the panel open until the send finishes: a list opens in place, a confirmation waits for its
+    /// Return, and a failure stays on screen with the payload intact. Only a finished send closes the panel.
+    private func runSend(_ command: Command) {
+        Task { [weak self] in
+            guard let self else { return }
+            let closed = await self.model.run(command)
+            self.finishSend(closed: closed)
+        }
+    }
+
+    private func confirmSend() {
+        Task { [weak self] in
+            guard let self else { return }
+            let closed = await self.model.confirmPending()
+            self.finishSend(closed: closed)
+        }
+    }
+
+    private func finishSend(closed: Bool) {
+        if closed {
+            if let sent = model.lastSentCommand {
+                usage.recordRun(
+                    sent, appName: model.targetApp?.name, appBundleID: model.targetApp?.bundleID,
+                    contextKinds: context.senseKinds)
+            }
+            hide(immediately: true)
+        } else if !panel.isVisible {
+            // A folder chooser or the Share menu took focus and the panel went away; bring it back where it was.
+            reopenWithError()
+        }
     }
 
     /// Closes the panel first so the key window goes back to the app underneath, then presses the item. If that fails
     /// the panel comes back with the reason.
     private func run(_ command: Command) {
+        if model.isSendRow(command) {
+            runSend(command)
+            return
+        }
         hide(immediately: true)
         let appName = model.targetApp?.name
         let appBundleID = model.targetApp?.bundleID
