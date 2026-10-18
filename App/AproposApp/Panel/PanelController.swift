@@ -230,10 +230,14 @@ final class PanelController: NSObject {
     private func run(_ command: Command) {
         hide(immediately: true)
         let appName = model.targetApp?.name
+        let appBundleID = model.targetApp?.bundleID
+        let kinds = context.senseKinds
         Task { [weak self] in
             guard let self else { return }
             let closed = await self.model.run(command)
-            if closed { self.usage.recordRun(command, appName: appName) }
+            if closed {
+                self.usage.recordRun(command, appName: appName, appBundleID: appBundleID, contextKinds: kinds)
+            }
             AproposLog.panel.info(
                 "ran \(command.breadcrumb, privacy: .public) > \(command.title, privacy: .public) ok=\(closed) error=\(self.model.runError ?? "none", privacy: .public)"
             )

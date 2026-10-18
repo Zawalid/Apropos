@@ -21,6 +21,8 @@ final class UsageController {
     private static let recentsKey = "aproposRecentCommands"
 
     let store: UsageStore
+    /// The order commands ran in, for next-action prediction. Its own file next to the usage file.
+    let sequence: SequenceLog
     private(set) var recents: [Recent]
 
     @ObservationIgnored private let palette: PaletteModel
@@ -31,6 +33,7 @@ final class UsageController {
 
     init(store: UsageStore, palette: PaletteModel, defaults: UserDefaults = .standard) {
         self.store = store
+        sequence = SequenceLog(url: SequenceLog.url(besides: store.url))
         self.palette = palette
         self.defaults = defaults
         resolver = store.symbolResolver()
@@ -49,9 +52,14 @@ final class UsageController {
         palette.setRanker(CommandRanker(signal: store.rankingSignal()))
     }
 
-    func recordRun(_ command: Command, appName: String?) {
+    func recordRun(
+        _ command: Command, appName: String?, appBundleID: String? = nil, contextKinds: [ContextKind] = []
+    ) {
         guard UsageStore.isRecordable(command) else { return }
         store.recordRun(of: command)
+        if SequenceLog.isRecordable(command) {
+            sequence.recordRun(command.stableID, app: appBundleID, contextKinds: contextKinds)
+        }
         let entry = Recent(
             stableID: command.stableID.rawValue, title: command.displayTitle, appName: appName ?? "",
             bundleID: command.stableID.bundleID, date: Date())
@@ -89,7 +97,10 @@ final class UsageController {
         saveRecents()
     }
 
-    func flush() { store.flush() }
+    func flush() {
+        store.flush()
+        sequence.flush()
+    }
 
     // MARK: Symbols
 

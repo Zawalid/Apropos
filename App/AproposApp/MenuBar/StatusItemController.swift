@@ -114,8 +114,11 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         guard let raw = sender.representedObject as? String else { return }
         if let command = controller.menus.commands.first(where: { $0.stableID.rawValue == raw }) {
             let appName = controller.tracker.app?.name
+            let appBundleID = controller.tracker.app?.bundleID
             Task { [controller] in
-                if await controller.palette.run(command) { controller.usage.recordRun(command, appName: appName) }
+                if await controller.palette.run(command) {
+                    controller.usage.recordRun(command, appName: appName, appBundleID: appBundleID)
+                }
             }
         } else {
             controller.togglePanel()

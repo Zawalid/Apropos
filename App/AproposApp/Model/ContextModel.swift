@@ -10,6 +10,8 @@ import Observation
 final class ContextModel {
     private(set) var items: [ContextItem] = []
     private(set) var itemsPID: pid_t?
+    /// Which kinds of context the last snapshot found, whether or not a chip shows them. Kinds only, for the run log.
+    private(set) var senseKinds: [ContextKind] = []
 
     @ObservationIgnored private let service: ContextService
     @ObservationIgnored private var task: Task<Void, Never>?
@@ -34,12 +36,16 @@ final class ContextModel {
         task?.cancel()
         guard let app, settings.contextSensing else {
             items = []
+            senseKinds = []
             itemsPID = nil
             onChange?()
             return
         }
         // Another app's context must not linger under this app's chip; the same app keeps its chips until fresh ones arrive.
-        if itemsPID != app.pid { items = [] }
+        if itemsPID != app.pid {
+            items = []
+            senseKinds = []
+        }
         var service = self.service
         service.privacy = settings.contextPrivacy
         let visible = Set(settings.visibleKinds)
@@ -48,6 +54,7 @@ final class ContextModel {
             let snapshot = await sensing.snapshot(for: app)
             guard !Task.isCancelled, let self else { return }
             self.itemsPID = app.pid
+            self.senseKinds = snapshot.items.map(\.kind)
             self.items = snapshot.items.filter { visible.contains($0.kind) }
             self.onChange?()
         }
