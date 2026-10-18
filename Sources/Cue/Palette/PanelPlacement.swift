@@ -2,7 +2,7 @@ import CoreGraphics
 
 /// Where the palette goes: horizontally centred on the screen the person is using, in the upper part of it.
 public enum PanelPlacement {
-    public static let size = CGSize(width: 680, height: 460)
+    public static let size = CGSize(width: 720, height: 520)
 
     /// `visibleFrame` is the screen's usable area in AppKit coordinates (origin bottom-left).
     public static func frame(in visibleFrame: CGRect, size: CGSize = PanelPlacement.size) -> CGRect {
