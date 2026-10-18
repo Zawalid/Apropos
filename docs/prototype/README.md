@@ -14,3 +14,7 @@ dark, Option+Space to toggle the panel.
 
 Design decisions it encodes: no open or close animation (used hundreds of times a day), motion only where it
 explains a change (selection highlight, context change, recording steps), one mint accent used sparingly.
+
+## v2: density and icon comparison
+
+`v2.html` compares the previous, current and proposed layouts at 1:1 scale with three row-icon options. Decision: the Proposed layout with Glyph icons (a tile on every row). Serve it the same way and open http://127.0.0.1:5731/v2.html at 100% zoom.
