@@ -35,3 +35,12 @@ struct CommandDisplayTests {
         #expect(CommandDisplay.symbol(for: command("Whatever", path: ["Odd"])) == "command")
     }
 }
+
+struct AmbiguousTitleTests {
+    @Test func lowerCaseAndGenericTitlesNeedTheirMenu() {
+        #expect(CommandDisplay.isAmbiguous(title: "as Columns"))
+        #expect(CommandDisplay.isAmbiguous(title: "Reset"))
+        #expect(!CommandDisplay.isAmbiguous(title: "New Finder Window"))
+        #expect(!CommandDisplay.isAmbiguous(title: "Empty Trash"))
+    }
+}

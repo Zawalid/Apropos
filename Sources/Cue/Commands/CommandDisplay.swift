@@ -39,6 +39,20 @@ public enum CommandDisplay {
         return title.isEmpty ? raw : title
     }
 
+    /// Whether a title cannot be understood without its menu: it starts in lower case ("as Columns") or is a bare
+    /// generic word that many menus reuse.
+    public static func isAmbiguous(title: String) -> Bool {
+        let clean = cleanTitle(title)
+        guard let first = clean.first else { return false }
+        if first.isLowercase { return true }
+        return genericTitles.contains(clean.lowercased())
+    }
+
+    private static let genericTitles: Set<String> = [
+        "show", "hide", "next", "previous", "reset", "clear", "options", "more", "all", "other", "default", "custom",
+        "bigger", "smaller", "larger", "actual size", "zoom", "toggle", "new", "open", "close", "add", "remove",
+    ]
+
     /// Matches "1 update" and "12 updates".
     private static func isUpdateCount(_ text: Substring) -> Bool {
         let parts = text.split(separator: " ")
