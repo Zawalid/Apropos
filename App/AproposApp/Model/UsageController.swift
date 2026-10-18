@@ -48,6 +48,10 @@ final class UsageController {
             recents = []
         }
         palette.setPredictor { [weak self] commands in self?.predictions(for: commands) ?? [] }
+        let prediction = prediction
+        store.onLearnedRankingReset = { bundleID in
+            if let bundleID { prediction.reset(forApp: bundleID) } else { prediction.reset() }
+        }
     }
 
     // MARK: Ranking
@@ -64,6 +68,12 @@ final class UsageController {
         var titles: [CommandID: String] = [:]
         for command in commands { titles[command.stableID] = command.displayTitle }
         return prediction.rows(app: palette.targetApp?.bundleID, candidates: titles, contextKinds: contextKinds())
+    }
+
+    /// Applies the person's prediction settings (on or off, reasons) and asks the palette for its rows again.
+    func applyPredictionSettings(_ settings: SettingsStore) {
+        prediction.configure(from: settings)
+        palette.refreshPredictions()
     }
 
     /// Not now on a predicted command: it is offered less until the person runs it again.

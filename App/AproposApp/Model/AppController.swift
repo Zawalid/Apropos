@@ -81,6 +81,7 @@ final class AppController {
             menus: menus, tracker: tracker, ranker: CommandRanker(signal: usageStore.rankingSignal()))
         self.palette = palette
         self.usage = UsageController(store: usageStore, palette: palette, defaults: defaults)
+        usage.prediction.configure(from: settings.store)
         self.combo = settings.hotKey
         // Context actions: each finished snapshot feeds the center, which lists what applies in the palette.
         let actions = ContextActionCenter(library: .bundled(plus: ActionPackLibrary.userDirectory))
@@ -164,6 +165,7 @@ final class AppController {
     /// Applies the settings that live outside the views: the hotkey and the alternate-command rows.
     private func settingsChanged() {
         if menus.showAlternates != settings.showAlternates { menus.showAlternates = settings.showAlternates }
+        usage.applyPredictionSettings(settings.store)
         if !settings.contextSensing { actions.clear() }
         if settings.hotKey != combo {
             combo = settings.hotKey
