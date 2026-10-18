@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cue settings prototype</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{
+  --ease:cubic-bezier(0.23,1,0.32,1);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",sans-serif;
+}
+html[data-theme=dark]{
+  --win:#111413;--side:#181c1b;--card:rgba(255,255,255,.045);--edge:rgba(255,255,255,.07);--edge2:rgba(255,255,255,.12);
+  --text:#F2F5F3;--text2:rgba(242,245,243,.66);--text3:rgba(242,245,243,.45);
+  --hl:rgba(255,255,255,.085);--chip:rgba(255,255,255,.07);--tile:rgba(255,255,255,.1);--tile-ink:rgba(255,255,255,.88);
+  --accent:#8CF2CC;--accent-ink:#0B100F;--accent-soft:rgba(140,242,204,.16);--off:rgba(255,255,255,.2);
+  --key-bg:rgba(255,255,255,.07);--key-edge:rgba(255,255,255,.15);--caution:#ff9f43;
+  --wall:radial-gradient(60% 70% at 18% 20%,#1d4d46 0%,transparent 60%),radial-gradient(50% 60% at 85% 15%,#23305c 0%,transparent 60%),#0c1210;
+  --shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08);
+}
+html[data-theme=light]{
+  --win:#F5F7F6;--side:#EAEEEC;--card:#FFFFFF;--edge:rgba(0,0,0,.07);--edge2:rgba(0,0,0,.14);
+  --text:#121C18;--text2:rgba(18,28,24,.68);--text3:rgba(18,28,24,.5);
+  --hl:rgba(0,0,0,.065);--chip:rgba(0,0,0,.05);--tile:rgba(0,0,0,.07);--tile-ink:rgba(18,28,24,.8);
+  --accent:#0A6B50;--accent-ink:#F4FBF8;--accent-soft:rgba(10,107,80,.13);--off:rgba(0,0,0,.18);
+  --key-bg:rgba(0,0,0,.04);--key-edge:rgba(0,0,0,.14);--caution:#a04a08;
+  --wall:radial-gradient(60% 70% at 18% 20%,#b9e6d8 0%,transparent 60%),radial-gradient(50% 60% at 85% 15%,#c7d3f2 0%,transparent 60%),#e8efec;
+  --shadow:0 30px 70px rgba(30,50,45,.28),0 0 0 1px rgba(0,0,0,.1);
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);color:var(--text);background:var(--wall);-webkit-font-smoothing:antialiased;display:grid;place-items:center}
+[hidden]{display:none!important}
+button{all:unset;cursor:default;box-sizing:border-box}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-radius:6px}
+
+#win{width:780px;height:540px;background:var(--win);border-radius:12px;box-shadow:var(--shadow);display:flex;overflow:hidden;position:relative}
+/* sidebar */
+#side{width:204px;margin:6px;border-radius:9px;background:var(--side);border:1px solid var(--edge);display:flex;flex-direction:column;padding:10px 8px 8px;flex:none}
+.lights{display:flex;gap:7px;height:20px;align-items:center;padding-left:4px;margin-bottom:8px}
+.lights i{width:11px;height:11px;border-radius:50%;background:var(--off)}
+.search{display:flex;align-items:center;gap:7px;height:28px;padding:0 8px;border-radius:7px;background:var(--chip);border:1px solid var(--edge);margin-bottom:8px}
+.search i{font-size:13px;color:var(--text3)}
+.search input{all:unset;flex:1;font-size:12.5px;color:var(--text);caret-color:var(--accent);min-width:0}
+.search input::placeholder{color:var(--text3)}
+.search:focus-within{border-color:var(--edge2)}
+.nav{display:flex;flex-direction:column;gap:1px}
+.nav hr{border:0;height:1px;background:var(--edge);margin:6px 6px}
+.item{display:flex;align-items:center;gap:9px;height:30px;padding:0 7px;border-radius:7px;font-size:13px;color:var(--text)}
+.item:hover{background:var(--chip)}
+.item[aria-current=page]{background:var(--hl)}
+.tile{width:18px;height:18px;border-radius:5px;background:var(--tile);color:var(--tile-ink);display:grid;place-items:center;flex:none}
+.tile i{font-size:11px}
+.results{display:flex;flex-direction:column;gap:1px;overflow:auto;scrollbar-width:none}
+.res{display:flex;align-items:center;gap:9px;padding:6px 7px;border-radius:7px}
+.res.on{background:var(--hl)}
+.res b{display:block;font-weight:400;font-size:13px}
+.res small{display:block;font-size:11px;color:var(--text3);margin-top:1px}
+.none{padding:10px 8px;font-size:12.5px;color:var(--text3)}
+.side-foot{margin-top:auto;padding:8px 6px 2px;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text3);white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+kbd{font-family:var(--font);font-size:10.5px;min-width:18px;height:18px;padding:0 4px;display:inline-grid;place-items:center;border-radius:5px;background:var(--key-bg);border:1px solid var(--key-edge);color:var(--text2)}
+/* detail */
+#detail{flex:1;min-width:0;display:flex;flex-direction:column}
+.bar{height:44px;display:flex;align-items:center;padding:6px 16px 0;gap:10px;flex:none}
+.hist{display:flex;align-items:center;height:26px;border-radius:99px;background:var(--chip);border:1px solid var(--edge)}
+.hist button{width:30px;height:100%;display:grid;place-items:center;color:var(--text);font-size:12px}
+.hist button[disabled]{color:var(--text3);opacity:.5}
+.hist span{width:1px;height:12px;background:var(--edge2)}
+.scroll{flex:1;overflow:auto;padding:4px 16px 24px;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.pane{max-width:560px;display:flex;flex-direction:column;gap:16px}
+.sec h3{font-size:12.5px;font-weight:500;color:var(--text2);margin:0 0 6px 12px}
+.card{border-radius:10px;background:var(--card);border:1px solid var(--edge);overflow:hidden}
+.foot{font-size:11.5px;color:var(--text3);margin:6px 12px 0;line-height:1.4}
+.row{position:relative;display:flex;align-items:center;gap:10px;min-height:40px;padding:7px 12px;border-bottom:1px solid var(--edge)}
+.row:last-child{border-bottom:0}
+.row .l{flex:1;min-width:0}
+.row .t{font-size:13px}
+.row .d{font-size:11.5px;color:var(--text3);margin-top:2px;line-height:1.35}
+.row .r{display:flex;align-items:center;gap:8px;flex:none}
+.row.flash{animation:flash 1.2s var(--ease)}
+@keyframes flash{0%,60%{background:var(--accent-soft)}100%{background:transparent}}
+.mod{position:absolute;left:4px;top:50%;width:4px;height:4px;margin-top:-2px;border-radius:50%;background:var(--accent)}
+.reset{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:var(--text3);font-size:12px;opacity:0;transition:opacity .12s var(--ease)}
+.row:hover .reset,.reset:focus-visible{opacity:1}
+.reset:hover{background:var(--chip);color:var(--text)}
+/* controls */
+.sw{width:34px;height:20px;border-radius:99px;background:var(--off);position:relative;transition:background .16s var(--ease)}
+.sw::after{content:"";position:absolute;left:2.5px;top:2.5px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .16s var(--ease)}
+.sw[aria-checked=true]{background:var(--accent)}
+.sw[aria-checked=true]::after{transform:translateX(14px);background:var(--accent-ink)}
+.btn{height:26px;padding:0 11px;border-radius:7px;background:var(--chip);border:1px solid var(--edge);font-size:12.5px;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--hl)}
+.btn.danger{color:var(--caution)}
+.menu{position:relative}
+.menu>button{height:26px;padding:0 9px 0 10px;border-radius:7px;background:var(--chip);border:1px solid var(--edge);font-size:12.5px;display:inline-flex;align-items:center;gap:8px}
+.menu>button i{font-size:10px;color:var(--text3)}
+.pop{position:absolute;right:0;top:30px;min-width:100%;padding:4px;border-radius:9px;background:var(--side);border:1px solid var(--edge2);box-shadow:0 12px 32px rgba(0,0,0,.4);z-index:5;transform-origin:top right;transform:scale(.96);opacity:0;pointer-events:none;transition:opacity .16s var(--ease),transform .16s var(--ease)}
+.menu.open .pop{opacity:1;transform:none;pointer-events:auto}
+.pop button{display:flex;align-items:center;gap:8px;width:100%;height:26px;padding:0 9px;border-radius:6px;font-size:12.5px;white-space:nowrap}
+.pop button:hover{background:var(--hl)}
+.pop button i{width:12px;font-size:11px;color:var(--accent);visibility:hidden}
+.pop button[aria-checked=true] i{visibility:visible}
+.aa{display:flex;gap:2px}
+.aa button{width:34px;height:26px;border-radius:7px;display:grid;place-items:center;color:var(--text3);font-weight:500}
+.aa button[aria-pressed=true]{background:var(--hl);color:var(--text)}
+.rec{display:flex;align-items:center;gap:6px}
+.rec .pill{height:26px;min-width:96px;padding:0 8px;border-radius:7px;background:var(--chip);border:1px solid var(--edge);display:inline-flex;align-items:center;justify-content:center;gap:4px;font-size:12px}
+.rec .pill.rc{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.apps .ic{width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-size:11px;font-weight:500;background:var(--tile);color:var(--tile-ink);flex:none}
+.chipsel{display:flex;flex-wrap:wrap;gap:6px}
+.cs{height:26px;padding:0 10px 0 8px;border-radius:99px;background:var(--chip);border:1px solid var(--edge);font-size:12.5px;color:var(--text3);display:inline-flex;align-items:center;gap:5px}
+.cs i{font-size:11px;width:0;overflow:hidden;opacity:0}
+.cs[aria-checked=true]{background:var(--accent-soft);border-color:transparent;color:var(--text)}
+.cs[aria-checked=true] i{width:11px;opacity:1;color:var(--accent)}
+.hero{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0 2px}
+.hero .logo{width:52px;height:52px;border-radius:12px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:26px;margin-bottom:4px}
+.hero b{font-size:17px;font-weight:600}
+.hero span{font-size:12px;color:var(--text3)}
+.ok{color:var(--accent);font-size:15px}.bad{color:var(--caution);font-size:15px}
+/* prototype chrome */
+#proto{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:5px;border-radius:999px;background:rgba(20,24,23,.7);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.12);font-size:12px;color:rgba(255,255,255,.7)}
+#proto button{padding:5px 11px;border-radius:99px}
+#proto button[aria-pressed=true]{background:rgba(255,255,255,.14);color:#fff}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="win">
+  <aside id="side" aria-label="Settings sections">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <label class="search"><i class="ti ti-search"></i><input id="q" placeholder="Search settings" autocomplete="off" spellcheck="false" aria-label="Search settings"></label>
+    <nav class="nav" id="nav"></nav>
+    <div class="results" id="results" hidden></div>
+    <div class="side-foot"><span class="dot"></span>Accessibility on<span style="flex:1"></span><kbd>⌥</kbd><kbd>Space</kbd></div>
+  </aside>
+  <main id="detail">
+    <div class="bar"><div class="hist"><button id="back" aria-label="Back" disabled><i class="ti ti-chevron-left"></i></button><span></span><button id="fwd" aria-label="Forward" disabled><i class="ti ti-chevron-right"></i></button></div></div>
+    <div class="scroll" id="scroll"><div class="pane" id="pane"></div></div>
+  </main>
+</div>
+<div id="proto"><button id="tdark" aria-pressed="true">Dark</button><button id="tlight" aria-pressed="false">Light</button></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const PAGES=[
+ {id:'general',t:'General',i:'ti-settings'},
+ {id:'appearance',t:'Appearance',i:'ti-brush'},
+ {id:'context',t:'Context',i:'ti-viewfinder'},
+ {id:'privacy',t:'Privacy and data',i:'ti-shield-lock'},
+ {sep:true},
+ {id:'updates',t:'Updates',i:'ti-refresh'},
+ {id:'about',t:'About',i:'ti-info-circle'}];
+const DEF={login:false,menubar:true,hotkey:['⌥','Space'],closeblur:true,reset:60,alts:false,theme:'system',size:'default',icons:'glyph',motion:false,sense:true,
+ chips:{document:true,url:true,folder:true,branch:true,selection:true,selectionCount:true},
+ apps:{'Arc':true,'Claude':true,'Figma':true,'Finder':true,'Safari':true,'Xcode':true,'1Password':false},
+ ignore:['1Password','Bitwarden','Keychain Access','Passwords','KeePassXC'],updates:false};
+let S=JSON.parse(JSON.stringify(DEF));
+const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+const OPT={reset:[[0,'Immediately'],[15,'After 15 seconds'],[60,'After 1 minute'],[300,'After 5 minutes'],[3600,'After 1 hour']],
+ theme:[['system','System'],['dark','Dark'],['light','Light']],icons:[['glyph','Glyph'],['appLogo','App logo'],['none','None']]};
+const CHIPS=[['document','Document'],['url','Web address'],['folder','Folder'],['branch','Git branch'],['selection','Selected text'],['selectionCount','Selected items']];
+const APPCOL={Arc:'#7a5cff',Claude:'#d9774a',Figma:'#1c1c1c',Finder:'#3b9bff',Safari:'#2f9bff',Xcode:'#3b82f6','1Password':'#1a8cff'};
+
+/* search catalog: id (anchor), title, page, section, words */
+const CAT=[
+ ['login','Open at login','general','Startup','startup launch boot'],['menubar','Show in menu bar','general','Startup','icon status'],
+ ['hotkey','Open Cue','general','Startup','hotkey shortcut keyboard'],['closeblur','Close when Cue loses focus','general','Panel','dismiss blur'],
+ ['reset','Reset search after','general','Panel','query clear timeout'],['alts','Show alternate commands','general','Panel','option variants'],
+ ['theme','Theme','appearance','Look','dark light mode color'],['size','Interface size','appearance','Look','density compact large text'],
+ ['icons','Row icons','appearance','Look','glyph logo symbol'],['motion','Reduce motion','appearance','Look','animation'],
+ ['sense','Sense context','context','Context','selection accessibility'],['chips','Context chips','context','Chips','document url branch folder'],
+ ['apps','Apps with context off','context','Apps','per app disable'],
+ ['ax','Accessibility','privacy','Access','permission'],['ignore','Never read these apps','privacy','Ignored apps','password bank secret'],
+ ['ranking','Reset learned ranking','privacy','Learned data','usage suggestions'],['history','Clear history','privacy','Learned data','recent'],
+ ['hidden','Hidden commands','privacy','Learned data','unhide'],['export','Export settings','privacy','Settings file','backup json'],['import','Import settings','privacy','Settings file','restore json'],
+ ['updates','Check for updates','updates','Updates','sparkle version'],['version','Version','about','Cue','build']];
+
+/* history */
+let page='general',back=[],fwd=[];
+function go(p,anchor){
+ if(p!==page){back.push(page);fwd=[];page=p}
+ render();
+ if(anchor)reveal(anchor);
+}
+function reveal(a){const el=document.querySelector(`[data-a="${a}"]`);if(!el)return;el.scrollIntoView({block:'center'});el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}
+$('back').onclick=()=>{if(back.length){fwd.push(page);page=back.pop();render()}};
+$('fwd').onclick=()=>{if(fwd.length){back.push(page);page=fwd.pop();render()}};
+
+/* builders */
+function row(a,t,d,right,mod,resetKey){
+ const m=resetKey!==undefined&&!same(S[resetKey],DEF[resetKey]);
+ return `<div class="row" data-a="${a}">${m?'<span class="mod" title="Changed from default"></span>':''}<div class="l"><div class="t">${t}</div>${d?`<div class="d">${d}</div>`:''}</div><div class="r">${m?`<button class="reset" data-reset="${resetKey}" aria-label="Reset ${t} to default"><i class="ti ti-arrow-back-up"></i></button>`:''}${right}</div></div>`;
+}
+const sw=(k,on)=>`<button class="sw" role="switch" aria-checked="${on}" data-sw="${k}"></button>`;
+function menu(k,opts,cur){const c=opts.find(o=>o[0]===cur);return `<div class="menu" data-menu="${k}"><button aria-haspopup="menu">${c[1]}<i class="ti ti-selector"></i></button><div class="pop" role="menu">${opts.map(o=>`<button role="menuitemradio" aria-checked="${o[0]===cur}" data-opt="${o[0]}"><i class="ti ti-check"></i>${o[1]}</button>`).join('')}</div></div>`}
+const sec=(h,body,foot)=>`<section class="sec">${h?`<h3>${h}</h3>`:''}<div class="card">${body}</div>${foot?`<p class="foot">${foot}</p>`:''}</section>`;
+const keys=a=>a.map(k=>`<kbd>${k}</kbd>`).join('');
+
+const VIEW={
+ general:()=>sec('',
+   row('login','Open at login','Start Cue when you log in.',sw('login',S.login),0,'login')+
+   row('menubar','Show in menu bar','Keep the Cue icon in the menu bar.',sw('menubar',S.menubar),0,'menubar')+
+   row('hotkey','Open Cue','Cue runs alongside your launcher. Pick a shortcut it does not use.',`<div class="rec"><button class="pill" id="recbtn">${keys(S.hotkey)}</button></div>`,0,'hotkey'))+
+  sec('Panel',
+   row('closeblur','Close when Cue loses focus','',sw('closeblur',S.closeblur),0,'closeblur')+
+   row('reset','Reset search after','Keep what you typed if you reopen the panel within this time.',menu('reset',OPT.reset,S.reset),0,'reset')+
+   row('alts','Show alternate commands','List Option-key variants, such as Empty Trash Securely, as their own rows.',sw('alts',S.alts),0,'alts')),
+ appearance:()=>sec('',
+   row('theme','Theme','',menu('theme',OPT.theme,S.theme),0,'theme')+
+   row('size','Interface size','Row height and text size in the panel.',`<div class="aa" id="aa">${[['compact',11],['default',13],['large',16]].map(([v,s])=>`<button data-size="${v}" aria-pressed="${S.size===v}" aria-label="${v}" style="font-size:${s}px">Aa</button>`).join('')}</div>`,0,'size')+
+   row('icons','Row icons','What the icon at the start of each row shows.',menu('icons',OPT.icons,S.icons),0,'icons')+
+   row('motion','Reduce motion','Skip panel animations even if the system allows them.',sw('motion',S.motion),0,'motion')),
+ context:()=>sec('',row('sense','Sense context','Read the frontmost app\'s document, URL and selection. Everything stays on this Mac.',sw('sense',S.sense),0,'sense'))+
+  `<div style="display:contents;${S.sense?'':'opacity:.5;pointer-events:none'}">`+
+  sec('Chips',`<div class="row" data-a="chips"><div class="chipsel">${CHIPS.map(([k,t])=>`<button class="cs" role="checkbox" aria-checked="${S.chips[k]}" data-chip="${k}"><i class="ti ti-check"></i>${t}</button>`).join('')}</div></div>`,'Which pieces of context appear in the chip row under the search field.')+
+  sec('Apps',Object.keys(S.apps).map((n,i)=>`<div class="row apps" data-a="${i?'app'+n:'apps'}"><span class="ic">${n[0]}</span><div class="l"><div class="t">${n}</div></div><div class="r">${sw('app:'+n,S.apps[n])}</div></div>`).join(''),'Turn an app off and Cue reads nothing from it beyond the menu.')+`</div>`,
+ privacy:()=>sec('Access',row('ax','Accessibility','Lets Cue read and press menu items.','<span class="ok"><i class="ti ti-circle-check-filled"></i></span> <span style="font-size:12.5px;color:var(--text2)">Allowed</span>'))+
+  sec('Never read these apps',S.ignore.map((n,i)=>`<div class="row" ${i?'':'data-a="ignore"'}><div class="l"><div class="t">${n}</div></div><div class="r"><button class="btn" data-rm="${n}">Remove</button></div></div>`).join('')+row('addign','Add an app','',`<button class="btn" id="addign"><i class="ti ti-plus"></i>Choose</button>`),'Password managers and banks. Cue reads nothing in them, not even the document title.')+
+  sec('Learned data',
+   row('ranking','Reset learned ranking','Which commands you use most in each app.','<button class="btn danger" data-act="ranking">Reset</button>')+
+   row('history','Clear history','The recent commands in the menu bar menu.','<button class="btn danger" data-act="history">Clear</button>')+
+   row('hidden','Hidden commands','Nothing is hidden in Finder.',''))+
+  sec('Settings file',row('export','Export settings','Save your settings as a JSON file.','<button class="btn">Export</button>')+row('import','Import settings','Replace your settings with a saved file.','<button class="btn">Import</button>')),
+ updates:()=>sec('',row('updates','Check for updates automatically','Ask the update server whether a new version exists.',sw('updates',S.updates),0,'updates')+row('checknow','Check now','Version 0.1.0 (1)','<button class="btn">Check for Updates</button>'),'Cue only contacts the update server when you ask it to or turn this on.'),
+ about:()=>`<div class="hero"><div class="logo"><i class="ti ti-command"></i></div><b>Cue</b><span data-a="version">Version 0.1.0 (1)</span><span>What you can do right now, in this app, with this selection.</span></div>`+
+  sec('Diagnostics',[['Accessibility access',1,'Allowed'],['Context sensing',S.sense,S.sense?'On':'Off'],['Settings file',1,'Saved']].map(([t,ok,v])=>`<div class="row"><i class="ti ${ok?'ti-circle-check-filled ok':'ti-alert-triangle-filled bad'}"></i><div class="l"><div class="t">${t}</div></div><div class="r" style="font-size:12px;color:var(--text2)">${v}</div></div>`).join(''))
+};
+
+function renderNav(){
+ $('nav').innerHTML=PAGES.map(p=>p.sep?'<hr>':`<button class="item" data-p="${p.id}" ${p.id===page?'aria-current="page"':''}><span class="tile"><i class="ti ${p.i}"></i></span>${p.t}</button>`).join('');
+ $('nav').querySelectorAll('.item').forEach(b=>b.onclick=()=>go(b.dataset.p));
+}
+function render(){
+ $('pane').innerHTML=VIEW[page]();renderNav();
+ $('back').disabled=!back.length;$('fwd').disabled=!fwd.length;
+ $('scroll').scrollTop=0;bind();
+}
+function bind(){
+ const pane=$('pane');
+ pane.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{const k=b.dataset.sw;
+  if(k.startsWith('chip:'))S.chips[k.slice(5)]=!S.chips[k.slice(5)];else if(k.startsWith('app:'))S.apps[k.slice(4)]=!S.apps[k.slice(4)];else S[k]=!S[k];
+  const y=$('scroll').scrollTop;render();$('scroll').scrollTop=y});
+ pane.querySelectorAll('[data-menu]').forEach(m=>{
+  m.querySelector('button').onclick=e=>{e.stopPropagation();document.querySelectorAll('.menu.open').forEach(x=>x!==m&&x.classList.remove('open'));m.classList.toggle('open')};
+  m.querySelectorAll('[data-opt]').forEach(o=>o.onclick=()=>{const k=m.dataset.menu;S[k]=k==='reset'?+o.dataset.opt:o.dataset.opt;if(k==='theme')applyTheme();const y=$('scroll').scrollTop;render();$('scroll').scrollTop=y})});
+ pane.querySelectorAll('[data-chip]').forEach(b=>b.onclick=()=>{S.chips[b.dataset.chip]=!S.chips[b.dataset.chip];b.setAttribute('aria-checked',S.chips[b.dataset.chip])});
+ pane.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>{S.size=b.dataset.size;const y=$('scroll').scrollTop;render();$('scroll').scrollTop=y});
+ pane.querySelectorAll('[data-reset]').forEach(b=>b.onclick=()=>{const k=b.dataset.reset;S[k]=JSON.parse(JSON.stringify(DEF[k]));if(k==='theme')applyTheme();const y=$('scroll').scrollTop;render();$('scroll').scrollTop=y});
+ pane.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{S.ignore=S.ignore.filter(x=>x!==b.dataset.rm);render()});
+ const ai=$('addign');if(ai)ai.onclick=()=>{S.ignore.push(['Dashlane','LastPass','NordPass'].find(x=>!S.ignore.includes(x))||'Another app');render()};
+ const rb=$('recbtn');if(rb)rb.onclick=()=>{rb.classList.add('rc');rb.textContent='Press the new shortcut';
+  const h=e=>{e.preventDefault();if(e.key==='Escape'){}else if(e.altKey||e.metaKey||e.ctrlKey){S.hotkey=[e.metaKey?'⌘':e.ctrlKey?'⌃':'⌥',e.code==='Space'?'Space':e.key.toUpperCase()]}
+   document.removeEventListener('keydown',h,true);render()};document.addEventListener('keydown',h,true)};
+}
+document.addEventListener('click',()=>document.querySelectorAll('.menu.open').forEach(x=>x.classList.remove('open')));
+function applyTheme(){const t=S.theme==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):S.theme;setTheme(t,true)}
+function setTheme(t,fromSetting){document.documentElement.dataset.theme=t;$('tdark').setAttribute('aria-pressed',t==='dark');$('tlight').setAttribute('aria-pressed',t==='light')}
+$('tdark').onclick=()=>setTheme('dark');$('tlight').onclick=()=>setTheme('light');
+
+/* search */
+let hits=[],hi=0;
+function words(q){return q.toLowerCase().split(/\s+/).filter(Boolean)}
+function search(q){const w=words(q);if(!w.length)return[];
+ const pg=PAGES.filter(p=>!p.sep&&w.every(x=>p.t.toLowerCase().includes(x))).map(p=>({page:p.id,t:p.t,s:'Page',a:null,i:p.i}));
+ const st=CAT.filter(c=>w.every(x=>(c[1]+' '+c[4]).toLowerCase().includes(x))).map(c=>({page:c[2],t:c[1],s:PAGES.find(p=>p.id===c[2]).t+' › '+c[3],a:c[0],i:PAGES.find(p=>p.id===c[2]).i}));
+ return pg.concat(st)}
+function drawResults(){const q=$('q').value.trim();const on=!!q;$('nav').hidden=on;$('results').hidden=!on;if(!on)return;
+ hits=search(q);if(hi>=hits.length)hi=0;
+ $('results').innerHTML=hits.length?hits.map((h,i)=>`<button class="res ${i===hi?'on':''}" data-i="${i}"><span class="tile"><i class="ti ${h.i}"></i></span><span><b>${h.t}</b><small>${h.s}</small></span></button>`).join(''):'<div class="none">No settings match</div>';
+ $('results').querySelectorAll('.res').forEach(b=>{b.onmousemove=()=>{hi=+b.dataset.i;$('results').querySelectorAll('.res').forEach((x,j)=>x.classList.toggle('on',j===hi))};b.onclick=()=>open(+b.dataset.i)})}
+function open(i){const h=hits[i];if(h)go(h.page,h.a)}
+$('q').addEventListener('input',()=>{hi=0;drawResults()});
+$('q').addEventListener('keydown',e=>{if(e.key==='ArrowDown'){e.preventDefault();hi=Math.min(hits.length-1,hi+1);drawResults()}else if(e.key==='ArrowUp'){e.preventDefault();hi=Math.max(0,hi-1);drawResults()}else if(e.key==='Enter'){open(hi)}else if(e.key==='Escape'&&$('q').value){$('q').value='';drawResults();e.stopPropagation()}});
+document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='f'){e.preventDefault();$('q').focus()}if((e.metaKey||e.ctrlKey)&&e.key==='['){e.preventDefault();$('back').click()}if((e.metaKey||e.ctrlKey)&&e.key===']'){e.preventDefault();$('fwd').click()}});
+render();
+</script>
+</body>
+</html>
