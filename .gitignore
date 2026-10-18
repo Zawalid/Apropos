@@ -1,0 +1,10 @@
+.build/
+.swiftpm/
+xcuserdata/
+DerivedData/
+.DS_Store
+
+build/
+App/Cue.xcodeproj/
+
+.claude/worktrees/
