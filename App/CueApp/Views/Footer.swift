@@ -13,7 +13,7 @@ struct FloatingFooter: View {
         HStack(spacing: 10) {
             Button(action: actions.openSettings) {
                 Image(systemName: "gearshape")
-                    .font(.system(size: 17, weight: .regular))
+                    .font(.system(size: 14.5, weight: .regular))
                     .foregroundStyle(Theme.text2)
             }
             .buttonStyle(RoundGlassButtonStyle())
@@ -27,7 +27,7 @@ struct FloatingFooter: View {
                     .foregroundStyle(Theme.cautionText)
                     .lineLimit(1)
                     .padding(.horizontal, 12)
-                    .frame(height: 32)
+                    .frame(height: 28)
                     .cueGlass(in: Capsule())
             }
             if content == .results { actionBar }
@@ -40,27 +40,27 @@ struct FloatingFooter: View {
     private var actionBar: some View {
         HStack(spacing: 4) {
             Button(action: actions.run) {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Text("Run menu item").foregroundStyle(Theme.text)
-                    KeyCap(text: "↩")
+                    KeyCap(text: "↩", small: true)
                 }
             }
             .buttonStyle(CapsuleButtonStyle())
             .focusable()
             Rectangle().fill(Theme.divider).frame(width: 1, height: 18)
             Button(action: actions.toggleActions) {
-                HStack(spacing: 6) {
+                HStack(spacing: 4) {
                     Text("Actions").foregroundStyle(Theme.text2)
-                    KeyCap(text: "⌘")
-                    KeyCap(text: "K")
+                    KeyCap(text: "⌘", small: true)
+                    KeyCap(text: "K", small: true)
                 }
             }
             .buttonStyle(CapsuleButtonStyle())
             .focusable()
         }
-        .font(.system(size: 13.5))
+        .font(.system(size: 12.5))
         .padding(.horizontal, 6)
-        .frame(height: 44)
+        .frame(height: Theme.footerHeight)
         .cueGlass(in: Capsule())
         .shadow(color: .black.opacity(0.18), radius: 9, y: 6)
     }
@@ -75,7 +75,9 @@ struct ActionsPopover: View {
     var body: some View {
         VStack(spacing: 2) {
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                Button { actions.perform(item) } label: {
+                Button {
+                    actions.perform(item)
+                } label: {
                     HStack(spacing: 10) {
                         Image(systemName: item.symbol)
                             .font(.system(size: 13, weight: .medium))

@@ -33,7 +33,7 @@ struct StatusView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.bottom, 70)
+        .padding(.bottom, Theme.footerInset)
         .accessibilityElement(children: .contain)
     }
 }
@@ -48,7 +48,7 @@ struct LoadingRows: View {
                 HStack(spacing: Theme.Spacing.md) {
                     RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
                         .fill(Theme.tile)
-                        .frame(width: 30, height: 30)
+                        .frame(width: Theme.tileSize, height: Theme.tileSize)
                     Capsule().fill(Theme.tile).frame(width: width, height: 10)
                     Spacer()
                 }

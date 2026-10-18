@@ -21,7 +21,9 @@ enum ContextChips {
     static func chips(for app: TargetApp?, items: [ContextItem] = []) -> [ContextChip] {
         guard let app else { return [] }
         var chips = [ContextChip(id: "app-\(app.pid)", leading: .appIcon(app.pid), text: app.name)]
-        chips += items.map { ContextChip(id: $0.kind.rawValue, leading: .symbol($0.symbol), text: $0.label) }
+        chips += items.filter { $0.label != app.name }.map {
+            ContextChip(id: $0.kind.rawValue, leading: .symbol($0.symbol), text: $0.label)
+        }
         #if DEBUG
             if items.isEmpty, ProcessInfo.processInfo.environment["CUE_FIXTURE_CONTEXT"] != nil {
                 chips += fixtures(for: app).enumerated().map { index, pair in

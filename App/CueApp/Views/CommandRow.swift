@@ -10,17 +10,17 @@ struct CommandRow: View {
 
     var body: some View {
         let command = ranked.command
-        HStack(spacing: Theme.Spacing.md) {
+        HStack(spacing: 12) {
             IconTile(symbol: CommandDisplay.symbol(for: command), isEnabled: command.isEnabled)
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(highlightedTitle)
-                    .font(.system(size: 15, weight: .medium))
-                    .tracking(-0.075)
+                    .font(.system(size: 14, weight: .medium))
+                    .tracking(-0.07)
                     .foregroundStyle(command.isEnabled ? Theme.text : Theme.text3)
                     .lineLimit(1)
                     .layoutPriority(1)
                 Text(subtitle)
-                    .font(.system(size: 12.5))
+                    .font(.system(size: 12))
                     .foregroundStyle(Theme.text3)
                     .lineLimit(1)
             }
@@ -61,7 +61,7 @@ struct CommandRow: View {
             let next = result.index(afterCharacter: index)
             if matched.contains(offset) {
                 result[index..<next].foregroundColor = Theme.accentText
-                result[index..<next].font = .system(size: 15, weight: .semibold)
+                result[index..<next].font = .system(size: 14, weight: .semibold)
             }
             index = next
         }
@@ -77,12 +77,13 @@ struct IconTile: View {
 
     var body: some View {
         Image(systemName: symbol)
-            .font(.system(size: 14, weight: .medium))
+            .font(.system(size: 13.5, weight: .medium))
             .foregroundStyle(accented ? Theme.accentText : (isEnabled ? Theme.tileInk : Theme.text3))
-            .frame(width: 30, height: 30)
+            .frame(width: Theme.tileSize, height: Theme.tileSize)
             .background(
                 RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
-                    .fill(accented ? Theme.accentSoft : Theme.tile))
+                    .fill(accented ? Theme.accentSoft : Theme.tile)
+            )
             .accessibilityHidden(true)
     }
 }

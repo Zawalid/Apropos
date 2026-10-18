@@ -34,16 +34,17 @@ struct ResultsList: View {
         let entries = makeEntries()
         let isGrouped = model.query.trimmingCharacters(in: .whitespaces).isEmpty
         let selectedID = model.selected?.id
-        let offset = selectedOffset(in: entries, selectedID: selectedID)
+        let placement = selectedPlacement(in: entries, selectedID: selectedID)
         ScrollViewReader { proxy in
             ScrollView(showsIndicators: false) {
                 ZStack(alignment: .top) {
-                    if let offset {
+                    if let placement {
                         RoundedRectangle(cornerRadius: Theme.rowRadius, style: .continuous)
                             .fill(Theme.highlight)
-                            .frame(height: Theme.rowHeight)
-                            .offset(y: offset)
-                            .animation(reduceMotion ? nil : Motion.selection, value: offset)
+                            .frame(height: placement.height)
+                            .offset(y: placement.offset)
+                            .animation(reduceMotion ? nil : Motion.selection, value: placement.offset)
+                            .animation(reduceMotion ? nil : Motion.selection, value: placement.height)
                             .id("highlight-\(model.targetApp?.pid ?? 0)-\(model.query)")
                             .allowsHitTesting(false)
                     }
@@ -54,26 +55,28 @@ struct ResultsList: View {
                                 SectionHeader(title: title)
                             case .row(let ranked, let index):
                                 CommandRow(
-                                    ranked: ranked, appName: model.targetApp?.name, showsFullPath: !isGrouped)
-                                    .rowRise(index: index, entrance: entrance)
-                                    .id(ranked.id)
-                                    .onTapGesture { actions.runCommand(ranked.command) }
-                                    .onContinuousHover { phase in hover(phase, id: ranked.id) }
+                                    ranked: ranked, appName: model.targetApp?.name, showsFullPath: !isGrouped
+                                )
+                                .rowRise(index: index, entrance: entrance)
+                                .id(ranked.id)
+                                .onTapGesture { actions.runCommand(ranked.command) }
+                                .onContinuousHover { phase in hover(phase, id: ranked.id) }
                             }
                         }
                     }
                 }
                 .padding(.horizontal, 12)
                 .padding(.top, 2)
-                .padding(.bottom, 96)
+                .padding(.bottom, Theme.listFade)
             }
             .mask {
                 VStack(spacing: 0) {
                     Rectangle()
                     LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
-                        .frame(height: 96)
+                        .frame(height: Theme.listFade)
                 }
             }
+            .padding(.bottom, Theme.footerInset)
             .onChange(of: selectedID) {
                 guard let selectedID else { return }
                 proxy.scrollTo(selectedID)
@@ -106,8 +109,7 @@ struct ResultsList: View {
                 let group = ranked.command.path.first ?? "Menu"
                 if group != currentGroup {
                     currentGroup = group
-                    let title = group == model.targetApp?.name ? "App menu" : group
-                    entries.append(.section(id: "\(index)-\(group)", title: title))
+                    entries.append(.section(id: "\(index)-\(group)", title: group))
                 }
             }
             entries.append(.row(ranked, index: index))
@@ -115,11 +117,12 @@ struct ResultsList: View {
         return entries
     }
 
-    private func selectedOffset(in entries: [ListEntry], selectedID: String?) -> CGFloat? {
+    private func selectedPlacement(in entries: [ListEntry], selectedID: String?) -> (offset: CGFloat, height: CGFloat)?
+    {
         guard let selectedID else { return nil }
         var y: CGFloat = 0
         for entry in entries {
-            if case .row(let ranked, _) = entry, ranked.id == selectedID { return y }
+            if case .row(let ranked, _) = entry, ranked.id == selectedID { return (y, entry.height) }
             y += entry.height
         }
         return nil
@@ -134,8 +137,10 @@ private struct SectionHeader: View {
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(Theme.text3)
             .padding(.horizontal, 10)
-            .padding(.top, 8)
-            .frame(maxWidth: .infinity, minHeight: Theme.sectionHeight, maxHeight: Theme.sectionHeight, alignment: .leading)
+            .padding(.top, 10)
+            .frame(
+                maxWidth: .infinity, minHeight: Theme.sectionHeight, maxHeight: Theme.sectionHeight, alignment: .leading
+            )
             .accessibilityAddTraits(.isHeader)
     }
 }

@@ -4,13 +4,14 @@ import SwiftUI
 struct KeyCap: View {
     let text: String
     var onAccent = false
+    var small = false
 
     var body: some View {
         Text(text)
-            .font(.system(size: 11.5, weight: .medium))
+            .font(.system(size: small ? 10.5 : 11.5, weight: .medium))
             .foregroundStyle(onAccent ? Theme.accentInk.opacity(0.8) : Theme.text2)
-            .frame(minWidth: 20, minHeight: 20)
-            .padding(.horizontal, text.count > 1 ? 5 : 0)
+            .frame(minWidth: small ? 17 : 20, minHeight: small ? 17 : 20)
+            .padding(.horizontal, text.count > 1 ? 4 : 0)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(onAccent ? Theme.accentInk.opacity(0.1) : Theme.keyFill)
@@ -29,8 +30,8 @@ struct CapsuleButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .padding(.horizontal, 10)
-            .frame(height: 32)
+            .padding(.horizontal, 8)
+            .frame(height: Theme.footerHeight - 6)
             .background(Capsule().fill(hovering || configuration.isPressed ? Theme.highlight : .clear))
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(Motion.easeOut(0.12), value: configuration.isPressed)
@@ -44,7 +45,7 @@ struct CapsuleButtonStyle: ButtonStyle {
 struct RoundGlassButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .frame(width: 44, height: 44)
+            .frame(width: Theme.footerHeight, height: Theme.footerHeight)
             .cueGlass(in: Circle())
             .shadow(color: .black.opacity(0.18), radius: 9, y: 6)
             .scaleEffect(configuration.isPressed ? 0.95 : 1)

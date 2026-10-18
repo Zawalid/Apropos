@@ -36,7 +36,7 @@ struct PaletteView: View {
                     selectedIndex: state.actionIndex, actions: actions
                 )
                 .padding(.trailing, 14)
-                .padding(.bottom, 68)
+                .padding(.bottom, 56)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                 .transition(
                     reduceMotion ? .opacity : .scale(scale: 0.96, anchor: .bottomTrailing).combined(with: .opacity))
@@ -59,24 +59,24 @@ private struct SearchHeader: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 20, weight: .regular))
+                    .font(.system(size: 17, weight: .regular))
                     .foregroundStyle(Theme.text2)
                     .accessibilityHidden(true)
                 TextField(placeholder, text: Bindable(model).query)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 22))
-                    .tracking(-0.22)
+                    .font(.system(size: 18))
+                    .tracking(-0.18)
                     .foregroundStyle(Theme.text)
                     .focused(searchFocused)
                     .autocorrectionDisabled()
                     .accessibilityLabel("Search commands")
             }
             .padding(.horizontal, 22)
-            .padding(.top, 20)
-            .padding(.bottom, 14)
+            .padding(.top, 16)
+            .padding(.bottom, 10)
             ChipRow(app: model.targetApp, items: context.itemsPID == model.targetApp?.pid ? context.items : [])
                 .padding(.horizontal, 22)
-                .padding(.bottom, 12)
+                .padding(.bottom, 10)
         }
     }
 
@@ -97,7 +97,7 @@ private struct ChipRow: View {
                 ContextChipView(chip: chip).chipRise(index: index)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 26, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
         .clipped()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Current context")
@@ -110,21 +110,20 @@ private struct ContextChipView: View {
     var body: some View {
         HStack(spacing: 6) {
             switch chip.leading {
-            case .appIcon(let pid): AppIcon(pid: pid, size: 16)
+            case .appIcon(let pid): AppIcon(pid: pid, size: 14)
             case .symbol(let name):
                 Image(systemName: name)
-                    .font(.system(size: 11.5, weight: .medium))
+                    .font(.system(size: 10.5, weight: .medium))
                     .accessibilityHidden(true)
             }
             Text(chip.text)
-                .font(.system(size: 12.5, weight: chip.isApp ? .medium : .regular))
+                .font(.system(size: 12, weight: chip.isApp ? .medium : .regular))
                 .lineLimit(1)
         }
         .foregroundStyle(chip.isApp ? Theme.text : Theme.text2)
         .padding(.horizontal, 10)
-        .frame(height: 26)
+        .frame(height: 22)
         .background(Capsule().fill(Theme.chip))
-        .overlay(Capsule().strokeBorder(Theme.chipEdge, lineWidth: 1))
         .fixedSize()
     }
 }

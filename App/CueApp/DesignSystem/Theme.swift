@@ -12,12 +12,17 @@ enum Theme {
         static let xl: CGFloat = 24
     }
 
-    static let panelRadius: CGFloat = 26
+    static let panelRadius: CGFloat = 22
     static let rowRadius: CGFloat = 12
     static let tileRadius: CGFloat = 8
+    static let tileSize: CGFloat = 24
     static let controlRadius: CGFloat = 8
-    static let rowHeight: CGFloat = 46
-    static let sectionHeight: CGFloat = 32
+    static let rowHeight: CGFloat = 38
+    static let sectionHeight: CGFloat = 30
+    /// The list stops this far above the panel's bottom edge so the floating footer has its own strip.
+    static let footerInset: CGFloat = 54
+    static let listFade: CGFloat = 24
+    static let footerHeight: CGFloat = 34
 
     private static func adaptive(light: NSColor, dark: NSColor) -> Color {
         Color(
