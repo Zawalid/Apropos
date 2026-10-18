@@ -93,6 +93,23 @@
         static let paletteSendFailed = palette("palette-send-failed", PaletteOptions(app: "safari", send: .failure))
         static let paletteSendFiles = palette("palette-send-files", PaletteOptions(app: "finder", send: .list))
 
+        // Sequences
+
+        static let paletteSequenceRow = palette(
+            "palette-sequence-row", PaletteOptions(app: "safari", sequence: .row))
+        static let paletteSequenceDraft = palette(
+            "palette-sequence-draft", PaletteOptions(app: "safari", sequence: .level))
+        static let paletteSequenceConfirm = palette(
+            "palette-sequence-confirm", PaletteOptions(app: "safari", sequence: .confirm))
+        static let paletteSequenceAsk = palette(
+            "palette-sequence-ask", PaletteOptions(app: "safari", sequence: .ask))
+        static let paletteSequenceFailed = palette(
+            "palette-sequence-failed", PaletteOptions(app: "safari", sequence: .failure, sequenceFails: true))
+        static let paletteSequenceSave = palette(
+            "palette-sequence-save", PaletteOptions(app: "safari", sequence: .save))
+        static let paletteSequenceSaved = palette(
+            "palette-sequence-saved", PaletteOptions(app: "safari", sequence: .saved))
+
         // Palette appearance settings
 
         static let paletteCompact = palette("palette-compact", PaletteOptions(size: .compact))
@@ -139,7 +156,8 @@
             palettePermission, paletteReadFailed, paletteRunFailed, paletteActions, paletteChips, paletteUsuallyNext,
             paletteUsuallyNextOne,
             paletteUsuallyNextFresh, paletteSendRows, paletteSendList, paletteSendConfirm, paletteSendFailed,
-            paletteSendFiles, paletteCompact,
+            paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceConfirm, paletteSequenceAsk,
+            paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaved, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,
             settingsGeneral, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
             settingsUpdates, settingsAbout, settingsSearch, onboardingWelcome, onboardingPermission,
@@ -195,6 +213,16 @@
     #Preview("Palette, send to, confirm") { PairedPreview(PreviewCatalog.paletteSendConfirm) }
     #Preview("Palette, send to, failed") { PairedPreview(PreviewCatalog.paletteSendFailed) }
     #Preview("Palette, send files") { PairedPreview(PreviewCatalog.paletteSendFiles) }
+
+    // MARK: Sequences
+
+    #Preview("Palette, sequence draft row") { PairedPreview(PreviewCatalog.paletteSequenceRow) }
+    #Preview("Palette, sequence draft level") { PairedPreview(PreviewCatalog.paletteSequenceDraft) }
+    #Preview("Palette, sequence, confirm") { PairedPreview(PreviewCatalog.paletteSequenceConfirm) }
+    #Preview("Palette, sequence, question") { PairedPreview(PreviewCatalog.paletteSequenceAsk) }
+    #Preview("Palette, sequence, failed") { PairedPreview(PreviewCatalog.paletteSequenceFailed) }
+    #Preview("Palette, sequence, save as command") { PairedPreview(PreviewCatalog.paletteSequenceSave) }
+    #Preview("Palette, sequence, saved") { PairedPreview(PreviewCatalog.paletteSequenceSaved) }
 
     // MARK: Interface size and row icons
 

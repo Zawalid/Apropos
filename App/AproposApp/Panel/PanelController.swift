@@ -126,6 +126,8 @@ final class PanelController: NSObject {
             if let move = env["APROPOS_PREVIEW_MOVE"].flatMap(Int.init) { model.moveSelection(by: move) }
             if env["APROPOS_PREVIEW_ACTIONS"] != nil { toggleActions() }
             if let scene = env["APROPOS_PREVIEW_SEND"] { DebugFixtures.applySend(scene, model: model) }
+            // A sequence scene shares the sample context of the send-to scenes.
+            if let scene = env["APROPOS_PREVIEW_SEQUENCE"] { DebugFixtures.applySend(scene, model: model) }
         }
     #endif
 

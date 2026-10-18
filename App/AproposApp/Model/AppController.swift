@@ -146,7 +146,8 @@ final class AppController {
         self.context = ContextModel(settings: settings, service: service)
         #if DEBUG
             if AgentMode.isOn {
-                DebugFixtures.sendHooks = DebugFixtures.SendHooks(send: send, actions: actions, usage: usage)
+                DebugFixtures.sendHooks = DebugFixtures.SendHooks(
+                    send: send, actions: actions, usage: usage, sequences: sequences)
             }
         #endif
     }

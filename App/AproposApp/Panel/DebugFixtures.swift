@@ -119,6 +119,7 @@
             let send: SendToCenter
             let actions: ContextActionCenter
             let usage: UsageController
+            let sequences: SequenceCenter
         }
 
         @MainActor static var sendHooks: SendHooks?
@@ -134,8 +135,13 @@
                 values: sendValues(bundleID: app.bundleID))
             hooks.actions.update(with: snapshot)
             hooks.send.update(with: snapshot)
+            hooks.sequences.update(with: snapshot)
             seedSendUsage(hooks.usage.store)
             hooks.send.refresh()
+            if let sequence = SequenceScene(rawValue: scene) {
+                Task { await DebugSequences.apply(sequence, model: model) }
+                return
+            }
             guard scene != "rows" else { return }
             Task {
                 guard

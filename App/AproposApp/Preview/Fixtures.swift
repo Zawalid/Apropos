@@ -97,6 +97,10 @@
         var failedRun = false
         /// Shows a state of the send-to flow, over a browser (or Finder, for files) with a selection.
         var send: SendScene?
+        /// Shows a state of the sequence builder, over a browser with a selection.
+        var sequence: SequenceScene?
+        /// Makes the sample sequence fail at its second step, for the failure scene.
+        var sequenceFails = false
     }
 
     /// The models behind one palette preview, wired the way `PanelController` wires them but over scratch stores.
@@ -111,6 +115,7 @@
         let options: PaletteOptions
         let send: SendToCenter
         let contextActions: ContextActionCenter
+        let sequences: SequenceCenter
 
         init(_ options: PaletteOptions) {
             self.options = options
@@ -163,13 +168,31 @@
             model.attachSend(send)
             contextActions = ContextActionCenter()
             contextActions.attach(to: model)
-            if options.send != nil {
+            // Sequences: the real center over fake services and a scratch store, so nothing is ever run or saved for real.
+            let fakeSend = AppSendServices.fake(failing: options.sequenceFails)
+            let parts = AppSequences.parts(
+                functions: .builtin, actions: AppSequences.fakeActions(failing: options.sequenceFails), send: fakeSend)
+            let library = ActionPackLibrary.bundled()
+            let commandsStore = UserCommandStore(
+                directory: FileManager.default.temporaryDirectory.appendingPathComponent(
+                    "apropos-preview-commands-\(UUID().uuidString)", isDirectory: true))
+            let sendCenter = send
+            sequences = SequenceCenter(
+                store: commandsStore, runner: parts.runner,
+                catalogue: {
+                    SequenceCatalogue(
+                        contextActions: library.actions, userCommands: commandsStore.commands,
+                        destinations: sendCenter.sequenceDestinations)
+                })
+            model.attachSequences(sequences)
+            if options.send != nil || options.sequence != nil {
                 DebugFixtures.seedSendUsage(store)
                 let snapshot = ContextSnapshot(
                     appName: target.name, bundleID: target.bundleID, pid: target.pid, capturedAt: Date(),
                     values: DebugFixtures.sendValues(bundleID: target.bundleID))
                 contextActions.update(with: snapshot)
                 send.update(with: snapshot)
+                sequences.update(with: snapshot)
             }
             model.query = options.query
             state.actionsOpen = options.actionsOpen
@@ -180,6 +203,7 @@
 
         /// Work that needs the run loop: the failed run that fills the footer's note.
         func settle() async {
+            if let scene = options.sequence { await DebugSequences.apply(scene, model: model) }
             if let scene = options.send, scene != .rows {
                 let generic = model.results.first {
                     $0.command.id.hasPrefix("send:") && $0.command.title.hasSuffix("to...")

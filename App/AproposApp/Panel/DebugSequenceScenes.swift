@@ -1,0 +1,60 @@
+#if DEBUG
+    import Apropos
+    import Foundation
+
+    /// Which state of the sequence builder a palette scene shows.
+    enum SequenceScene: String {
+        /// The list with the draft row at the head.
+        case row
+        /// The draft level: Run, Save, Discard and the steps.
+        case level
+        /// The combined confirmation waiting for its Return.
+        case confirm
+        /// A question asked in the search field before the run.
+        case ask
+        /// A run that stopped at a step, with the steps marked.
+        case failure
+        /// The form that saves the draft as a command.
+        case save
+        /// The list again, with the notice of where the command went.
+        case saved
+    }
+
+    /// Debug builds only: puts the palette into one state of the sequence builder by doing what a person would do, through
+    /// the real model, over fake services. The draft is "uppercase, then send to Notes" (Mail for the confirmation).
+    @MainActor
+    enum DebugSequences {
+        /// Builds the sample draft and walks to `scene`. The palette must already hold a snapshot with a selection.
+        static func apply(_ scene: SequenceScene, model: PaletteModel) async {
+            guard let sequences = model.sequences else { return }
+            func row(_ id: String) -> Command? { model.results.first { $0.command.id == id }?.command }
+
+            guard let upper = row("ctx:text.upper") else { return }
+            model.addToSequence(upper)
+            // A destination is added from the destination list, the way a person adds it.
+            guard let generic = row("send:text") else { return }
+            _ = await model.run(generic)
+            if let destination = row(scene == .confirm ? "send:text>dest:mail" : "send:text>dest:notes") {
+                model.addToSequence(destination)
+            }
+            _ = model.goBack()
+            if scene == .row { return }
+
+            if scene == .ask, let first = sequences.steps.first { sequences.setAsking(true, stepID: first.id) }
+            guard let top = model.results.first?.command else { return }
+            _ = await model.run(top)
+            if scene == .level { return }
+            if scene == .save || scene == .saved {
+                if let save = row("seq:save") { _ = await model.run(save) }
+                if scene == .saved {
+                    sequences.form.name = "Shout and note"
+                    sequences.form.alias = "shout"
+                    model.saveSequence()
+                }
+                return
+            }
+            // confirm, ask and failure all start with Run.
+            if let run = row("seq:run") { _ = await model.run(run) }
+        }
+    }
+#endif
