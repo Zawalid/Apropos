@@ -8,3 +8,5 @@ build/
 App/Apropos.xcodeproj/
 
 .claude/worktrees/
+
+.playwright-mcp/
