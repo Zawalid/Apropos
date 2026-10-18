@@ -10,3 +10,6 @@ App/Apropos.xcodeproj/
 .claude/worktrees/
 
 .playwright-mcp/
+
+# recording spike build output
+scratch/recording-spike/build/

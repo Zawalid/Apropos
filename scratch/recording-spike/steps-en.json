@@ -1,0 +1,8 @@
+[
+  {"kind": "setValue", "locator": {"role": "AXTextField", "identifier": "name-field"}, "value": "hello"},
+  {"kind": "press", "locator": {"role": "AXButton", "identifier": "save-button", "title": "Save"}},
+  {"kind": "press", "locator": {"role": "AXButton", "title": "Export"}},
+  {"kind": "press", "locator": {"menuPath": ["File", "Export as PDF"]}},
+  {"kind": "press", "locator": {"role": "AXButton", "title": "Open sheet"}},
+  {"kind": "press", "locator": {"role": "AXButton", "identifier": "sheet-done"}}
+]
