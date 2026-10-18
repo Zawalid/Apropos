@@ -14,6 +14,12 @@ is in context sensing, teachable commands and maintained per-app packs. Raycast 
 extension authors and has no app-shaped command list. Spotlight on macOS 26 has actions, but only for apps that
 adopted App Intents.
 
+## Positioning (decided 2026-10-18)
+
+Cue runs alongside Raycast, not instead of it. Raycast stays the launcher (apps, files, clipboard, windows, snippets).
+Cue is the context companion: it answers "what can I do right now, in this app, with this selection". It has its
+own hotkey (default Option+Space, Raycast's is Command+Space) and never launches apps or manages the clipboard.
+
 ## Goals
 - Palette that reshapes around the frontmost app and context with no setup
 - Instant open, fluid animation, fully keyboard-driven, native look
@@ -22,7 +28,8 @@ adopted App Intents.
 - Free core, Pro tier for sync and team packs (call)
 
 ## Non-goals (v1)
-- Rebuilding Raycast's clipboard history, snippets, window management, calculator
+- Anything a general launcher does: app launching, file search, clipboard history, snippets, window management,
+  calculator. Raycast owns those (see Positioning)
 - A natural-language agent that operates the whole screen
 - Mac App Store distribution, iOS companion, a pack marketplace
 
