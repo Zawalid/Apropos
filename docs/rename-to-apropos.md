@@ -56,16 +56,16 @@ Real users (starting with Walid) already have data under the old name. On first 
 - **Debug signed binary and probe:** re-sign and re-grant for `apropos-probe`.
 
 ## Checklist
-- [ ] Baseline green, tree clean
-- [ ] `LegacyMigration` and tests committed
-- [ ] Package, targets, folders, imports renamed, project regenerated
-- [ ] Bundle id, subsystem, env vars, notifications, hotkey signature renamed
-- [ ] All UI strings say Apropos (grep for `\bCue\b` and `cue` finds only history notes)
-- [ ] Scripts, CI, docs, README, CHANGELOG, prototypes updated
-- [ ] No executable named `apropos` anywhere
-- [ ] `swift test` passes
-- [ ] App built and launched, migration verified with a copy of real data, Accessibility re-grant flow verified
-- [ ] Screenshots of panel and Settings show the new name
+- [x] Baseline green, tree clean
+- [x] `LegacyMigration` and tests committed
+- [x] Package, targets, folders, imports renamed, project regenerated
+- [x] Bundle id, subsystem, env vars, notifications, hotkey signature renamed
+- [x] All UI strings say Apropos (grep for `\bCue\b` and `cue` finds only history notes)
+- [x] Scripts, CI, docs, README, CHANGELOG, prototypes updated
+- [x] No executable named `apropos` anywhere
+- [x] `swift test` passes
+- [ ] App built (agent mode only, never launched against real data) and launched, migration verified with a copy of real data, Accessibility re-grant flow verified
+- [x] Screenshots of panel and Settings show the new name
 - [ ] Report lists what was and was not verified
 
 ## Folder

@@ -25,7 +25,7 @@ jobs:
       - name: Build the app
         run: |
           xcodebuild build \
-            -project App/Apropos.xcodeproj -scheme Cue \
+            -project App/Apropos.xcodeproj -scheme Apropos \
             -destination 'platform=macOS' \
             CODE_SIGNING_ALLOWED=NO
 
