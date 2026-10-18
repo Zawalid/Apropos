@@ -19,6 +19,8 @@ public enum ActionError: Error, Equatable, Sendable {
     case unavailable(String)
     /// A `uiSteps` command stopped at a step.
     case uiStepFailed(StepFailure)
+    /// A `sequence` command stopped, was cancelled or ran out of time. The sentence names the step, never a value.
+    case sequenceFailed(String)
 
     public var message: String {
         switch self {
@@ -34,6 +36,7 @@ public enum ActionError: Error, Equatable, Sendable {
         case .unknownFunction: "That action is not available in this version."
         case .unavailable(let reason): reason
         case .uiStepFailed(let failure): failure.message
+        case .sequenceFailed(let sentence): sentence
         }
     }
 }

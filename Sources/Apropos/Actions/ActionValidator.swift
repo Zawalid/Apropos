@@ -22,6 +22,7 @@ public enum ActionValidationError: Error, Equatable, Sendable, CustomStringConve
     case optionInjection
     case tooLarge
     case invalidSteps(UIStepsValidationError)
+    case invalidSequence(SequenceIssue)
 
     public var description: String {
         switch self {
@@ -44,6 +45,7 @@ public enum ActionValidationError: Error, Equatable, Sendable, CustomStringConve
         case .emptyScript: "script is empty"
         case .tooLarge: "a field is too large"
         case .invalidSteps(let error): error.description
+        case .invalidSequence(let issue): issue.description
         case .optionInjection: "put -- before a value that is a whole argument, or send it on standard input"
         }
     }
@@ -72,8 +74,9 @@ public enum ActionValidator {
         guard !action.symbol.isEmpty, !action.symbol.contains(where: \.isWhitespace) else {
             throw ActionValidationError.badSymbol
         }
-        // Steps are bound to the app they act in, which is context enough.
+        // Steps are bound to the app they act in, which is context enough. A sequence declares its own inputs.
         if case .uiSteps = action.backend {
+        } else if case .sequence = action.backend {
         } else if requireContext, action.requires.isEmpty {
             throw ActionValidationError.noRequirements
         }
@@ -108,6 +111,10 @@ public enum ActionValidator {
             break
         case .uiSteps(let steps):
             if let first = UIStepsValidator.issues(in: steps).first { throw ActionValidationError.invalidSteps(first) }
+        case .sequence(let sequence):
+            if let first = SequenceValidator.issues(in: sequence).first {
+                throw ActionValidationError.invalidSequence(first)
+            }
         }
         for variable in used {
             let provided = variable.requirements.contains { action.requires.contains($0) }

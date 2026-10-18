@@ -110,6 +110,8 @@ enum SequenceEffects {
         case .urlScheme(let template): found.append(effect(.opensLink, "Open \(linkDescription(template))"))
         case .keyPress: found.append(effect(.pressesKeys, "Press keys in the app in front: \(action.title)"))
         case .uiSteps(let backend): found += backend.steps.map { effect(.menuSteps, $0.derivedSummary) }
+        // A sequence cannot be a step of another sequence: the planner flags it and nothing runs.
+        case .sequence: break
         }
         // A named output is captured for the next step and never delivered.
         if action.output == .replaceSelection, !captured {

@@ -21,6 +21,7 @@ public struct ActionServices: Sendable {
     public var postKey: @Sendable (KeyPressBackend) async -> Bool
     public var replaceSelection: @Sendable (_ text: String, _ pid: pid_t) async -> ReplaceResult
     public var uiSteps: UIStepsExecutor
+    public var sequences: SequenceExecutor
 
     public init(
         process: @escaping @Sendable (ProcessRequest) async throws -> ProcessOutput,
@@ -29,7 +30,8 @@ public struct ActionServices: Sendable {
         notify: @escaping @Sendable (String) async -> Void,
         postKey: @escaping @Sendable (KeyPressBackend) async -> Bool,
         replaceSelection: @escaping @Sendable (String, pid_t) async -> ReplaceResult,
-        uiSteps: UIStepsExecutor = .live
+        uiSteps: UIStepsExecutor = .live,
+        sequences: SequenceExecutor = .unavailable
     ) {
         self.process = process
         self.openURL = openURL
@@ -38,6 +40,7 @@ public struct ActionServices: Sendable {
         self.postKey = postKey
         self.replaceSelection = replaceSelection
         self.uiSteps = uiSteps
+        self.sequences = sequences
     }
 
     public static let live = ActionServices(

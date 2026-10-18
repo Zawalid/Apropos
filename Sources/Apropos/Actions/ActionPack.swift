@@ -20,6 +20,7 @@ import Foundation
 /// - `urlScheme`: `url` (template; values are percent-encoded)
 /// - `keyPress`: `keyCode`, `modifiers` (`command`, `option`, `shift`, `control`)
 /// - `uiSteps`: `version`, `steps` (see docs/ui-steps.md)
+/// - `sequence`: `sequence` with `version` and `steps` (see docs/sequences.md)
 struct ActionDefinition: Codable {
     struct BackendDefinition: Codable {
         var type: String
@@ -35,6 +36,7 @@ struct ActionDefinition: Codable {
         var modifiers: [String]?
         var version: Int?
         var steps: [UIStep]?
+        var sequence: SequenceBackend?
 
         init(type: String) { self.type = type }
     }
@@ -87,6 +89,8 @@ struct ActionDefinition: Codable {
             built = .uiSteps(
                 UIStepsBackend(
                     version: backend.version ?? UIStepsBackend.currentVersion, steps: try need(backend.steps, "steps")))
+        case "sequence":
+            built = .sequence(try need(backend.sequence, "sequence"))
         default:
             throw ConversionError.unknownBackend(backend.type)
         }
@@ -145,6 +149,9 @@ struct ActionDefinition: Codable {
             backend.type = "uiSteps"
             backend.version = steps.version
             backend.steps = steps.steps
+        case .sequence(let sequence):
+            backend.type = "sequence"
+            backend.sequence = sequence
         }
         self.backend = backend
     }

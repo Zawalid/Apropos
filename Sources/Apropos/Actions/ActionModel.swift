@@ -173,6 +173,8 @@ public enum ActionBackend: Sendable, Equatable {
     case keyPress(KeyPressBackend)
     /// Menu picks (and later presses) in other apps through Accessibility. See `UIStepsBackend`.
     case uiSteps(UIStepsBackend)
+    /// An ordered list of steps of different kinds, with values passed between them. See `Sequencer`.
+    case sequence(SequenceBackend)
 }
 
 /// One thing Apropos can do with the current context.

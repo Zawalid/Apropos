@@ -1,7 +1,7 @@
 import Foundation
 
 /// Why a sequence was refused. Messages name the step by position and never repeat its content.
-public enum SequenceIssue: Error, Equatable, Sendable, CustomStringConvertible {
+public indirect enum SequenceIssue: Error, Equatable, Sendable, CustomStringConvertible {
     case unsupportedVersion(Int)
     case noSteps
     case tooManySteps(limit: Int)

@@ -33,6 +33,19 @@ public struct ActionEngine: Sendable {
     private func execute(
         _ action: ContextAction, values: ContextValues, target: TargetApp?, confirmed: Bool
     ) async -> Result<ActionOutcome, ActionError> {
+        switch await produce(action, values: values, target: target, confirmed: confirmed) {
+        case .failure(let error): return .failure(error)
+        case .success(let produced):
+            if Task.isCancelled { return .failure(.cancelled) }
+            return .success(await deliver(produced, for: action, pid: target?.pid))
+        }
+    }
+
+    /// Everything `run` does except delivering the result text: the checks, the backend, the timeout. A sequence uses it
+    /// to hand a step's text to the next step. Nothing is logged here.
+    public func produce(
+        _ action: ContextAction, values: ContextValues, target: TargetApp?, confirmed: Bool = false
+    ) async -> Result<String?, ActionError> {
         guard action.apps.allows(target?.bundleID) else { return .failure(.notApplicable) }
         for requirement in ContextRequirement.allCases where action.requires.contains(requirement) {
             if !values.has(requirement) { return .failure(.missingContext(requirement)) }
@@ -45,7 +58,7 @@ public struct ActionEngine: Sendable {
         let produced: String?
         do {
             produced = try await withTimeout(action.timeout) {
-                try await runBackend(action, input: input, target: target)
+                try await runBackend(action, input: input, target: target, confirmed: confirmed)
             }
         } catch let error as ActionError {
             return .failure(error)
@@ -59,8 +72,7 @@ public struct ActionEngine: Sendable {
         } catch {
             return .failure(.backendFailed(status: nil))
         }
-        if Task.isCancelled { return .failure(.cancelled) }
-        return .success(await deliver(produced, for: action, pid: target?.pid))
+        return .success(produced)
     }
 
     static func map(_ error: ProcessRunError) -> ActionError {
@@ -90,7 +102,9 @@ public struct ActionEngine: Sendable {
 
     // MARK: Backends
 
-    private func runBackend(_ action: ContextAction, input: ActionInput, target: TargetApp?) async throws -> String? {
+    private func runBackend(
+        _ action: ContextAction, input: ActionInput, target: TargetApp?, confirmed: Bool
+    ) async throws -> String? {
         switch action.backend {
         case .function(let name):
             guard let function = functions[name] else { throw ActionError.unknownFunction(name) }
@@ -133,6 +147,29 @@ public struct ActionEngine: Sendable {
             let report = await services.uiSteps.run(steps, action.id.rawValue, target, action.timeout)
             if let failure = report.failure { throw ActionError.uiStepFailed(failure) }
             return nil
+
+        case .sequence(let sequence):
+            let execution = SequenceExecution(
+                actionID: action.id, values: input.values, target: target, confirmed: confirmed,
+                timeout: action.timeout)
+            return try await Self.finish(await services.sequences.run(sequence, execution), services: services)
+        }
+    }
+
+    /// Turns the report of a sequence into the engine's vocabulary.
+    private static func finish(_ report: SequenceReport, services: ActionServices) async throws -> String? {
+        switch report.outcome {
+        case .completed:
+            return nil
+        case .completedWithFailures:
+            if let sentence = report.message { await services.notify(sentence) }
+            return nil
+        case .needsConfirmation:
+            throw ActionError.confirmationRequired
+        case .needsAnswers, .refused:
+            throw ActionError.unavailable(report.message ?? "That sequence cannot run.")
+        case .stopped, .cancelled, .timedOut:
+            throw ActionError.sequenceFailed(report.message ?? "The sequence stopped.")
         }
     }
 

@@ -230,6 +230,7 @@ extension ActionBackend {
         case .urlScheme: "urlScheme"
         case .keyPress: "keyPress"
         case .uiSteps: "uiSteps"
+        case .sequence: "sequence"
         }
     }
 }

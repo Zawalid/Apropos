@@ -13,9 +13,13 @@ public enum CommandRisk: String, Sendable, Equatable, CaseIterable {
     case replacesSelection
     /// Chooses menu items in other apps.
     case controlsApps
+    /// Runs several steps in a row, each of which can do something of its own.
+    case runsSequence
 
     /// Risks that make an imported command wait for approval.
-    public var needsApproval: Bool { self == .runsProgram || self == .runsAppleScript || self == .controlsApps }
+    public var needsApproval: Bool {
+        self == .runsProgram || self == .runsAppleScript || self == .controlsApps || self == .runsSequence
+    }
 
     public var warning: String {
         switch self {
@@ -26,6 +30,7 @@ public enum CommandRisk: String, Sendable, Equatable, CaseIterable {
         case .opensLink: "Opens a link."
         case .replacesSelection: "Replaces the text you have selected."
         case .controlsApps: "Chooses menu items in other apps."
+        case .runsSequence: "Runs several steps in a row, which can send what you select to other apps."
         }
     }
 }
@@ -41,6 +46,7 @@ public enum CommandSummary {
         case .keyPress: risks.append(.pressesKeys)
         case .urlScheme: risks.append(.opensLink)
         case .uiSteps: risks.append(.controlsApps)
+        case .sequence: risks.append(.runsSequence)
         case .function: break
         }
         if command.output == .replaceSelection { risks.append(.replacesSelection) }
@@ -79,6 +85,8 @@ public enum CommandSummary {
             lines += steps.steps.prefix(8).map { "    " + clipped($0.derivedSummary) }
             if steps.steps.count > 8 { lines.append("    ...") }
             lines.append("Reliability: \(steps.fragility.title). \(steps.fragility.explanation)")
+        case .sequence(let sequence):
+            lines += SequenceSummary.lines(for: sequence)
         }
         if !command.requires.isEmpty {
             lines.append("Needs: " + command.requires.map(\.rawValue).sorted().joined(separator: ", ") + ".")

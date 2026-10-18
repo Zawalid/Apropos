@@ -99,11 +99,14 @@ public enum PlanRefusal: Equatable, Sendable {
     case invalid(SequenceIssue)
     case untrusted
     case blocked(step: Int, PlanProblem)
+    /// No sequencer is connected to the engine that was asked to run it.
+    case notConnected
 
     public var message: String {
         switch self {
         case .invalid(let issue): issue.description
         case .untrusted: "This sequence is waiting for your approval."
+        case .notConnected: "Sequences are not available here."
         case .blocked(let step, let problem): "Step \(step + 1): \(problem.message)."
         }
     }
@@ -253,5 +256,5 @@ extension SequenceValueKind {
 
 extension ActionBackend {
     /// Whether this is a sequence, which cannot be a step of another sequence.
-    var isSequence: Bool { false }
+    var isSequence: Bool { if case .sequence = self { true } else { false } }
 }
