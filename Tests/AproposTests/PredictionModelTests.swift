@@ -85,8 +85,11 @@ struct PredictionModelTests {
 
     @Test func secondOrderBeatsFirstOrderWhenItIsMoreSpecific() throws {
         // After "Save": "Close" if "Open" came before it, "Share" if "New" did.
-        let open = id(safari, "Open"), new = id(safari, "New"), save = id(safari, "Save")
-        let close = id(safari, "Close"), share = id(safari, "Share")
+        let open = id(safari, "Open")
+        let new = id(safari, "New")
+        let save = id(safari, "Save")
+        let close = id(safari, "Close")
+        let share = id(safari, "Share")
         var events: [RunEvent] = []
         for index in 0..<10 {
             let base = monday9 - Double(20 - index) * 3_600
@@ -108,7 +111,8 @@ struct PredictionModelTests {
     }
 
     @Test func timeOfDayPriorSeparatesMorningFromEvening() throws {
-        let news = id(safari, "News"), game = id(safari, "Games")
+        let news = id(safari, "News")
+        let game = id(safari, "Games")
         var events: [RunEvent] = []
         for index in 0..<14 {
             // 09:00 and 21:00 on consecutive Mondays..Sundays.
@@ -125,7 +129,8 @@ struct PredictionModelTests {
     }
 
     @Test func contextKindsShiftThePrediction() throws {
-        let format = id(safari, "Format"), search = id(safari, "Search")
+        let format = id(safari, "Format")
+        let search = id(safari, "Search")
         var events: [RunEvent] = []
         for index in 0..<12 {
             let when = monday9 - Double(30 - index) * 3_600
@@ -179,7 +184,8 @@ struct PredictionModelTests {
     }
 
     @Test func frecencyIsTheColdStartFallback() throws {
-        let save = id(safari, "Save"), close = id(safari, "Close")
+        let save = id(safari, "Save")
+        let close = id(safari, "Close")
         let prior = FrecencyPrior(scores: [save: 900, close: 100])
         let model = PredictionModel(calendar: Self.utc)
         let predictions = model.predict(PredictionContext(app: safari, date: monday9), prior: prior)
@@ -202,7 +208,8 @@ struct PredictionModelTests {
     @Test func defaultCandidatesStayInsideTheFrontmostApp() {
         let model = model(routine(repeats: 10, start: monday9 - day))
         let build = id(xcode, "Build", menu: "Product")
-        let predictions = model.predict(PredictionContext(app: xcode, recent: [id(terminal, "Commit", menu: "Git")], date: monday9))
+        let predictions = model.predict(
+            PredictionContext(app: xcode, recent: [id(terminal, "Commit", menu: "Git")], date: monday9))
         #expect(predictions.allSatisfy { $0.command.bundleID == xcode })
         _ = build
     }
@@ -216,17 +223,25 @@ struct PredictionModelTests {
         let context = PredictionContext(app: terminal, recent: [tests], date: monday9)
         let before = try #require(model(base).predict(context).first { $0.command == commit }).confidence
 
-        let dismissed = base + [
-            RunEvent(kind: .dismiss, at: monday9 - 100, command: commit, app: terminal)
-        ].compactMap { $0 }
+        let dismissed =
+            base
+            + [
+                RunEvent(kind: .dismiss, at: monday9 - 100, command: commit, app: terminal)
+            ].compactMap { $0 }
         let afterDismiss = try #require(model(dismissed).predict(context).first { $0.command == commit }).confidence
         #expect(afterDismiss < before * 0.6)
 
-        let ignored = base + (0..<4).map { event(id(terminal, "Other", menu: "Git"), app: terminal, at: monday9 - 500 + Double($0), offered: commit) }
+        let ignored =
+            base
+            + (0..<4).map {
+                event(
+                    id(terminal, "Other", menu: "Git"), app: terminal, at: monday9 - 500 + Double($0), offered: commit)
+            }
         let afterIgnore = try #require(model(ignored).predict(context).first { $0.command == commit }).confidence
         #expect(afterIgnore < before)
 
-        let accepted = base + (0..<4).map { event(commit, app: terminal, at: monday9 - 500 + Double($0), offered: commit) }
+        let accepted =
+            base + (0..<4).map { event(commit, app: terminal, at: monday9 - 500 + Double($0), offered: commit) }
         let afterAccept = try #require(model(accepted).predict(context).first { $0.command == commit }).confidence
         #expect(afterAccept > afterIgnore)
     }
@@ -270,10 +285,14 @@ struct PredictionModelTests {
         let runs = 50
         let clock = ContinuousClock()
         let elapsed = clock.measure { for _ in 0..<runs { _ = model.predict(context, limit: 3, candidates: all) } }
-        let perCall = Double(elapsed.components.attoseconds) / 1e18 / Double(runs) + Double(elapsed.components.seconds) / Double(runs)
+        let perCall =
+            Double(elapsed.components.attoseconds) / 1e18 / Double(runs) + Double(elapsed.components.seconds)
+            / Double(runs)
         #expect(perCall < 0.002, "a prediction took \(perCall * 1000) ms")
         let unrestricted = clock.measure { for _ in 0..<runs { _ = model.predict(context, limit: 3) } }
-        let perCallOpen = Double(unrestricted.components.attoseconds) / 1e18 / Double(runs) + Double(unrestricted.components.seconds) / Double(runs)
+        let perCallOpen =
+            Double(unrestricted.components.attoseconds) / 1e18 / Double(runs) + Double(unrestricted.components.seconds)
+            / Double(runs)
         #expect(perCallOpen < 0.002, "an unrestricted prediction took \(perCallOpen * 1000) ms")
     }
 }

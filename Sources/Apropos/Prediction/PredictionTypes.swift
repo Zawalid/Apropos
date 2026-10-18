@@ -92,7 +92,9 @@ public struct Prediction: Sendable, Equatable {
         self.basis = basis
     }
 
-    func withoutReason() -> Prediction { Prediction(command: command, confidence: confidence, reason: "", basis: basis) }
+    func withoutReason() -> Prediction {
+        Prediction(command: command, confidence: confidence, reason: "", basis: basis)
+    }
 }
 
 extension CommandID {

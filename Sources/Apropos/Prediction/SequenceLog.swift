@@ -95,7 +95,8 @@ public final class SequenceLog {
     /// Logs one run. Returns the event, or nil when the identity is not allowed in the log.
     @discardableResult
     public func recordRun(
-        _ id: CommandID, app: String?, contextKinds: [ContextKind] = [], offered: CommandID? = nil, at date: Date = Date()
+        _ id: CommandID, app: String?, contextKinds: [ContextKind] = [], offered: CommandID? = nil,
+        at date: Date = Date()
     ) -> RunEvent? {
         let previous = recentCommands(at: date).first
         guard
@@ -199,7 +200,9 @@ public final class SequenceLog {
         formatter.dateFormat = "yyyyMMdd-HHmmss"
         let backup = url.deletingLastPathComponent()
             .appendingPathComponent("\(url.lastPathComponent).broken-\(formatter.string(from: now))")
-        if !FileManager.default.fileExists(atPath: backup.path) { try? FileManager.default.copyItem(at: url, to: backup) }
+        if !FileManager.default.fileExists(atPath: backup.path) {
+            try? FileManager.default.copyItem(at: url, to: backup)
+        }
     }
 
     private func scheduleWrite() {
@@ -275,7 +278,8 @@ final class LogWriter: @unchecked Sendable {
         guard let data = try? encoder.encode(SequenceFile(events: events)) else { return .failed("encoding failed") }
         guard data != lastData else { return .unchanged }
         do {
-            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             try data.write(to: url, options: .atomic)
             try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
             lastData = data

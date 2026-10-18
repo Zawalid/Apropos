@@ -28,7 +28,9 @@ struct PalettePredictionTests {
         Command(id: title, title: title, path: path, isEnabled: enabled, source: .menuItem(bundleID: bundle))
     }
 
-    private func makeModel(_ commands: [Command], run: (@MainActor (Command) async -> Result<Void, CommandRunError>)? = nil)
+    private func makeModel(
+        _ commands: [Command], run: (@MainActor (Command) async -> Result<Void, CommandRunError>)? = nil
+    )
         -> PaletteModel
     {
         let tracker = FrontmostAppTracker(ownBundleID: "test")
@@ -39,7 +41,8 @@ struct PalettePredictionTests {
 
     private func prediction(_ command: Command, _ confidence: Double = 0.9) -> Prediction {
         Prediction(
-            command: command.stableID, confidence: confidence, reason: "After Alpha you chose \(command.title) 9 of 12 times",
+            command: command.stableID, confidence: confidence,
+            reason: "After Alpha you chose \(command.title) 9 of 12 times",
             basis: .afterCommand)
     }
 
@@ -50,7 +53,8 @@ struct PalettePredictionTests {
     @Test func predictedRowsSitAfterPinnedAndBeforeSuggestions() {
         let model = makeModel(list)
         let store = UsageStore(
-            url: FileManager.default.temporaryDirectory.appendingPathComponent("apropos-\(UUID().uuidString)/usage.json"),
+            url: FileManager.default.temporaryDirectory.appendingPathComponent(
+                "apropos-\(UUID().uuidString)/usage.json"),
             writeDelay: .zero)
         store.setPinned(true, for: list[3].stableID)
         for _ in 0..<5 { store.recordRun(id: list[2].stableID) }
@@ -87,7 +91,8 @@ struct PalettePredictionTests {
     @Test func aPinnedCommandIsNotPredictedAgain() {
         let model = makeModel(list)
         let store = UsageStore(
-            url: FileManager.default.temporaryDirectory.appendingPathComponent("apropos-\(UUID().uuidString)/usage.json"),
+            url: FileManager.default.temporaryDirectory.appendingPathComponent(
+                "apropos-\(UUID().uuidString)/usage.json"),
             writeDelay: .zero)
         store.setPinned(true, for: list[1].stableID)
         model.setRanker(CommandRanker(signal: store.rankingSignal()))
@@ -117,7 +122,9 @@ struct PalettePredictionTests {
 
     @Test func aPredictionWithoutAReasonStillFormsTheGroup() {
         let model = makeModel(list)
-        model.setPredictor { _ in [Prediction(command: self.list[2].stableID, confidence: 0.9, reason: "", basis: .afterCommand)] }
+        model.setPredictor { _ in
+            [Prediction(command: self.list[2].stableID, confidence: 0.9, reason: "", basis: .afterCommand)]
+        }
         #expect(model.predictedCount == 1)
         #expect(model.predictionReason(forRowID: "Gamma") == nil)
         #expect(model.isPredicted(rowID: "Gamma"))
@@ -182,7 +189,9 @@ struct PalettePredictionTests {
     private let now = Date(timeIntervalSince1970: 1_800_262_800)
     private func engine(_ url: URL? = nil) -> PredictionEngine {
         let location =
-            url ?? FileManager.default.temporaryDirectory.appendingPathComponent("apropos-eng-\(UUID().uuidString)/sequence.json")
+            url
+            ?? FileManager.default.temporaryDirectory.appendingPathComponent(
+                "apropos-eng-\(UUID().uuidString)/sequence.json")
         return PredictionEngine(
             log: SequenceLog(url: location, writeDelay: .zero, now: now), buildInBackground: false)
     }
@@ -268,7 +277,8 @@ struct PalettePredictionTests {
     }
 
     @Test func resetForgetsTheLogAndTheModel() {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("apropos-eng-\(UUID().uuidString)/sequence.json")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "apropos-eng-\(UUID().uuidString)/sequence.json")
         let engine = engine(url)
         learnRoutine(engine)
         engine.recordRun(id("Alpha"), app: bundle, at: now)
@@ -279,7 +289,8 @@ struct PalettePredictionTests {
     }
 
     @Test func modelIsRebuiltFromTheLogAtLaunch() async throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("apropos-eng-\(UUID().uuidString)/sequence.json")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "apropos-eng-\(UUID().uuidString)/sequence.json")
         let first = engine(url)
         learnRoutine(first)
         first.recordRun(id("Alpha"), app: bundle, at: now)

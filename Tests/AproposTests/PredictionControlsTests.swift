@@ -8,10 +8,13 @@ struct PredictionControlsTests {
     private let now = Date(timeIntervalSince1970: 1_800_262_800)
 
     private func directory() -> URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent("apropos-ctl-\(UUID().uuidString)", isDirectory: true)
+        FileManager.default.temporaryDirectory.appendingPathComponent(
+            "apropos-ctl-\(UUID().uuidString)", isDirectory: true)
     }
 
-    private func id(_ app: String, _ title: String) -> CommandID { CommandID.base(bundleID: app, path: ["Menu"], title: title) }
+    private func id(_ app: String, _ title: String) -> CommandID {
+        CommandID.base(bundleID: app, path: ["Menu"], title: title)
+    }
 
     // MARK: Settings
 
@@ -118,8 +121,9 @@ struct PredictionControlsTests {
         let text = String(decoding: try CommandExchange.export([], name: "Mine"), as: UTF8.self)
         #expect(!text.contains("events"))
         #expect(!text.contains("sequence"))
-        #expect(UserCommandStore.defaultDirectory.deletingLastPathComponent().path
-            == SequenceLog.url(besides: UsageStore.defaultURL).deletingLastPathComponent().path)
+        #expect(
+            UserCommandStore.defaultDirectory.deletingLastPathComponent().path
+                == SequenceLog.url(besides: UsageStore.defaultURL).deletingLastPathComponent().path)
         #expect(UserCommandStore.defaultDirectory.lastPathComponent != "sequence.json")
     }
 }

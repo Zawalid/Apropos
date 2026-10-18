@@ -81,7 +81,8 @@ public struct PredictionModel: Sendable {
     // MARK: Tables
 
     private enum Level: UInt8, CaseIterable {
-        case app = 0, slot, kinds, prevAny, prevApp, prevTwo
+        case app = 0
+        case slot, kinds, prevAny, prevApp, prevTwo
     }
 
     private struct TableKey: Hashable, Sendable {
@@ -139,7 +140,9 @@ public struct PredictionModel: Sendable {
 
     private static func kindsMask(_ names: [String]) -> Int32 {
         var mask: Int32 = 0
-        for (index, kind) in ContextKind.allCases.enumerated() where names.contains(kind.rawValue) { mask |= 1 << Int32(index) }
+        for (index, kind) in ContextKind.allCases.enumerated() where names.contains(kind.rawValue) {
+            mask |= 1 << Int32(index)
+        }
         return mask
     }
 

@@ -93,12 +93,15 @@ struct SequenceLogTests {
     @Test func contextKindsKeepOnlyKnownKindNames() {
         let event = RunEvent(
             kind: .run, time: 1_800_000_000, command: id("X"), app: "app.test", previous: nil,
-            kindNames: ["selection", "https://example.com/secret", "document", "selection", "My Report.docx"], offered: nil)
+            kindNames: ["selection", "https://example.com/secret", "document", "selection", "My Report.docx"],
+            offered: nil)
         #expect(event?.contextKinds == ["document", "selection"])
     }
 
     @Test func appMustBeABundleIdentifier() {
-        for bad in ["My Document.pdf", "/Users/me/file", "title with space", "", String(repeating: "a", count: 200), "café.app"] {
+        for bad in [
+            "My Document.pdf", "/Users/me/file", "title with space", "", String(repeating: "a", count: 200), "café.app",
+        ] {
             #expect(RunEvent(at: now, command: id("X"), app: bad)?.app == PredictionPrivacy.unknownApp)
         }
         #expect(RunEvent(at: now, command: id("X"), app: "com.apple.dt.Xcode")?.app == "com.apple.dt.Xcode")
@@ -113,7 +116,8 @@ struct SequenceLogTests {
             #expect(store.recordRun(command.stableID, app: "app.test", at: now) == nil)
         }
         let nested = Command(
-            id: "y", title: "Page about my bank", path: ["File", "Open Recent"], source: .menuItem(bundleID: "app.test"))
+            id: "y", title: "Page about my bank", path: ["File", "Open Recent"], source: .menuItem(bundleID: "app.test")
+        )
         #expect(!SequenceLog.isRecordable(nested))
         let fine = Command(id: "z", title: "Save", path: ["File"], source: .menuItem(bundleID: "app.test"))
         #expect(SequenceLog.isRecordable(fine))

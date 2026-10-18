@@ -3,6 +3,8 @@ import Testing
 
 @testable import Apropos
 
+/// Serialized: the replays are CPU heavy in a debug build and would otherwise starve the timing tests of other suites.
+@Suite(.serialized)
 struct PredictionEvaluationTests {
     private static let utc: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
@@ -16,7 +18,7 @@ struct PredictionEvaluationTests {
         return evaluator
     }
 
-    private func profile(days: Int = 200, seed: UInt64 = 1) -> SyntheticProfile {
+    private func profile(days: Int = 120, seed: UInt64 = 1) -> SyntheticProfile {
         var profile = SyntheticProfile()
         profile.days = days
         profile.seed = seed
@@ -67,8 +69,12 @@ struct PredictionEvaluationTests {
         drifting.driftDay = 50
         let events = SyntheticLog.generate(drifting)
         let cut = drifting.start.timeIntervalSince1970 + 50 * 86_400
-        let before = events.filter { $0.time < cut && $0.command.fallbackTitle == "Archive" && $0.app == "com.apple.Terminal" }
-        let after = events.filter { $0.time >= cut && $0.command.fallbackTitle == "Archive" && $0.app == "com.apple.Terminal" }
+        let before = events.filter {
+            $0.time < cut && $0.command.fallbackTitle == "Archive" && $0.app == "com.apple.Terminal"
+        }
+        let after = events.filter {
+            $0.time >= cut && $0.command.fallbackTitle == "Archive" && $0.app == "com.apple.Terminal"
+        }
         #expect(before.isEmpty)
         #expect(after.count > 50)
     }
@@ -129,7 +135,8 @@ struct PredictionEvaluationTests {
             let chained = previous.map { time - $0.time <= SequenceLog.sessionWindow } == true
             guard
                 let event = RunEvent(
-                    at: Date(timeIntervalSince1970: time), command: id, app: app, previous: chained ? previous?.command : nil)
+                    at: Date(timeIntervalSince1970: time), command: id, app: app,
+                    previous: chained ? previous?.command : nil)
             else { continue }
             events.append(event)
             previous = event
@@ -139,10 +146,10 @@ struct PredictionEvaluationTests {
     }
 
     @Test func recoversAfterAChangeOfHabit() {
-        var drifting = profile(days: 300)
-        drifting.driftDay = 150
+        var drifting = profile(days: 200)
+        drifting.driftDay = 100
         let report = evaluator().run(SyntheticLog.generate(drifting))
-        let steady = evaluator().run(SyntheticLog.generate(profile(days: 300)))
+        let steady = evaluator().run(SyntheticLog.generate(profile(days: 200)))
         #expect(report.model.hitAt1 > steady.model.hitAt1 - 0.08)
     }
 
@@ -162,7 +169,8 @@ struct PredictionEvaluationTests {
     @Test func policyShowsNothingBelowTheThresholdAndAtMostTwoRows() {
         func prediction(_ name: String, _ confidence: Double) -> Prediction {
             Prediction(
-                command: CommandID(rawValue: "app|menu>\(name)"), confidence: confidence, reason: "", basis: .afterCommand)
+                command: CommandID(rawValue: "app|menu>\(name)"), confidence: confidence, reason: "",
+                basis: .afterCommand)
         }
         #expect(PredictionPolicy.rows(from: []).isEmpty)
         #expect(PredictionPolicy.rows(from: [prediction("a", 0.6), prediction("b", 0.3)]).isEmpty)

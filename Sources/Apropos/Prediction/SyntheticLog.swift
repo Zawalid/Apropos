@@ -67,7 +67,9 @@ public enum SyntheticLog {
             "dev": Routine(
                 name: "dev",
                 steps: [
-                    Step(app: xcode, menu: "Product", options: [("Build", 1)], kinds: [.branch, .document], skipChance: 0),
+                    Step(
+                        app: xcode, menu: "Product", options: [("Build", 1)], kinds: [.branch, .document], skipChance: 0
+                    ),
                     Step(
                         app: xcode, menu: "Product", options: [("Run Tests", 0.85), ("Run", 0.15)],
                         kinds: [.branch, .document], skipChance: 0),
@@ -90,7 +92,8 @@ public enum SyntheticLog {
                 steps: [
                     Step(app: mail, menu: "Mailbox", options: [("Get New Mail", 1)], kinds: [], skipChance: 0),
                     Step(
-                        app: mail, menu: "Message", options: [("Reply", 0.6), ("Archive Message", 0.4)], kinds: [.selection],
+                        app: mail, menu: "Message", options: [("Reply", 0.6), ("Archive Message", 0.4)],
+                        kinds: [.selection],
                         skipChance: 0),
                     Step(app: mail, menu: "Message", options: [("Send", 1)], kinds: [], skipChance: 0.4),
                 ]),
@@ -153,7 +156,9 @@ public enum SyntheticLog {
             let midnight = profile.start.addingTimeInterval(Double(day) * 86_400).timeIntervalSince1970
             let weekday = profile.calendar.component(.weekday, from: Date(timeIntervalSince1970: midnight))
             let weekend = weekday == 1 || weekday == 7
-            func hour(_ from: Double, _ to: Double) -> Double { midnight + Double.random(in: from...to, using: &random) * 3_600 }
+            func hour(_ from: Double, _ to: Double) -> Double {
+                midnight + Double.random(in: from...to, using: &random) * 3_600
+            }
             if weekend {
                 for _ in 0..<Int.random(in: 3...6, using: &random) { play("browse", at: hour(10, 22), day: day) }
                 if random.chance(0.5) { play("writing", at: hour(10, 12), day: day) }
@@ -185,7 +190,8 @@ public enum SyntheticLog {
     private static func events(from raws: [Raw]) -> [RunEvent] {
         var events: [RunEvent] = []
         events.reserveCapacity(raws.count)
-        let ordered = raws.enumerated().sorted { ($0.element.time, $0.offset) < ($1.element.time, $1.offset) }.map(\.element)
+        let ordered = raws.enumerated().sorted { ($0.element.time, $0.offset) < ($1.element.time, $1.offset) }.map(
+            \.element)
         var last: RunEvent?
         for item in ordered {
             let id = CommandID.base(bundleID: item.app, path: [item.menu], title: item.title)

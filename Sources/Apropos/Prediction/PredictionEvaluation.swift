@@ -58,17 +58,22 @@ public struct PredictionEvaluator: Sendable {
         /// Aggregate numbers only, safe to print for a real log.
         public func render() -> String {
             func pct(_ value: Double) -> String { String(format: "%5.1f%%", value * 100) }
-            var lines = ["train events: \(trainEvents)   test events: \(testEvents)   show threshold: \(String(format: "%.2f", threshold))"]
+            var lines = [
+                "train events: \(trainEvents)   test events: \(testEvents)   show threshold: \(String(format: "%.2f", threshold))"
+            ]
             lines.append("                       hit@1    hit@3  coverage  wrong-when-shown")
             for score in [model, frecency, repeatLast] {
                 lines.append(
-                    "  \(score.name.padding(toLength: 20, withPad: " ", startingAt: 0)) \(pct(score.hitAt1)) \(pct(score.hitAt3)) \(pct(score.coverage))   \(pct(score.wrongWhenShown))")
+                    "  \(score.name.padding(toLength: 20, withPad: " ", startingAt: 0)) \(pct(score.hitAt1)) \(pct(score.hitAt3)) \(pct(score.coverage))   \(pct(score.wrongWhenShown))"
+                )
             }
             lines.append(
                 "  on the moments the model shows: model \(pct(modelWhereShown)), frecency only \(pct(frecencyWhereShown)), repeat last \(pct(repeatLastWhereShown)) (hit@1)"
             )
             lines.append("  shown rows contain the right command: \(pct(model.shownHit))")
-            lines.append("  calibration (top confidence vs how often it was right), error \(String(format: "%.3f", expectedCalibrationError)):")
+            lines.append(
+                "  calibration (top confidence vs how often it was right), error \(String(format: "%.3f", expectedCalibrationError)):"
+            )
             for bin in reliability where bin.count > 0 {
                 lines.append(
                     "    confidence \(String(format: "%.1f", bin.lower))-\(String(format: "%.1f", bin.lower + 0.1)): n=\(bin.count) mean \(String(format: "%.2f", bin.meanConfidence)) right \(pct(bin.hitRate))"
@@ -77,7 +82,8 @@ public struct PredictionEvaluator: Sendable {
             lines.append("  threshold sweep:")
             for row in sweep {
                 lines.append(
-                    "    \(String(format: "%.2f", row.threshold)): coverage \(pct(row.coverage)) wrong-when-shown \(pct(row.wrongWhenShown))")
+                    "    \(String(format: "%.2f", row.threshold)): coverage \(pct(row.coverage)) wrong-when-shown \(pct(row.wrongWhenShown))"
+                )
             }
             return lines.joined(separator: "\n")
         }
@@ -221,7 +227,8 @@ public struct PredictionEvaluator: Sendable {
             guard total > 0 else { return }
             func score(_ name: String, _ counts: Counts) -> Score {
                 Score(
-                    name: name, hitAt1: Double(counts.hit1) / Double(total), hitAt3: Double(counts.hit3) / Double(total),
+                    name: name, hitAt1: Double(counts.hit1) / Double(total),
+                    hitAt3: Double(counts.hit3) / Double(total),
                     coverage: Double(counts.shown) / Double(total),
                     wrongWhenShown: counts.shown > 0 ? Double(counts.wrong) / Double(counts.shown) : 0,
                     shownHit: counts.shown > 0 ? Double(counts.shownHit) / Double(counts.shown) : 0)
@@ -240,7 +247,8 @@ public struct PredictionEvaluator: Sendable {
             for (index, bin) in bins.enumerated() {
                 let rate = bin.count > 0 ? Double(bin.hits) / Double(bin.count) : 0
                 let mean = bin.count > 0 ? bin.confidence / Double(bin.count) : 0
-                report.reliability.append(Bin(lower: Double(index) / 10, count: bin.count, meanConfidence: mean, hitRate: rate))
+                report.reliability.append(
+                    Bin(lower: Double(index) / 10, count: bin.count, meanConfidence: mean, hitRate: rate))
                 ece += Double(bin.count) * abs(rate - mean)
                 counted += bin.count
             }
@@ -249,7 +257,8 @@ public struct PredictionEvaluator: Sendable {
                 report.sweep.append(
                     Sweep(
                         threshold: level, coverage: Double(sweepShown[index]) / Double(total),
-                        wrongWhenShown: sweepShown[index] > 0 ? Double(sweepWrong[index]) / Double(sweepShown[index]) : 0))
+                        wrongWhenShown: sweepShown[index] > 0
+                            ? Double(sweepWrong[index]) / Double(sweepShown[index]) : 0))
             }
         }
     }
