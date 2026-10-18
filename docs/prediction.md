@@ -89,10 +89,42 @@ otherwise (the `o` field in the log). Not now writes a `dismiss` event. The conf
 `(accepted + 1) / (accepted + 0.5 * ignored + 2 * dismissed + 1)`, with the same decay. Two Not nows take a prediction
 to a fifth of its confidence; accepting it again brings it back.
 
-**Speed.** A prediction over a year of data (36 500 runs, 12 apps, 80 commands each) takes well under 2 ms, tested in
+**Speed.** A prediction over a year of data (36 500 runs, 12 apps, 80 commands each) scored against a 600-command menu
+takes about 0.04 ms in a debug build and 0.005 ms in release on the development Mac; the bound is 2 ms, tested in
 `PredictionModelTests.predictsWithinTwoMillisecondsOnAYearOfData` for both the candidate-restricted and the open call.
 Learning one more run is a handful of dictionary updates, so the model is updated in place after every run and built
 from the log once at launch.
+
+## In the palette
+
+With an empty query, when the best prediction is at least 0.65 likely, the list gets a **Usually next** group right after
+Pinned and before Suggested for this moment: the best prediction and, if it is at least 0.25 likely too, a runner-up
+(at most two rows). Each row's subtitle is its reason in place of the menu path. Nothing is shown while a query is typed,
+for a pinned command (it is already first), or for a hidden or unavailable one. Candidates are the commands that can run
+right now, so a prediction is never something the app in front cannot do.
+
+- **Run it with one key:** Command-Return runs the first Usually next row whatever is highlighted. It is free in the
+  palette (Return, arrows, Tab, Page Up and Down, Command-K, Command-comma, Command-arrows and Control-N, P, J and K are
+  taken). The group header shows the keys. With no prediction on screen the key does nothing. Return on the highlighted
+  row still works as before, and the first row is highlighted when nothing is pinned.
+- **Accepting and ignoring** are recorded in the log as the `o` field: the top prediction shown when the palette opened,
+  attached to the next run if it happens within two minutes. Running that command counts as accepted, running anything
+  else as ignored, closing the palette without running anything as neither.
+- **Not now** is in the Command-K popover on a predicted row. It writes a `dismiss` event and the row drops out at once.
+- The first time the palette opens before the context snapshot arrives, kinds of context are those of the last snapshot
+  for the same app; when the snapshot changes them the group is asked for again.
+
+## Controls
+
+Registry entries (page: Privacy and data; the Settings pages themselves are not touched here): `predictNextCommand`
+(default on) and `showPredictionReasons` (default on). Turning prediction off stops predictions and also stops recording new
+runs; what is already in the log stays until it is reset, so turning it back on resumes from there. Reasons off keeps
+the group and shows the usual menu path under each row.
+
+**Reset learned ranking** clears the sequence log along with the usage counts (pins, hidden commands and aliases are kept
+as before); resetting one app removes that app's runs and every mention of its commands in the rest of the log. The
+registry has no button type, so the reset itself is the existing button in Settings. The settings export, the commands
+export and `usage.json` never contain the log (tested).
 
 ## Evaluation
 
@@ -152,3 +184,18 @@ people repeat at all, or whether most sequences live in keyboard shortcuts and t
 holds only what ran through Apropos, so a person who uses the palette rarely has too few events); (5) the effect of the
 10 minute session window and the 30 day half-life, with `--half-life` and `--pseudo`; (6) whether Usually next is
 accepted: the log records `offered` and the run, so the accept rate is computable after the first week of use.
+
+## Tests
+
+`SequenceLogTests` (format, rotation by age and count, corrupt and partial files, newer-version files, permissions, and
+the privacy rules: only the documented keys appear in the file, no field can hold content, app and kinds are cleaned,
+content menus are not logged, a tampered file cannot smuggle content in), `PredictionModelTests` (transitions, cross-app
+links, second order, time of day, context kinds, decay, calibration of uncertainty, cold start, feedback, determinism,
+the 2 ms bound), `PredictionEvaluationTests` (generator, evaluation determinism, baselines, calibration, threshold rule,
+quiet on random data, drift recovery, no names in the report), `PalettePredictionTests` (group order, two rows, never
+while searching, pinned first, Command-Return, Not now, engine end to end), `PredictionControlsTests` (settings, reset,
+exports).
+
+Checking the UI without the real app: `scripts/render-previews.sh palette-usually-next palette-usually-next-one
+palette-usually-next-fresh` and `scripts/shots.sh` (the `usually-next` state seeds a routine through the real log, model
+and palette path in agent mode).

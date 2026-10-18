@@ -261,7 +261,8 @@ struct PredictionModelTests {
             previous = built
         }
         let model = model(events)
-        let all = Set((0..<commandsPerApp).map { id(apps[0], "Command \($0)") })
+        // A big menu: the commands the person uses plus hundreds more that were never run.
+        let all = Set((0..<600).map { id(apps[0], "Command \($0)") })
         let context = PredictionContext(
             app: apps[0], recent: [id(apps[1], "Command 3"), id(apps[0], "Command 9")], date: monday9,
             contextKinds: ["document"])

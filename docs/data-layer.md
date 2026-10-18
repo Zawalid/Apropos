@@ -9,6 +9,7 @@ stays on the Mac.
 | Command identity | `Sources/Apropos/Commands/CommandID.swift` | none, it is a key |
 | Option-key alternates | `Sources/Apropos/Commands/MenuSnapshot.swift` | none |
 | Usage, pins, hides, aliases, symbol choices | `Sources/Apropos/Usage` | `usage.json` |
+| Order commands ran in (next-action prediction) | `Sources/Apropos/Prediction` | `sequence.json` (see [prediction.md](prediction.md)) |
 | Row symbols | `Sources/Apropos/Commands/Symbol*.swift`, `Resources/SymbolPacks` | optional `packs/*.json` |
 
 All files sit in `~/Library/Application Support/Apropos/`. Data from the former name (Cue) is copied there once at

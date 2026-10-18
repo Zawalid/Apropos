@@ -12,6 +12,11 @@ work lands.
   left untouched. macOS treats the renamed app as new, so grant Accessibility again and remove the stale Cue entry.
 
 ### Added
+- Next-action prediction: Apropos learns, on this Mac, which command you usually run next and offers it under Usually
+  next with a reason such as "After Run Tests you chose Commit 9 of 12 times". Command-Return runs the first one, Not now
+  in the Command-K popover dismisses one, and Settings can turn it off. It learns from command names, apps and times
+  only (never selections, URLs, document names or queries), in its own `sequence.json`, which Reset learned ranking
+  clears and no export includes. See docs/prediction.md.
 - A menu-bar app with a global shortcut (Option-Space by default, changeable in Settings) that opens a floating
   palette on the screen you are using. Escape or clicking away closes it.
 - The palette lists the frontmost app's menu bar commands with their shortcuts, enabled and checked state, searches
