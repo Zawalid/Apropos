@@ -23,7 +23,7 @@ public final class PaletteModel {
     public var results: [RankedCommand] {
         let key = CacheKey(
             revision: menus.revision, query: query, rankerRevision: rankerRevision, contextRevision: contextRevision,
-            targetPID: tracker.app?.pid)
+            predictionRevision: predictionRevision, targetPID: tracker.app?.pid)
         if key != cacheKey {
             computeResults()
             cacheKey = key
@@ -37,6 +37,26 @@ public final class PaletteModel {
         _ = results
         return (pinnedCount, suggestedCount)
     }
+    /// With an empty query, how many rows sit in the Usually next group: right after the pinned ones, before the
+    /// suggestions. At most `PredictionPolicy.maxRows`, and 0 while searching or when nothing is likely enough.
+    public var predictedCount: Int {
+        _ = results
+        return predictedRows
+    }
+
+    /// Why a row is in the Usually next group, a sentence built from real counts. Nil for any other row.
+    public func predictionReason(forRowID id: String) -> String? {
+        _ = results
+        return predictionReasons[id]
+    }
+
+    /// The command the top Usually next row stands for, or nil when the group is empty.
+    public var topPrediction: Command? {
+        let list = results
+        let start = pinnedCount
+        return predictedRows > 0 && list.indices.contains(start) ? list[start].command : nil
+    }
+
     /// An explicit choice made with the arrow keys; nil means the first available result.
     public private(set) var selectedID: String?
     /// Shown inline after a command failed to run.
@@ -60,6 +80,10 @@ public final class PaletteModel {
         (@MainActor (Command, TargetApp?, Bool) async -> Result<ActionOutcome, ActionError>)?
     @ObservationIgnored private var pinnedCount = 0
     @ObservationIgnored private var suggestedCount = 0
+    @ObservationIgnored private var predictedRows = 0
+    @ObservationIgnored private var predictionReasons: [String: String] = [:]
+    @ObservationIgnored private var predictor: (@MainActor ([Command]) -> [Prediction])?
+    @ObservationIgnored private var predictionRevision = 0
     @ObservationIgnored private var runner: (@MainActor (Command) async -> Result<Void, CommandRunError>)?
     @ObservationIgnored private var cachedResults: [RankedCommand] = []
     @ObservationIgnored private var cacheKey: CacheKey?
@@ -69,6 +93,7 @@ public final class PaletteModel {
         let query: String
         let rankerRevision: Int
         let contextRevision: Int
+        let predictionRevision: Int
         let targetPID: pid_t?
     }
 
@@ -90,6 +115,17 @@ public final class PaletteModel {
         self.ranker = ranker
         rankerRevision += 1
     }
+
+    /// Where "Usually next" comes from. The closure gets the commands that could be offered (available, not hidden, not
+    /// pinned) and returns the predictions to show, already limited by the show threshold. Nothing is asked while the
+    /// query is not empty.
+    public func setPredictor(_ predictor: (@MainActor ([Command]) -> [Prediction])?) {
+        self.predictor = predictor
+        predictionRevision += 1
+    }
+
+    /// Asks the predictor again, for example after the context changed or the person said Not now.
+    public func refreshPredictions() { predictionRevision += 1 }
 
     /// Context actions for the app with `pid`, built from its latest context snapshot. They are listed only while that
     /// app is the target, so another app's selection never offers actions here. They come before the menu commands.
@@ -119,21 +155,39 @@ public final class PaletteModel {
         let base = ranker.rank(commands, query: query)
         pinnedCount = 0
         suggestedCount = 0
+        predictedRows = 0
+        predictionReasons = [:]
         guard query.trimmingCharacters(in: .whitespaces).isEmpty else {
             cachedResults = base
             return
         }
         let pinned = ranker.pinned(commands.filter(\.isEnabled)).count
-        let suggested = ranker.suggested(commands, limit: Self.suggestionLimit)
+        // Pinned stays first. Then what usually comes next, then the suggestions, then the menus.
+        let pinnedIDs = Set(base.prefix(pinned).map(\.command.stableID))
+        let byStable = Dictionary(base.map { ($0.command.stableID, $0) }, uniquingKeysWith: { first, _ in first })
+        var predicted: [RankedCommand] = []
+        if let predictor {
+            let eligible = base.map(\.command).filter { $0.isEnabled && !pinnedIDs.contains($0.stableID) }
+            for prediction in predictor(eligible).prefix(PredictionPolicy.maxRows) {
+                guard let row = byStable[prediction.command], !pinnedIDs.contains(prediction.command) else { continue }
+                predicted.append(row)
+                predictionReasons[row.id] = prediction.reason
+            }
+        }
+        let predictedIDs = Set(predicted.map(\.command.stableID))
+        let suggested = ranker.suggested(commands, limit: Self.suggestionLimit + predicted.count)
+            .filter { !predictedIDs.contains($0.command.stableID) }.prefix(Self.suggestionLimit)
         let suggestedIDs = Set(suggested.map(\.command.stableID))
         let head = Array(base.prefix(pinned))
-        let rest = base.dropFirst(pinned).filter { !suggestedIDs.contains($0.command.stableID) }
+        let rest = base.dropFirst(pinned).filter {
+            !suggestedIDs.contains($0.command.stableID) && !predictedIDs.contains($0.command.stableID)
+        }
         // Suggestions come from the same list, so take the ranked rows to keep ids and scores consistent.
-        let byStable = Dictionary(base.map { ($0.command.stableID, $0) }, uniquingKeysWith: { first, _ in first })
         let lifted = suggested.compactMap { byStable[$0.command.stableID] }
         pinnedCount = head.count
+        predictedRows = predicted.count
         suggestedCount = lifted.count
-        cachedResults = head + lifted + rest
+        cachedResults = head + predicted + lifted + rest
     }
 
     public var targetApp: TargetApp? { tracker.app }
@@ -191,6 +245,14 @@ public final class PaletteModel {
 
     public func selectFirst() { selectedID = results.first?.id }
     public func selectLast() { selectedID = results.last?.id }
+
+    /// Runs the first Usually next row, whatever is highlighted. Returns true when the palette can close, false when
+    /// there is no prediction or the command failed.
+    @discardableResult
+    public func runTopPrediction() async -> Bool {
+        guard let command = topPrediction else { return false }
+        return await run(command)
+    }
 
     /// Runs the selected command. Returns true when the palette can close.
     @discardableResult

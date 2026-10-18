@@ -219,6 +219,13 @@ public final class UsageStore {
         return UsageSignal(scores: scores, pins: pins, hidden: hidden, aliases: aliases)
     }
 
+    /// The learned usage as per-app shares, the cold-start fallback of next-action prediction.
+    public func frecencyPrior(now: Date = Date()) -> FrecencyPrior {
+        var scores: [CommandID: Double] = [:]
+        for (id, record) in file.usage { scores[id] = Frecency.score(runs: record.runs, recent: record.recent, now: now) }
+        return FrecencyPrior(scores: scores)
+    }
+
     // MARK: Persistence
 
     /// Writes any pending change now. Call on quit.
