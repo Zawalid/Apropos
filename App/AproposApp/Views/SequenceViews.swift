@@ -101,9 +101,6 @@ struct SequenceSaveView: View {
     var body: some View {
         let form = Bindable(center).form
         VStack(alignment: .leading, spacing: 14) {
-            Text("Save as command")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Theme.text3)
             field("Name", text: form.name, prompt: "Name this command", field: .name)
             field("Alias", text: form.alias, prompt: "Optional, typed in the search to find it", field: .alias)
             HStack(spacing: 10) {

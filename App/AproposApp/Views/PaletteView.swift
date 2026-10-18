@@ -126,7 +126,7 @@ private struct SearchHeader: View {
 
     private var placeholder: String {
         if let asking = model.sequenceAsking { return asking.prompt }
-        if model.sequenceLevel == .save { return "Save as command" }
+        if model.sequenceLevel == .save { return "Name, alias and symbol" }
         if model.sequenceLevel != nil { return "Search the draft" }
         if model.sendLevel != nil { return "Search destinations" }
         if let app = model.targetApp { return "Search \(app.name) commands" }
