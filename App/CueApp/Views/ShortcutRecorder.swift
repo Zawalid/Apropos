@@ -13,29 +13,55 @@ struct ShortcutRecorder: View {
     @State private var hint: String?
 
     var body: some View {
-        HStack(spacing: Theme.Spacing.sm) {
+        HStack(spacing: 8) {
             Button {
                 isRecording ? stop() : start()
             } label: {
                 Group {
                     if isRecording {
                         Text("Press the new shortcut")
+                            .font(.system(size: 12.5, weight: .medium))
                             .foregroundStyle(Theme.accentText)
                     } else {
-                        HStack(spacing: 3) {
+                        HStack(spacing: 4) {
                             ForEach(Array(combo.caps.enumerated()), id: \.offset) { KeyCap(text: $0.element) }
                         }
                     }
                 }
-                .frame(minWidth: 140, minHeight: 24)
+                .frame(minWidth: 100, minHeight: 26)
+                .padding(.horizontal, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous).fill(
+                        isRecording ? Theme.accentSoft : Theme.chip)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(isRecording ? Theme.accentText : Theme.chipEdge, lineWidth: 1)
+                )
+                .contentShape(Rectangle())
             }
-            .buttonStyle(RecorderButtonStyle())
+            .buttonStyle(.plain)
+            .focusable()
+            .cueFocusRing(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .accessibilityLabel("Global shortcut, \(combo.display)")
             if let hint {
                 Text(hint).font(.system(size: 12)).foregroundStyle(Theme.cautionText)
             } else if combo != .default && !isRecording {
-                Button("Reset") { onChange(.default) }
-                    .buttonStyle(.link)
+                Button {
+                    onChange(.default)
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Theme.text2)
+                        .frame(width: 26, height: 26)
+                        .background(Circle().fill(Theme.chip))
+                        .overlay(Circle().strokeBorder(Theme.chipEdge, lineWidth: 1))
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .focusable()
+                .cueFocusRing(Circle())
+                .accessibilityLabel("Reset shortcut to default")
             }
         }
         .onDisappear { stop() }
@@ -76,17 +102,5 @@ struct ShortcutRecorder: View {
         }
         stop()
         onChange(candidate)
-    }
-}
-
-private struct RecorderButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 8)
-            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.chip))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.chipEdge, lineWidth: 1))
-            .brightness(configuration.isPressed ? -0.05 : 0)
-            .contentShape(Rectangle())
-            .cueFocusRing(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
