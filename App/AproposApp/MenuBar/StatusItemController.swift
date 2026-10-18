@@ -68,7 +68,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
         let entries = MenuBarContent.entries(
             recents: controller.usage.recents, hotKey: controller.combo.display,
-            hasAccess: controller.permission.isTrusted)
+            hasAccess: controller.permission.isTrusted, pendingCommands: controller.userCommands.pending.count)
         for entry in entries {
             switch entry {
             case .separator: menu.addItem(.separator())
@@ -93,6 +93,11 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         case .allowAccess: #selector(allowAccess)
         case .welcomeGuide: #selector(welcomeGuide)
         case .settings: #selector(openSettings)
+        case .importCommands: #selector(importCommands)
+        case .exportCommands: #selector(exportCommands)
+        case .reviewCommands: #selector(reviewCommands)
+        case .revealCommands: #selector(revealCommands)
+        case .reloadCommands: #selector(reloadCommands)
         case .checkForUpdates: #selector(checkForUpdates)
         case .quit: #selector(quit)
         }
@@ -122,12 +127,20 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func welcomeGuide() { controller.showOnboarding() }
     @objc private func openSettings() { controller.showSettings() }
     @objc private func checkForUpdates() { controller.settings.checkForUpdatesNow() }
+    @objc private func importCommands() { CommandManagement.importCommands(controller.userCommands) }
+    @objc private func exportCommands() { CommandManagement.exportCommands(controller.userCommands) }
+    @objc private func reviewCommands() { CommandManagement.reviewPending(controller.userCommands) }
+    @objc private func revealCommands() { CommandManagement.reveal(controller.userCommands) }
+    @objc private func reloadCommands() { CommandManagement.reload(controller.userCommands) }
     @objc private func quit() { NSApp.terminate(nil) }
 }
 
 /// What the menu lists, as plain values: the status item turns them into `NSMenuItem`s and the previews draw them.
 enum MenuBarContent {
-    enum Action { case open, allowAccess, welcomeGuide, settings, checkForUpdates, quit }
+    enum Action {
+        case open, allowAccess, welcomeGuide, settings, checkForUpdates, quit
+        case importCommands, exportCommands, reviewCommands, revealCommands, reloadCommands
+    }
 
     enum Entry {
         case separator
@@ -137,7 +150,9 @@ enum MenuBarContent {
         case action(Action, title: String, key: String)
     }
 
-    static func entries(recents: [UsageController.Recent], hotKey: String, hasAccess: Bool) -> [Entry] {
+    static func entries(
+        recents: [UsageController.Recent], hotKey: String, hasAccess: Bool, pendingCommands: Int = 0
+    ) -> [Entry] {
         var list: [Entry] = [.sectionHeader("Recent")]
         if recents.isEmpty { list.append(.placeholder("No recent commands yet")) }
         for recent in recents {
@@ -147,6 +162,16 @@ enum MenuBarContent {
         list.append(.separator)
         list.append(.action(.open, title: "Open Apropos (\(hotKey))", key: ""))
         if !hasAccess { list.append(.action(.allowAccess, title: "Allow Accessibility Access\u{2026}", key: "")) }
+        list.append(.separator)
+        list.append(.sectionHeader("Your commands"))
+        if pendingCommands > 0 {
+            let title = "Review \(pendingCommands) Imported Command\(pendingCommands == 1 ? "" : "s")\u{2026}"
+            list.append(.action(.reviewCommands, title: title, key: ""))
+        }
+        list.append(.action(.importCommands, title: "Import Commands\u{2026}", key: ""))
+        list.append(.action(.exportCommands, title: "Export Commands\u{2026}", key: ""))
+        list.append(.action(.revealCommands, title: "Reveal Commands Folder", key: ""))
+        list.append(.action(.reloadCommands, title: "Reload Commands", key: ""))
         list.append(.separator)
         list.append(.action(.settings, title: "Settings\u{2026}", key: ","))
         list.append(.action(.welcomeGuide, title: "Welcome Guide", key: ""))
