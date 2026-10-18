@@ -172,7 +172,6 @@ struct ContextActionIntegrationTests {
         guard let upper = rig.center.commands.first(where: { $0.id == "ctx:text.upper" }) else { return }
         for _ in 0..<5 { store.recordRun(of: upper) }
         rig.model.setRanker(CommandRanker(signal: store.rankingSignal()))
-        rig.model.prepareForOpen()
         let groups = rig.model.leadingGroups
         #expect(groups.suggested == 1)
         #expect(rig.model.results[groups.pinned].command.id == "ctx:text.upper")
