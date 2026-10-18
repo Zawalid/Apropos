@@ -18,6 +18,8 @@ struct PaletteAction: Identifiable {
         case askMe(Bool)
         /// Read the selection instead of the previous step's result (true), or go back to the chain (false).
         case useSelection(Bool)
+        /// Go on with the next step when this one fails (true), or stop there (false).
+        case continueOnFailure(Bool)
     }
 
     let kind: Kind
@@ -106,6 +108,11 @@ struct PaletteAction: Identifiable {
                         kind: .askMe(true), title: "Ask me for the text", symbol: "text.cursor", keys: []))
             }
         }
+        let continues = sequence.continuesOnFailure(stepID: id)
+        list.append(
+            PaletteAction(
+                kind: .continueOnFailure(!continues), title: continues ? "Stop if it fails" : "Keep going if it fails",
+                symbol: continues ? "hand.raised" : "forward.end", keys: []))
         list.append(PaletteAction(kind: .deleteStep, title: "Delete step", symbol: "trash", keys: ["⌫"]))
         return list
     }

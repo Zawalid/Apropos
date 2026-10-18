@@ -269,6 +269,9 @@ final class PanelController: NSObject {
         case .askMe(let asking):
             if let id = model.selectedStepID { model.sequences?.setAsking(asking, stepID: id) }
             closeActions(animated: true)
+        case .continueOnFailure(let continues):
+            if let id = model.selectedStepID { model.sequences?.setContinuesOnFailure(continues, stepID: id) }
+            closeActions(animated: true)
         case .useSelection(let usesSelection):
             if let id = model.selectedStepID { model.sequences?.setUsesSelection(usesSelection, stepID: id) }
             closeActions(animated: true)
