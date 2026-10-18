@@ -7,5 +7,6 @@ and shows the actions that matter for that moment. Do something once in any app 
 
 Cue is a working name and may change.
 
-Status: planning. See [docs/design.md](docs/design.md) for the full idea and [docs/roadmap.md](docs/roadmap.md)
-for the build order.
+Status: M0 (foundation) is built: global shortcut, floating palette, the frontmost app's menu commands with fuzzy
+search, and Accessibility onboarding. See [docs/design.md](docs/design.md) for the full idea,
+[docs/roadmap.md](docs/roadmap.md) for the build order and [docs/development.md](docs/development.md) to run it.

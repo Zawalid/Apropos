@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift test
+
+  app:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: cd App && xcodegen generate
+      - name: Build the app
+        run: |
+          xcodebuild build \
+            -project App/Cue.xcodeproj -scheme Cue \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO
+
+  format:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift format lint --strict --recursive Sources Tests App/CueApp Package.swift
