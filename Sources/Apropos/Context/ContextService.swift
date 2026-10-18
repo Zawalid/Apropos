@@ -71,7 +71,7 @@ public struct ContextService: Sendable {
         snapshot.items = ContextItemBuilder.items(from: fields)
         snapshot.capturedAt = Date()
         let elapsed = Int(Date().timeIntervalSince(started) * 1000)
-        CueLog.app.debug("context: \(snapshot.items.count) items in \(elapsed) ms")
+        AproposLog.app.debug("context: \(snapshot.items.count) items in \(elapsed) ms")
         return snapshot
     }
 }

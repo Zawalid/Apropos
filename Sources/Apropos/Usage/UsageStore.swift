@@ -286,7 +286,7 @@ public final class UsageStore {
             lastSaveError = nil
         } catch {
             lastSaveError = error.localizedDescription
-            CueLog.app.error("usage save failed: \(error.localizedDescription, privacy: .public)")
+            AproposLog.app.error("usage save failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

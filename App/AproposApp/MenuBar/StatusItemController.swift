@@ -24,7 +24,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         statusItem.menu = menu
         applyVisibility()
         observer = NotificationCenter.default.addObserver(
-            forName: .cueSettingsChanged, object: nil, queue: .main
+            forName: .aproposSettingsChanged, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.applyVisibility() }
         }
@@ -84,7 +84,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     private func selector(for action: MenuBarContent.Action) -> Selector {
         switch action {
-        case .open: #selector(openCue)
+        case .open: #selector(openApropos)
         case .allowAccess: #selector(allowAccess)
         case .settings: #selector(openSettings)
         case .checkForUpdates: #selector(checkForUpdates)
@@ -111,7 +111,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         }
     }
 
-    @objc private func openCue() { controller.togglePanel() }
+    @objc private func openApropos() { controller.togglePanel() }
     @objc private func allowAccess() { controller.showOnboarding() }
     @objc private func openSettings() { controller.showSettings() }
     @objc private func checkForUpdates() { controller.settings.checkForUpdatesNow() }

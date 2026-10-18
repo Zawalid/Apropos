@@ -6,12 +6,12 @@ import SwiftUI
 extension View {
     /// A glass surface in `shape`: material, Cue's tint, a hairline whose top edge catches light, and no fill
     /// outside the shape.
-    func cueGlass<S: InsettableShape>(in shape: S, tinted: Bool = true) -> some View {
-        modifier(CueGlass(shape: shape, tinted: tinted))
+    func aproposGlass<S: InsettableShape>(in shape: S, tinted: Bool = true) -> some View {
+        modifier(AproposGlass(shape: shape, tinted: tinted))
     }
 }
 
-private struct CueGlass<S: InsettableShape>: ViewModifier {
+private struct AproposGlass<S: InsettableShape>: ViewModifier {
     let shape: S
     let tinted: Bool
 
@@ -56,7 +56,7 @@ private struct VisualEffectBlur: NSViewRepresentable {
 }
 
 /// A keyboard focus ring in the accent, drawn only while the view has focus.
-private struct CueFocusRing<S: Shape>: ViewModifier {
+private struct AproposFocusRing<S: Shape>: ViewModifier {
     let shape: S
     @Environment(\.isFocused) private var isFocused
 
@@ -68,7 +68,7 @@ private struct CueFocusRing<S: Shape>: ViewModifier {
 }
 
 extension View {
-    func cueFocusRing<S: Shape>(_ shape: S) -> some View {
-        modifier(CueFocusRing(shape: shape))
+    func aproposFocusRing<S: Shape>(_ shape: S) -> some View {
+        modifier(AproposFocusRing(shape: shape))
     }
 }

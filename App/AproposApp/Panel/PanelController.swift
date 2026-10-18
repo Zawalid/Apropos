@@ -51,7 +51,7 @@ final class PanelController: NSObject {
         panel.setContentSize(PanelPlacement.size)
 
         #if DEBUG
-            if AgentMode.isOn, let name = ProcessInfo.processInfo.environment["CUE_APPEARANCE"] {
+            if AgentMode.isOn, let name = ProcessInfo.processInfo.environment["APROPOS_APPEARANCE"] {
                 panel.appearance = NSAppearance(named: name == "light" ? .aqua : .darkAqua)
             }
         #endif
@@ -85,7 +85,7 @@ final class PanelController: NSObject {
         AgentMode.conceal(panel)
         panel.invalidateShadow()
         state.focusToken += 1
-        CueLog.panel.info(
+        AproposLog.panel.info(
             "show target=\(self.model.targetApp?.name ?? "none", privacy: .public) commands=\(self.model.results.count)"
         )
         #if DEBUG
@@ -104,12 +104,12 @@ final class PanelController: NSObject {
     }
 
     #if DEBUG
-        /// CUE_PREVIEW_QUERY, CUE_PREVIEW_MOVE (rows to move down) and CUE_PREVIEW_ACTIONS shape what a snapshot shows.
+        /// APROPOS_PREVIEW_QUERY, APROPOS_PREVIEW_MOVE (rows to move down) and APROPOS_PREVIEW_ACTIONS shape what a snapshot shows.
         private func applyDebugPreview() {
             let env = ProcessInfo.processInfo.environment
-            if let query = env["CUE_PREVIEW_QUERY"] { model.query = query }
-            if let move = env["CUE_PREVIEW_MOVE"].flatMap(Int.init) { model.moveSelection(by: move) }
-            if env["CUE_PREVIEW_ACTIONS"] != nil { toggleActions() }
+            if let query = env["APROPOS_PREVIEW_QUERY"] { model.query = query }
+            if let move = env["APROPOS_PREVIEW_MOVE"].flatMap(Int.init) { model.moveSelection(by: move) }
+            if env["APROPOS_PREVIEW_ACTIONS"] != nil { toggleActions() }
         }
     #endif
 
@@ -122,7 +122,7 @@ final class PanelController: NSObject {
     }
 
     private func handle(_ key: PaletteKey) -> Bool {
-        CueLog.panel.info(
+        AproposLog.panel.info(
             "key \(String(describing: key), privacy: .public) query=\(self.model.query, privacy: .public) selected=\(self.model.selected?.command.title ?? "none", privacy: .public)"
         )
         if state.actionsOpen { return handleActions(key) }
@@ -228,7 +228,7 @@ final class PanelController: NSObject {
             guard let self else { return }
             let closed = await self.model.run(command)
             if closed { self.usage.recordRun(command, appName: appName) }
-            CueLog.panel.info(
+            AproposLog.panel.info(
                 "ran \(command.breadcrumb, privacy: .public) > \(command.title, privacy: .public) ok=\(closed) error=\(self.model.runError ?? "none", privacy: .public)"
             )
             if !closed { self.reopenWithError() }

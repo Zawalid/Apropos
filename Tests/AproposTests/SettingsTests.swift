@@ -7,7 +7,7 @@ import Testing
 struct SettingsTests {
     private func tempURL() -> URL {
         FileManager.default.temporaryDirectory
-            .appendingPathComponent("cue-settings-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("apropos-settings-\(UUID().uuidString)", isDirectory: true)
             .appendingPathComponent("settings.json")
     }
 

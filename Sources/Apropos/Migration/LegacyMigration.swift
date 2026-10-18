@@ -38,6 +38,8 @@ public struct LegacyMigration {
     public static let legacyDomain = "com.zawalid.cue"
     public static let markerName = "migrated-from-cue"
     public static let doneKey = "legacyMigrationDone"
+    /// Old defaults keys that embedded the former name, mapped to their new names.
+    public static let renamedKeys = ["cueRecentCommands": "aproposRecentCommands"]
 
     private let supportDirectory: URL
     private let folderName: String
@@ -168,7 +170,9 @@ public struct LegacyMigration {
         guard legacyDomain != domain, let old = legacyDefaults.persistentDomain(forName: legacyDomain) else { return 0 }
         let current = defaults.persistentDomain(forName: domain) ?? [:]
         var copied = 0
-        for (key, value) in old where current[key] == nil {
+        for (oldKey, value) in old {
+            let key = Self.renamedKeys[oldKey] ?? oldKey
+            guard current[key] == nil else { continue }
             defaults.set(value, forKey: key)
             copied += 1
         }

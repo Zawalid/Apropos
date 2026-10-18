@@ -117,7 +117,7 @@ public struct SymbolPackLibrary: Sendable {
             guard let data = try? Data(contentsOf: url), let pack = try? SymbolPack.decode(data),
                 pack.schemaVersion <= SymbolPack.currentVersion
             else {
-                CueLog.app.error("symbol pack skipped: \(url.lastPathComponent, privacy: .public)")
+                AproposLog.app.error("symbol pack skipped: \(url.lastPathComponent, privacy: .public)")
                 return nil
             }
             return pack

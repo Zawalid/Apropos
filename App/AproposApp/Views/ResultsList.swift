@@ -27,7 +27,7 @@ struct ResultsList: View {
     let actions: PaletteActions
 
     @Environment(UsageController.self) private var usage
-    @Environment(\.cueReduceMotion) private var reduceMotion
+    @Environment(\.aproposReduceMotion) private var reduceMotion
     @Environment(\.interfaceMetrics) private var metrics
     @State private var entrance = RowEntrance()
     @State private var lastMouse = NSEvent.mouseLocation

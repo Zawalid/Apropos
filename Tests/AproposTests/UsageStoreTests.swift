@@ -10,7 +10,7 @@ struct UsageStoreTests {
 
     private func tempURL() -> URL {
         FileManager.default.temporaryDirectory
-            .appendingPathComponent("cue-usage-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("apropos-usage-\(UUID().uuidString)", isDirectory: true)
             .appendingPathComponent("usage.json")
     }
 

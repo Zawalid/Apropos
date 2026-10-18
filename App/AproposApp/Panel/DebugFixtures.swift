@@ -2,7 +2,7 @@
     import AppKit
     import Apropos
 
-    /// Debug builds only: CUE_FIXTURE_COMMANDS=finder|safari|xcode seeds a realistic command list so the palette can be
+    /// Debug builds only: APROPOS_FIXTURE_COMMANDS=finder|safari|xcode seeds a realistic command list so the palette can be
     /// checked without Accessibility access. Titles keep the noise real menus carry (ellipses, update counts).
     enum DebugFixtures {
         /// The app a fixture list pretends to belong to, so automated runs need not bring the real app to the front.

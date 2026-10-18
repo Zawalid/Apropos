@@ -42,7 +42,7 @@ struct ShortcutRecorder: View {
             }
             .buttonStyle(.plain)
             .focusable()
-            .cueFocusRing(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .aproposFocusRing(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .accessibilityLabel("Global shortcut, \(combo.display)")
             if let hint {
                 Text(hint).font(.system(size: 12)).foregroundStyle(Theme.cautionText)
@@ -60,7 +60,7 @@ struct ShortcutRecorder: View {
                 }
                 .buttonStyle(.plain)
                 .focusable()
-                .cueFocusRing(Circle())
+                .aproposFocusRing(Circle())
                 .accessibilityLabel("Reset shortcut to default")
             }
         }

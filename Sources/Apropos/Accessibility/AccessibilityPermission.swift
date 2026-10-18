@@ -42,7 +42,7 @@ public final class AccessibilityPermission {
         let now = probe()
         guard now != isTrusted else { return }
         isTrusted = now
-        CueLog.accessibility.info("accessibility trusted: \(now)")
+        AproposLog.accessibility.info("accessibility trusted: \(now)")
         updatePolling()
     }
 

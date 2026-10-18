@@ -4,7 +4,7 @@
 #   scripts/shots.sh             build once, then capture everything
 #   scripts/shots.sh --no-build  reuse the last build (build/agent)
 #
-# Runs entirely in agent mode (CUE_AGENT=1): a separate Debug build in build/agent, started as its own process with
+# Runs entirely in agent mode (APROPOS_AGENT=1): a separate Debug build in build/agent, started as its own process with
 # no status item, hotkey, welcome window or activation, and fully transparent windows. It never touches the app
 # you run with scripts/dev.sh, never brings another app to the front and never opens anything on your screen. It
 # stops only the process it started. Fixture commands and context mean Accessibility access is not needed. Each image
@@ -53,7 +53,7 @@ if [ ! -x "$POST" ]; then
 import Foundation
 let args = CommandLine.arguments
 DistributedNotificationCenter.default().postNotificationName(
-    Notification.Name("com.zawalid.cue.debug." + args[1]), object: args.count > 2 ? args[2] : nil, userInfo: nil,
+    Notification.Name("com.zawalid.apropos.debug." + args[1]), object: args.count > 2 ? args[2] : nil, userInfo: nil,
     deliverImmediately: true)
 SWIFT
   swiftc -O build/apropos-post.swift -o "$POST"
@@ -69,20 +69,20 @@ launch() {
   shift
   stop_agent
   local data
-  data="$(mktemp -d "${TMPDIR:-/tmp}/cue-shots.XXXXXX")"
-  env CUE_AGENT=1 CUE_APPEARANCE="$mode" CUE_SNAPSHOT_DIR="$OUT" CUE_DATA_DIR="$data" "$@" "$BIN" >/dev/null 2>&1 &
+  data="$(mktemp -d "${TMPDIR:-/tmp}/apropos-shots.XXXXXX")"
+  env APROPOS_AGENT=1 APROPOS_APPEARANCE="$mode" APROPOS_SNAPSHOT_DIR="$OUT" APROPOS_DATA_DIR="$data" "$@" "$BIN" >/dev/null 2>&1 &
   AGENT_PID=$!
   sleep 2
 }
 
 STATES=(
   "list|"
-  "empty-search|CUE_PREVIEW_QUERY="
-  "no-results|CUE_PREVIEW_QUERY=zzqx"
-  "loading|CUE_PREVIEW_STATE=loading"
-  "permission|CUE_PREVIEW_STATE=permission"
-  "error|CUE_PREVIEW_STATE=failed"
-  "popover|CUE_PREVIEW_ACTIONS=1"
+  "empty-search|APROPOS_PREVIEW_QUERY="
+  "no-results|APROPOS_PREVIEW_QUERY=zzqx"
+  "loading|APROPOS_PREVIEW_STATE=loading"
+  "permission|APROPOS_PREVIEW_STATE=permission"
+  "error|APROPOS_PREVIEW_STATE=failed"
+  "popover|APROPOS_PREVIEW_ACTIONS=1"
 )
 
 for mode in dark light; do
@@ -90,14 +90,14 @@ for mode in dark light; do
     label="${entry%%|*}"
     extra="${entry#*|}"
     # shellcheck disable=SC2086
-    launch "$mode" CUE_FIXTURE_COMMANDS=finder CUE_FIXTURE_USAGE=1 \
-      CUE_SNAPSHOT_NAME="panel-$label-$mode" $extra
+    launch "$mode" APROPOS_FIXTURE_COMMANDS=finder APROPOS_FIXTURE_USAGE=1 \
+      APROPOS_SNAPSHOT_NAME="panel-$label-$mode" $extra
     post toggle
     sleep 2
     echo "panel-$label-$mode"
   done
 
-  launch "$mode" CUE_FIXTURE_COMMANDS=finder
+  launch "$mode" APROPOS_FIXTURE_COMMANDS=finder
   for page in general appearance context privacyAndData updates about; do
     post settings "$page"
     sleep 1.6

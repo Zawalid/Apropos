@@ -141,7 +141,7 @@ struct PaletteModelUsageTests {
         let list = ["Alpha", "Beta", "Gamma", "Delta"].map { command($0) }
         let model = makeModel(list)
         let store = UsageStore(
-            url: FileManager.default.temporaryDirectory.appendingPathComponent("cue-\(UUID().uuidString)/usage.json"),
+            url: FileManager.default.temporaryDirectory.appendingPathComponent("apropos-\(UUID().uuidString)/usage.json"),
             writeDelay: .zero)
         store.setPinned(true, for: list[3].stableID)
         for _ in 0..<5 { store.recordRun(id: list[2].stableID) }

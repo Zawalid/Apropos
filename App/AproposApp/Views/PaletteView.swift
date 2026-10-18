@@ -22,7 +22,7 @@ struct PaletteView: View {
     let actions: PaletteActions
 
     @FocusState private var searchFocused: Bool
-    @Environment(\.cueReduceMotion) private var reduceMotion
+    @Environment(\.aproposReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -47,7 +47,7 @@ struct PaletteView: View {
             }
         }
         .frame(width: PanelPlacement.size.width, height: PanelPlacement.size.height)
-        .cueGlass(in: RoundedRectangle(cornerRadius: Theme.panelRadius, style: .continuous))
+        .aproposGlass(in: RoundedRectangle(cornerRadius: Theme.panelRadius, style: .continuous))
         .tint(Theme.accentText)
         .environment(\.interfaceMetrics, settings.metrics)
         .environment(settings)
@@ -209,11 +209,11 @@ private struct PaletteContentView: View {
 }
 
 #if DEBUG
-    /// Debug builds only: CUE_PREVIEW_STATE=permission|loading|failed|empty|nocommands forces a state so each can be
+    /// Debug builds only: APROPOS_PREVIEW_STATE=permission|loading|failed|empty|nocommands forces a state so each can be
     /// looked at without breaking the real conditions.
     enum DebugPreviewState {
         static var forced: PaletteContent? {
-            switch ProcessInfo.processInfo.environment["CUE_PREVIEW_STATE"] {
+            switch ProcessInfo.processInfo.environment["APROPOS_PREVIEW_STATE"] {
             case "permission": .needsPermission
             case "loading": .loading
             case "failed": .failed("The app did not answer in time. Switch back to it and try again.")

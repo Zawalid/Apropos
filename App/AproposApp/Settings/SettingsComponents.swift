@@ -70,7 +70,7 @@ extension View {
 /// Scrolls a pane to the search result and pulses it once.
 struct SettingsRevealer<Content: View>: View {
     @Environment(SettingsNavigation.self) private var navigation
-    @Environment(\.cueReduceMotion) private var reduceMotion
+    @Environment(\.aproposReduceMotion) private var reduceMotion
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -197,18 +197,18 @@ struct SettingToggleRow: View {
             title: title ?? definition?.title ?? id.rawValue,
             detail: title == nil ? definition.map(\.detail).flatMap { $0.isEmpty ? nil : $0 } : nil, settingID: id
         ) {
-            CueToggle(title: title ?? definition?.title ?? id.rawValue, isOn: $isOn)
+            AproposToggle(title: title ?? definition?.title ?? id.rawValue, isOn: $isOn)
         }
         .settingsAnchor(id.rawValue)
     }
 }
 
 /// A switch that reads the same whether or not its window is key: accent track when on, quiet track when off.
-struct CueToggle: View {
+struct AproposToggle: View {
     let title: String
     @Binding var isOn: Bool
 
-    @Environment(\.cueReduceMotion) private var reduceMotion
+    @Environment(\.aproposReduceMotion) private var reduceMotion
 
     var body: some View {
         Button {
@@ -228,7 +228,7 @@ struct CueToggle: View {
         }
         .buttonStyle(.plain)
         .focusable()
-        .cueFocusRing(Capsule())
+        .aproposFocusRing(Capsule())
         .accessibilityLabel(title)
         .accessibilityValue(isOn ? "On" : "Off")
         .accessibilityAddTraits(.isToggle)
@@ -297,7 +297,7 @@ struct SecondaryButtonStyle: ButtonStyle {
             )
             .contentShape(Rectangle())
             .onHover { hovering = $0 }
-            .cueFocusRing(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .aproposFocusRing(RoundedRectangle(cornerRadius: 9, style: .continuous))
     }
 }
 

@@ -267,7 +267,7 @@ public final class SettingsStore {
             lastSaveError = nil
         } catch {
             lastSaveError = error.localizedDescription
-            CueLog.app.error("settings save failed: \(error.localizedDescription, privacy: .public)")
+            AproposLog.app.error("settings save failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 

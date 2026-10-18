@@ -41,7 +41,7 @@ struct RowRise: ViewModifier {
     let duration: Double
     let entrance: RowEntrance?
 
-    @Environment(\.cueReduceMotion) private var reduceMotion
+    @Environment(\.aproposReduceMotion) private var reduceMotion
     @State private var shown = false
 
     func body(content: Content) -> some View {
@@ -71,15 +71,15 @@ extension View {
     }
 }
 
-private struct CueReduceMotionKey: EnvironmentKey {
+private struct AproposReduceMotionKey: EnvironmentKey {
     static let defaultValue = false
 }
 
 extension EnvironmentValues {
     /// True when the system asks for reduced motion or Cue's own setting does.
-    var cueReduceMotion: Bool {
-        get { self[CueReduceMotionKey.self] }
-        set { self[CueReduceMotionKey.self] = newValue }
+    var aproposReduceMotion: Bool {
+        get { self[AproposReduceMotionKey.self] }
+        set { self[AproposReduceMotionKey.self] = newValue }
     }
 }
 
@@ -88,7 +88,7 @@ private struct ReduceMotionProvider: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var system
 
     func body(content: Content) -> some View {
-        content.environment(\.cueReduceMotion, system || setting)
+        content.environment(\.aproposReduceMotion, system || setting)
     }
 }
 

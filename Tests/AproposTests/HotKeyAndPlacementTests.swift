@@ -25,7 +25,7 @@ struct HotKeyAndPlacementTests {
     }
 
     @Test func storeRoundTripsAndFallsBack() throws {
-        let suite = "cue-tests-\(UUID().uuidString)"
+        let suite = "apropos-tests-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let store = HotKeyStore(defaults: defaults)

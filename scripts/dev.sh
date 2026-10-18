@@ -9,7 +9,7 @@
 #
 # Cue needs Accessibility access, and macOS ties that grant to the app's code signature. An ad hoc signature changes
 # on every build, so the grant would be lost each time and the welcome screen would come back. After each build this
-# script re-signs the app with a stable identity: CUE_SIGN_IDENTITY if set, otherwise the first code signing
+# script re-signs the app with a stable identity: APROPOS_SIGN_IDENTITY if set, otherwise the first code signing
 # certificate in your keychain (see `security find-identity -v -p codesigning`). With no certificate it falls back to
 # ad hoc and says so. Grant Accessibility once to the app this script builds; it then survives rebuilds.
 set -euo pipefail
@@ -17,7 +17,7 @@ cd "$(dirname "$0")/.."
 
 APP="build/dev/Build/Products/Debug/Apropos.app"
 MODE="${1:-once}"
-IDENTITY="${CUE_SIGN_IDENTITY:-}"
+IDENTITY="${APROPOS_SIGN_IDENTITY:-}"
 if [ -z "$IDENTITY" ]; then
   IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | sed -n 's/^ *1) [0-9A-F]* "\(.*\)"$/\1/p')"
 fi

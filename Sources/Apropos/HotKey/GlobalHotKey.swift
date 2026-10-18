@@ -14,7 +14,7 @@ public final class GlobalHotKey {
     private static var eventHandler: EventHandlerRef?
     private static var live: [UInt32: GlobalHotKey] = [:]
     private static var nextID: UInt32 = 1
-    private static let signature: OSType = 0x4355_4531  // "CUE1"
+    private static let signature: OSType = 0x4150_5231  // "APR1"
     private var id: UInt32 = 0
 
     public init(handler: @escaping @MainActor () -> Void) {
@@ -34,14 +34,14 @@ public final class GlobalHotKey {
         let status = RegisterEventHotKey(
             combo.keyCode, combo.carbonModifiers, hotKeyID, GetApplicationEventTarget(), 0, &ref)
         guard status == noErr, let ref else {
-            CueLog.hotKey.error("could not register \(combo.display): \(status)")
+            AproposLog.hotKey.error("could not register \(combo.display): \(status)")
             isRegistered = false
             return false
         }
         hotKeyRef = ref
         Self.live[id] = self
         isRegistered = true
-        CueLog.hotKey.info("registered \(combo.display)")
+        AproposLog.hotKey.info("registered \(combo.display)")
         return true
     }
 

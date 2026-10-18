@@ -30,7 +30,7 @@ final class AppController {
         var usageURL = UsageStore.defaultURL
         #if DEBUG
             // Snapshots and experiments keep their data out of the real files.
-            if let dir = ProcessInfo.processInfo.environment["CUE_DATA_DIR"] {
+            if let dir = ProcessInfo.processInfo.environment["APROPOS_DATA_DIR"] {
                 settingsURL = URL(fileURLWithPath: dir).appendingPathComponent("settings.json")
                 usageURL = URL(fileURLWithPath: dir).appendingPathComponent("usage.json")
             }
@@ -44,14 +44,14 @@ final class AppController {
     /// experiments never read or write the real folders.
     private static func runLegacyMigration() {
         #if DEBUG
-            if ProcessInfo.processInfo.environment["CUE_DATA_DIR"] != nil || AgentMode.isOn { return }
+            if ProcessInfo.processInfo.environment["APROPOS_DATA_DIR"] != nil || AgentMode.isOn { return }
         #endif
         guard let domain = Bundle.main.bundleIdentifier else { return }
         let outcome = LegacyMigration(
             supportDirectory: SettingsStore.supportDirectory, folderName: SettingsStore.folderName,
             defaults: .standard, domain: domain
         ).run()
-        CueLog.app.info("\(outcome.summary, privacy: .public)")
+        AproposLog.app.info("\(outcome.summary, privacy: .public)")
     }
 
     /// The pieces are passed in so previews can build a controller over in-memory stores and a fixed permission.
@@ -75,7 +75,7 @@ final class AppController {
 
     func start() {
         permission.startMonitoring()
-        if !(AgentMode.isOn && ProcessInfo.processInfo.environment["CUE_FIXTURE_COMMANDS"] != nil) { tracker.start() }
+        if !(AgentMode.isOn && ProcessInfo.processInfo.environment["APROPOS_FIXTURE_COMMANDS"] != nil) { tracker.start() }
         let panel = PanelController(
             model: palette, tracker: tracker, permission: permission, settings: settings, context: context,
             usage: usage, openSettings: { [weak self] in self?.showSettings() })
@@ -87,18 +87,18 @@ final class AppController {
         }
         self.panel = panel
         #if DEBUG
-            if let name = ProcessInfo.processInfo.environment["CUE_FIXTURE_COMMANDS"] {
+            if let name = ProcessInfo.processInfo.environment["APROPOS_FIXTURE_COMMANDS"] {
                 let fixtures = DebugFixtures.commands(named: name)
                 menus.seed(fixtures)
                 if AgentMode.isOn { tracker.pin(DebugFixtures.targetApp(named: name)) }
-                if ProcessInfo.processInfo.environment["CUE_FIXTURE_USAGE"] != nil {
+                if ProcessInfo.processInfo.environment["APROPOS_FIXTURE_USAGE"] != nil {
                     DebugFixtures.seedUsage(usage, commands: fixtures)
                 }
             }
             if AgentMode.isOn {
                 DebugSnapshot.installRemoteControl(panel: panel, model: palette)
                 DebugSnapshot.installSettingsControl(controller: self)
-                if let name = ProcessInfo.processInfo.environment["CUE_APPEARANCE"] {
+                if let name = ProcessInfo.processInfo.environment["APROPOS_APPEARANCE"] {
                     NSApp.appearance = NSAppearance(named: name == "light" ? .aqua : .darkAqua)
                 }
             }
@@ -110,7 +110,7 @@ final class AppController {
             showWelcomeOnce()
         }
         NotificationCenter.default.addObserver(
-            forName: .cueSettingsChanged, object: nil, queue: .main
+            forName: .aproposSettingsChanged, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.settingsChanged() }
         }

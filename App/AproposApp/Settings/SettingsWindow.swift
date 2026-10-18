@@ -110,7 +110,7 @@ final class SettingsWindowController {
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 560),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered,
             defer: false)
-        window.title = "Cue Settings"
+        window.title = "Settings"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
@@ -130,6 +130,8 @@ struct SettingsRoot: View {
     @State private var query: String
     @State private var highlightedHit = 0
     @FocusState private var searchFocused: Bool
+    @Namespace private var selection
+    @Environment(\.cueReduceMotion) private var reduceMotion
 
     init(controller: AppController, settings: SettingsModel, navigation: SettingsNavigation, initialQuery: String = "")
     {
@@ -142,18 +144,20 @@ struct SettingsRoot: View {
     var body: some View {
         HStack(spacing: 0) {
             sidebar
-                .frame(width: 214)
-                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.sidebarBackground))
+                .frame(width: 212)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.Settings.sidebar))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.cardEdge, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(Theme.Settings.sidebarEdge, lineWidth: 1)
                 )
-                .padding(6)
+                .padding(8)
             detail
         }
         .frame(minWidth: 720, minHeight: 480)
-        .background(Theme.windowBackground)
+        .background(Theme.Settings.window)
         .tint(Theme.accent)
         .environment(navigation)
+        .environment(settings)
         .environment(\.interfaceMetrics, settings.metrics)
         .providesReduceMotion(settings.reduceMotion)
         .ignoresSafeArea()
@@ -161,25 +165,28 @@ struct SettingsRoot: View {
 
     // MARK: Sidebar
 
+    private var trimmedQuery: String { query.trimmingCharacters(in: .whitespaces) }
+
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             searchField
-                .padding(.top, 38)
+                .padding(.top, 44)
+                .padding(.horizontal, 2)
+                .padding(.bottom, 10)
             if trimmedQuery.isEmpty {
                 pageList
             } else {
                 searchResults
             }
             Spacer(minLength: 0)
+            sidebarFooter
         }
         .padding(.horizontal, 8)
-        .padding(.bottom, 8)
+        .padding(.bottom, 10)
     }
 
-    private var trimmedQuery: String { query.trimmingCharacters(in: .whitespaces) }
-
     private var searchField: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 7) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Theme.text3)
@@ -198,51 +205,46 @@ struct SettingsRoot: View {
                 }
                 .onChange(of: query) { highlightedHit = 0 }
                 .accessibilityLabel("Search settings")
-            if !query.isEmpty {
-                Button {
-                    query = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.text3)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
-            }
         }
-        .padding(.horizontal, 9)
-        .frame(height: 28)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.chip))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.chipEdge, lineWidth: 1))
+        .padding(.horizontal, 10)
+        .frame(height: 30)
+        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Theme.Settings.chip))
+        .overlay(
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .strokeBorder(searchFocused ? Theme.text3 : .clear, lineWidth: 1)
+        )
     }
 
     private var pageList: some View {
-        VStack(alignment: .leading, spacing: 1) {
+        VStack(alignment: .leading, spacing: 2) {
             ForEach([SettingPage.general, .appearance, .context, .privacyAndData], id: \.self) { pageRow($0) }
-            Divider().overlay(Theme.cardEdge).padding(.vertical, 6).padding(.horizontal, 6)
+            Rectangle().fill(Theme.Settings.rule).frame(height: 1).padding(.vertical, 6).padding(.horizontal, 8)
             ForEach([SettingPage.updates, .about], id: \.self) { pageRow($0) }
         }
     }
 
     private func pageRow(_ page: SettingPage) -> some View {
-        let selected = navigation.page == page
-        return Button {
-            navigation.select(page)
-        } label: {
-            HStack(spacing: 9) {
-                PageTile(page: page)
-                Text(page.title)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.text)
-                Spacer()
-            }
-            .padding(.horizontal, 7)
-            .frame(height: 30)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous).fill(selected ? Theme.highlight : .clear)
-            )
-            .contentShape(Rectangle())
+        SidebarRow(page: page, isSelected: navigation.page == page, namespace: selection) {
+            withAnimation(reduceMotion ? nil : Motion.selection) { navigation.select(page) }
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private var sidebarFooter: some View {
+        HStack(spacing: 7) {
+            Circle()
+                .fill(controller.permission.isTrusted ? Theme.accent : Theme.cautionText)
+                .frame(width: 6, height: 6)
+            Text(controller.permission.isTrusted ? "Ready" : "Needs access")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.text3)
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            HStack(spacing: 3) {
+                ForEach(Array(controller.combo.caps.enumerated()), id: \.offset) { KeyCap(text: $0.element, small: true) }
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.top, 8)
     }
 
     private var hits: [SettingsHit] { SettingsCatalog.search(trimmedQuery) }
@@ -255,7 +257,8 @@ struct SettingsRoot: View {
                     Text("No settings match")
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.text3)
-                        .padding(10)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 10)
                 }
                 ForEach(Array(hits.enumerated()), id: \.element.id) { index, hit in
                     Button {
@@ -264,24 +267,19 @@ struct SettingsRoot: View {
                         HStack(spacing: 10) {
                             PageTile(page: hit.page)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(hit.title).font(.system(size: 13)).foregroundStyle(Theme.text)
-                                Text(
-                                    hit.isPage
-                                        ? "Page"
-                                        : [hit.page.title, hit.section].compactMap { $0 }.joined(
-                                            separator: " \u{203A} ")
-                                )
-                                .font(.system(size: 11))
-                                .foregroundStyle(Theme.text3)
-                                .lineLimit(1)
+                                Text(hit.title).font(.system(size: 13.5)).foregroundStyle(Theme.text)
+                                Text(hit.isPage ? "Page" : [hit.page.title, hit.section].compactMap { $0 }.joined(separator: " \u{203A} "))
+                                    .font(.system(size: 11.5))
+                                    .foregroundStyle(Theme.text3)
+                                    .lineLimit(1)
                             }
                             Spacer(minLength: 0)
                         }
-                        .padding(.horizontal, 7)
-                        .frame(height: 36)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
                         .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(index == highlightedHit ? Theme.highlight : .clear)
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(index == highlightedHit ? Theme.Settings.highlight : .clear)
                         )
                         .contentShape(Rectangle())
                     }
@@ -308,42 +306,48 @@ struct SettingsRoot: View {
     // MARK: Detail
 
     private var detail: some View {
-        VStack(spacing: 0) {
-            topBar
+        ZStack(alignment: .top) {
             SettingsRevealer {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 22) {
                         page
                     }
-                    .frame(maxWidth: 600, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 4)
-                    .padding(.bottom, 24)
+                    .frame(maxWidth: 580, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 62)
+                    .padding(.bottom, 28)
                     .frame(maxWidth: .infinity)
                     .id(navigation.page)
                 }
                 .scrollIndicators(.never)
+                .mask(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear, location: 0), .init(color: .black, location: 0.075),
+                            .init(color: .black, location: 0.965), .init(color: .clear, location: 1),
+                        ], startPoint: .top, endPoint: .bottom))
             }
+            topBar
         }
     }
 
-    /// Back and forward through the panes visited, and the title of the current one.
+    /// Back and forward through the panes visited.
     private var topBar: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 0) {
             HStack(spacing: 0) {
                 historyButton("chevron.left", label: "Back", enabled: navigation.canGoBack) { navigation.goBack() }
-                Rectangle().fill(Theme.cardEdge).frame(width: 1, height: 12)
+                Rectangle().fill(Theme.Settings.rule).frame(width: 1, height: 14)
                 historyButton("chevron.right", label: "Forward", enabled: navigation.canGoForward) {
                     navigation.goForward()
                 }
             }
-            .background(Capsule().fill(Theme.chip))
-            .overlay(Capsule().strokeBorder(Theme.chipEdge, lineWidth: 1))
+            .background(Capsule().fill(Theme.Settings.chip))
+            .overlay(Capsule().strokeBorder(Theme.Settings.cardEdge, lineWidth: 1))
             Spacer()
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 20)
         .padding(.top, 8)
-        .frame(height: 44, alignment: .center)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func historyButton(_ symbol: String, label: String, enabled: Bool, action: @escaping () -> Void)
@@ -351,9 +355,9 @@ struct SettingsRoot: View {
     {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(enabled ? Theme.text : Theme.text3.opacity(0.5))
-                .frame(width: 30, height: 26)
+                .frame(width: 34, height: 30)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -371,5 +375,42 @@ struct SettingsRoot: View {
         case .updates: UpdatesPage(settings: settings)
         case .about: AboutPage(controller: controller, settings: settings)
         }
+    }
+}
+
+/// One row of the sidebar. The highlight is shared between rows, so it slides from the old page to the new one.
+private struct SidebarRow: View {
+    let page: SettingPage
+    let isSelected: Bool
+    let namespace: Namespace.ID
+    let action: () -> Void
+
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                PageTile(page: page)
+                Text(page.title)
+                    .font(.system(size: 13.5))
+                    .foregroundStyle(Theme.text)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 8)
+            .frame(height: 32)
+            .background {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Theme.Settings.highlight)
+                        .matchedGeometryEffect(id: "selection", in: namespace)
+                } else if hovering {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Theme.Settings.hover)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

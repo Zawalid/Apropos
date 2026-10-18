@@ -32,10 +32,10 @@ The person keeps their own copy of the app running while they work. Do not distu
   the current session. `scripts/dev.sh` is for the person: it rebuilds, re-signs with a stable certificate (so the
   Accessibility grant survives) and relaunches their copy.
 - To check visuals use `scripts/shots.sh`. It builds a separate copy in `build/agent` and runs it in agent mode
-  (`CUE_AGENT=1`): no status item, hotkey, welcome window or activation, transparent windows, and the debug remote
+  (`APROPOS_AGENT=1`): no status item, hotkey, welcome window or activation, transparent windows, and the debug remote
   control is only live there. It stops only the process it started, takes a lock so two runs never overlap, and writes
   PNGs to `build/shots/`. Read those images and say which you read.
-- Debug env vars (`CUE_APPEARANCE`, `CUE_FIXTURE_*`, `CUE_SNAPSHOT_*`, `CUE_DATA_DIR`) only take effect in agent mode.
+- Debug env vars (`APROPOS_APPEARANCE`, `APROPOS_FIXTURE_*`, `APROPOS_SNAPSHOT_*`, `APROPOS_DATA_DIR`) only take effect in agent mode.
   Never launch the app with them set in the person's session: a leftover value used to pin the theme and ignore the
   Settings choice.
 - Anything that cannot be checked without the real app on screen (global hotkey, real glass over a real desktop,

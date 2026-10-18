@@ -20,7 +20,7 @@ extension InterfaceSize {
 }
 
 extension Notification.Name {
-    static let cueSettingsChanged = Notification.Name("com.zawalid.cue.settings.changed")
+    static let aproposSettingsChanged = Notification.Name("com.zawalid.apropos.settings.changed")
 }
 
 /// The settings every part of the app reads and writes, backed by `SettingsStore` (one JSON file). The store is the
@@ -148,14 +148,14 @@ final class SettingsModel {
     func resetSetting(_ id: SettingID) {
         store.reset(id)
         if id == .theme { applyAppearance() }
-        NotificationCenter.default.post(name: .cueSettingsChanged, object: nil)
+        NotificationCenter.default.post(name: .aproposSettingsChanged, object: nil)
     }
 
     // MARK: Files
 
     func exportSettings() {
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = "cue-settings.json"
+        panel.nameFieldStringValue = "apropos-settings.json"
         panel.allowedContentTypes = [.json]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do { try store.exportSettings(to: url) } catch { report("Could not export settings", error) }
@@ -168,7 +168,7 @@ final class SettingsModel {
         do {
             _ = try store.importSettings(from: url)
             applyAppearance()
-            NotificationCenter.default.post(name: .cueSettingsChanged, object: nil)
+            NotificationCenter.default.post(name: .aproposSettingsChanged, object: nil)
         } catch {
             report("Could not import settings", error)
         }
@@ -187,7 +187,7 @@ final class SettingsModel {
 
     private func write(_ value: SettingValue, _ id: SettingID) {
         guard store.set(value, for: id) else { return }
-        NotificationCenter.default.post(name: .cueSettingsChanged, object: nil)
+        NotificationCenter.default.post(name: .aproposSettingsChanged, object: nil)
     }
 
     private func report(_ message: String, _ error: Error) {
@@ -210,14 +210,14 @@ final class SettingsModel {
         do {
             if wanted { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
         } catch {
-            CueLog.app.error("login item failed: \(error.localizedDescription, privacy: .public)")
+            AproposLog.app.error("login item failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
     private func applyAppearance() {
         guard appliesSystemState else { return }
         #if DEBUG
-            if AgentMode.isOn, ProcessInfo.processInfo.environment["CUE_APPEARANCE"] != nil { return }
+            if AgentMode.isOn, ProcessInfo.processInfo.environment["APROPOS_APPEARANCE"] != nil { return }
         #endif
         switch appearance {
         case .system: NSApp?.appearance = nil

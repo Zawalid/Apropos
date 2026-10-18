@@ -18,7 +18,7 @@ final class UsageController {
     }
 
     static let recentLimit = 6
-    private static let recentsKey = "cueRecentCommands"
+    private static let recentsKey = "aproposRecentCommands"
 
     let store: UsageStore
     private(set) var recents: [Recent]

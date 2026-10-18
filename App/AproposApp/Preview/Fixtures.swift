@@ -13,7 +13,7 @@
         /// normally never even created.
         private static func scratchURL(_ name: String) -> URL {
             FileManager.default.temporaryDirectory
-                .appendingPathComponent("cue-preview-\(UUID().uuidString)", isDirectory: true)
+                .appendingPathComponent("apropos-preview-\(UUID().uuidString)", isDirectory: true)
                 .appendingPathComponent(name)
         }
 
@@ -33,7 +33,7 @@
 
         /// A private suite for the recent-commands list. The name is unique, and previews never record a run.
         static func defaults() -> UserDefaults {
-            UserDefaults(suiteName: "cue.preview.\(UUID().uuidString)") ?? .standard
+            UserDefaults(suiteName: "apropos.preview.\(UUID().uuidString)") ?? .standard
         }
 
         /// A controller for the Settings pages. With `trusted` false and an `app`, the tracker follows that fake app

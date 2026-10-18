@@ -37,7 +37,7 @@ struct CapsuleButtonStyle: ButtonStyle {
             .animation(Motion.easeOut(0.12), value: configuration.isPressed)
             .contentShape(Capsule())
             .onHover { hovering = $0 }
-            .cueFocusRing(Capsule())
+            .aproposFocusRing(Capsule())
     }
 }
 
@@ -47,12 +47,12 @@ struct RoundGlassButtonStyle: ButtonStyle {
         configuration.label
             .frame(width: Theme.footerHeight, height: Theme.footerHeight)
             .background(Theme.floatFill, in: Circle())
-            .cueGlass(in: Circle(), tinted: false)
+            .aproposGlass(in: Circle(), tinted: false)
             .shadow(color: .black.opacity(0.10), radius: 8, y: 4)
             .scaleEffect(configuration.isPressed ? 0.95 : 1)
             .animation(Motion.easeOut(0.12), value: configuration.isPressed)
             .contentShape(Circle())
-            .cueFocusRing(Circle())
+            .aproposFocusRing(Circle())
     }
 }
 
@@ -69,6 +69,6 @@ struct AccentButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(Motion.easeOut(0.12), value: configuration.isPressed)
             .contentShape(Capsule())
-            .cueFocusRing(Capsule())
+            .aproposFocusRing(Capsule())
     }
 }

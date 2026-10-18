@@ -28,7 +28,7 @@ struct FloatingFooter: View {
                     .lineLimit(1)
                     .padding(.horizontal, 12)
                     .frame(height: 28)
-                    .cueGlass(in: Capsule())
+                    .aproposGlass(in: Capsule())
             }
             if content == .results { actionBar }
         }
@@ -62,7 +62,7 @@ struct FloatingFooter: View {
         .padding(.horizontal, 6)
         .frame(height: Theme.footerHeight)
         .background(Theme.floatFill, in: Capsule())
-        .cueGlass(in: Capsule(), tinted: false)
+        .aproposGlass(in: Capsule(), tinted: false)
         .shadow(color: .black.opacity(0.10), radius: 8, y: 4)
     }
 }
@@ -103,7 +103,7 @@ struct ActionsPopover: View {
         }
         .padding(6)
         .frame(width: 250)
-        .cueGlass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .aproposGlass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: .black.opacity(0.3), radius: 24, y: 10)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Actions")

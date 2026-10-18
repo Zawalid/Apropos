@@ -33,7 +33,7 @@ targets:
       base:
         PRODUCT_NAME: Apropos
         PRODUCT_MODULE_NAME: AproposApp
-        PRODUCT_BUNDLE_IDENTIFIER: com.zawalid.cue
+        PRODUCT_BUNDLE_IDENTIFIER: com.zawalid.apropos
         MARKETING_VERSION: 0.1.0
         CURRENT_PROJECT_VERSION: 1
         # One signed binary: a separate debug dylib signed differently from the app fails to load under hardened runtime.
@@ -61,7 +61,7 @@ targets:
       base:
         PRODUCT_NAME: AproposPreviewRender
         PRODUCT_MODULE_NAME: AproposPreviewRender
-        PRODUCT_BUNDLE_IDENTIFIER: com.zawalid.cue.previewrender
+        PRODUCT_BUNDLE_IDENTIFIER: com.zawalid.apropos.previewrender
         GENERATE_INFOPLIST_FILE: YES
         ENABLE_HARDENED_RUNTIME: NO
 schemes:

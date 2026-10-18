@@ -2,17 +2,17 @@
     import AppKit
     import Apropos
 
-    /// Debug builds only: when CUE_SNAPSHOT_DIR is set, writes a PNG of the palette a moment after it opens and a text
+    /// Debug builds only: when APROPOS_SNAPSHOT_DIR is set, writes a PNG of the palette a moment after it opens and a text
     /// dump of what it shows. Lets the palette be checked without screen recording permission.
     @MainActor
     enum DebugSnapshot {
         static func scheduleIfRequested(of panel: NSPanel, model: PaletteModel) {
-            guard let dir = ProcessInfo.processInfo.environment["CUE_SNAPSHOT_DIR"] else { return }
+            guard let dir = ProcessInfo.processInfo.environment["APROPOS_SNAPSHOT_DIR"] else { return }
             Task {
                 try? await Task.sleep(for: .milliseconds(700))
                 guard let png = png(of: panel) else { return }
                 let stamp =
-                    ProcessInfo.processInfo.environment["CUE_SNAPSHOT_NAME"]
+                    ProcessInfo.processInfo.environment["APROPOS_SNAPSHOT_NAME"]
                     ?? "palette-\(Int(Date().timeIntervalSince1970))"
                 try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
                 try? png.write(to: URL(fileURLWithPath: "\(dir)/\(stamp).png"))
@@ -28,9 +28,9 @@
     }
 
     extension DebugSnapshot {
-        /// Writes a PNG of any window of this app into CUE_SNAPSHOT_DIR.
+        /// Writes a PNG of any window of this app into APROPOS_SNAPSHOT_DIR.
         static func capture(_ window: NSWindow, name: String) {
-            guard let dir = ProcessInfo.processInfo.environment["CUE_SNAPSHOT_DIR"], let png = png(of: window)
+            guard let dir = ProcessInfo.processInfo.environment["APROPOS_SNAPSHOT_DIR"], let png = png(of: window)
             else { return }
             try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
             try? png.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))
@@ -61,10 +61,10 @@
             return NSBitmapImageRep(cgImage: flat).representation(using: .png, properties: [:])
         }
 
-        /// Notification "com.zawalid.cue.debug.settings" (object = page name) opens that Settings page and snapshots it.
+        /// Notification "com.zawalid.apropos.debug.settings" (object = page name) opens that Settings page and snapshots it.
         static func installSettingsControl(controller: AppController) {
             DistributedNotificationCenter.default().addObserver(
-                forName: Notification.Name("com.zawalid.cue.debug.settings"), object: nil, queue: .main
+                forName: Notification.Name("com.zawalid.apropos.debug.settings"), object: nil, queue: .main
             ) { note in
                 let name = note.object as? String ?? "general"
                 MainActor.assumeIsolated {
@@ -78,14 +78,14 @@
         }
 
         /// Debug builds only: lets a script open the palette and run the best match for a query without synthesizing
-        /// keystrokes, through distributed notifications "com.zawalid.cue.debug.toggle" and "...debug.run" (object = query).
+        /// keystrokes, through distributed notifications "com.zawalid.apropos.debug.toggle" and "...debug.run" (object = query).
         static func installRemoteControl(panel: PanelController, model: PaletteModel) {
             let center = DistributedNotificationCenter.default()
-            center.addObserver(forName: Notification.Name("com.zawalid.cue.debug.toggle"), object: nil, queue: .main) {
+            center.addObserver(forName: Notification.Name("com.zawalid.apropos.debug.toggle"), object: nil, queue: .main) {
                 _ in
                 MainActor.assumeIsolated { panel.toggle() }
             }
-            center.addObserver(forName: Notification.Name("com.zawalid.cue.debug.run"), object: nil, queue: .main) {
+            center.addObserver(forName: Notification.Name("com.zawalid.apropos.debug.run"), object: nil, queue: .main) {
                 note in
                 let query = note.object as? String ?? ""
                 MainActor.assumeIsolated {

@@ -101,6 +101,16 @@ struct LegacyMigrationTests {
         #expect(box.defaults.bool(forKey: "hasSeenWelcome"))
     }
 
+    @Test func keysThatEmbeddedTheOldNameAreCopiedUnderTheNewName() throws {
+        let box = try sandbox()
+        box.legacy.set(["a", "b"], forKey: "cueRecentCommands")
+
+        _ = migration(box).run()
+
+        #expect(box.defaults.stringArray(forKey: "aproposRecentCommands") == ["a", "b"])
+        #expect(box.defaults.object(forKey: "cueRecentCommands") == nil)
+    }
+
     @Test func partialDataMigratesWhatExists() throws {
         let box = try sandbox()
         try write("{\"version\":1}", to: "Cue/settings.json", in: box)

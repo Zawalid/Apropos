@@ -152,7 +152,7 @@ struct ContextPage: View {
             ForEach(SettingsRegistry.contextChipOptions, id: \.value) { option in
                 if let kind = ContextKind(rawValue: option.value) {
                     SettingsRow(title: option.title) {
-                        CueToggle(
+                        AproposToggle(
                             title: option.title,
                             isOn: Binding(
                                 get: { settings.isChipShown(kind) }, set: { settings.setChip(kind, shown: $0) }))
@@ -169,7 +169,7 @@ struct ContextPage: View {
             }
             ForEach(apps) { app in
                 SettingsRow(title: app.name, leading: AnyView(AppIconImage(icon: app.icon, size: 20))) {
-                    CueToggle(
+                    AproposToggle(
                         title: app.name,
                         isOn: Binding(
                             get: { settings.isSensingEnabled(for: app.bundleID) },

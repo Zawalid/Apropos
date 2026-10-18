@@ -54,7 +54,7 @@ with a stable certificate:
 
 ```bash
 security find-identity -v -p codesigning        # pick a name from this list
-CUE_SIGN_IDENTITY="Your Certificate Name" scripts/dev.sh
+APROPOS_SIGN_IDENTITY="Your Certificate Name" scripts/dev.sh
 ```
 
 One time, so re-signing never prompts: open Keychain Access, find the certificate's private key under My Certificates,
@@ -85,9 +85,9 @@ The terminal needs Accessibility access for this.
 
 ## Debug-only hooks
 
-Debug builds read `CUE_SNAPSHOT_DIR`: when set, a PNG and a text dump of the palette are written a moment after it
+Debug builds read `APROPOS_SNAPSHOT_DIR`: when set, a PNG and a text dump of the palette are written a moment after it
 opens, so it can be checked without screen recording permission. They also listen for the distributed notifications
-`com.zawalid.cue.debug.toggle` and `com.zawalid.cue.debug.run` (the object is a query; its best match is run), which
+`com.zawalid.apropos.debug.toggle` and `com.zawalid.apropos.debug.run` (the object is a query; its best match is run), which
 lets a script drive the palette without synthesizing keystrokes.
 
 ## Known limits (M0)
@@ -100,9 +100,9 @@ lets a script drive the palette without synthesizing keystrokes.
 ## Agent runs are isolated
 
 Automated checks never touch the copy you run. `scripts/shots.sh` builds to `build/agent` and runs with
-`CUE_AGENT=1`, which removes the status item, the hotkey, the welcome window and activation, and makes the windows
+`APROPOS_AGENT=1`, which removes the status item, the hotkey, the welcome window and activation, and makes the windows
 transparent. The debug remote control only exists in that mode, so a script cannot open the panel on your screen.
 
 `scripts/dev.sh` re-signs the app with a stable code signing certificate after each build (the first one in your
-keychain, or `CUE_SIGN_IDENTITY`). macOS keys the Accessibility grant to that signature, so you grant it once and it
+keychain, or `APROPOS_SIGN_IDENTITY`). macOS keys the Accessibility grant to that signature, so you grant it once and it
 survives rebuilds. Without a certificate the app is ad hoc signed and the grant is lost on every build.

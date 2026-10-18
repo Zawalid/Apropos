@@ -15,7 +15,7 @@ struct ContextChip: Identifiable, Equatable {
 }
 
 /// Builds the chip row from what is known about the target app. M1 will feed it real context; until then release
-/// builds show the app chip alone and debug builds can show fixtures (set CUE_FIXTURE_CONTEXT=1).
+/// builds show the app chip alone and debug builds can show fixtures (set APROPOS_FIXTURE_CONTEXT=1).
 @MainActor
 enum ContextChips {
     static func chips(for app: TargetApp?, items: [ContextItem] = []) -> [ContextChip] {
@@ -25,7 +25,7 @@ enum ContextChips {
             ContextChip(id: $0.kind.rawValue, leading: .symbol($0.symbol), text: $0.label)
         }
         #if DEBUG
-            if items.isEmpty, ProcessInfo.processInfo.environment["CUE_FIXTURE_CONTEXT"] != nil {
+            if items.isEmpty, ProcessInfo.processInfo.environment["APROPOS_FIXTURE_CONTEXT"] != nil {
                 chips += fixtures(for: app).enumerated().map { index, pair in
                     ContextChip(id: "fx-\(index)", leading: .symbol(pair.0), text: pair.1)
                 }

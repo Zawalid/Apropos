@@ -144,20 +144,20 @@ private func window(_ configure: (FakeAX) -> Void) -> FakeAX {
 
     @Test func xcodeUsesDocumentAndTitleWorkspace() async {
         let root = window {
-            $0.strings[AXAttr.title] = "Cue \u{2014} AXMenuReader.swift"
-            $0.strings[AXAttr.document] = "file:///Users/me/Cue/Sources/AXMenuReader.swift"
+            $0.strings[AXAttr.title] = "Apropos \u{2014} AXMenuReader.swift"
+            $0.strings[AXAttr.document] = "file:///Users/me/Apropos/Sources/AXMenuReader.swift"
         }
         let snapshot = await makeService(root: root, branch: "feat/x").snapshot(for: app("com.apple.dt.Xcode"))
-        #expect(snapshot.fields.workspace == "Cue")
+        #expect(snapshot.fields.workspace == "Apropos")
         #expect(snapshot.item(.document)?.label == "AXMenuReader.swift")
         #expect(snapshot.item(.branch)?.label == "feat/x")
     }
 
     @Test func xcodeFallsBackToTitleWhenNoDocument() async {
-        let root = window { $0.strings[AXAttr.title] = "Cue - Package.swift" }
+        let root = window { $0.strings[AXAttr.title] = "Apropos - Package.swift" }
         let snapshot = await makeService(root: root).snapshot(for: app("com.apple.dt.Xcode"))
         #expect(snapshot.item(.document)?.label == "Package.swift")
-        #expect(snapshot.fields.workspace == "Cue")
+        #expect(snapshot.fields.workspace == "Apropos")
     }
 
     @Test func slowProviderTimesOutWithPartialSnapshot() async {
@@ -203,7 +203,7 @@ private func window(_ configure: (FakeAX) -> Void) -> FakeAX {
     }
 
     @Test func privacyRoundTripsThroughDefaults() {
-        let suite = "cue.test.\(UUID().uuidString)"
+        let suite = "apropos.test.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else { return }
         ContextPrivacy(disabledBundleIDs: ["a.b", "c.d"]).save(to: defaults)
         #expect(ContextPrivacy.load(from: defaults).disabledBundleIDs == ["a.b", "c.d"])
@@ -211,7 +211,7 @@ private func window(_ configure: (FakeAX) -> Void) -> FakeAX {
     }
 
     @Test func gitReaderFindsBranchOfARepoAndIgnoresNonRepos() throws {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("cue-git-\(UUID().uuidString)")
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("apropos-git-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         #expect(GitBranchReader().branch(forFolder: dir.path, timeout: 1) == nil)
