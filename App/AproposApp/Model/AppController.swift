@@ -17,6 +17,7 @@ final class AppController {
     let usage: UsageController
     let actions: ContextActionCenter
     let send: SendToCenter
+    let sequences: SequenceCenter
     let userCommands: UserCommandStore
     let commandHotKeys = CommandHotKeyManager()
     @ObservationIgnored private(set) lazy var external = ExternalRequestHandler(controller: self)
@@ -29,6 +30,7 @@ final class AppController {
     @ObservationIgnored private var statusItem: StatusItemController?
     @ObservationIgnored private let onboarding = OnboardingWindowController()
     @ObservationIgnored let sharePresenter: ShareMenuPresenter
+    @ObservationIgnored let sequenceSource: SequenceCatalogueSource
 
     convenience init() {
         Self.runLegacyMigration()
@@ -87,16 +89,30 @@ final class AppController {
         self.usage = UsageController(store: usageStore, palette: palette, defaults: defaults)
         usage.prediction.configure(from: settings.store)
         self.combo = settings.hotKey
-        // Context actions: each finished snapshot feeds the center, which lists what applies in the palette.
-        let actions = ContextActionCenter(library: .bundled(plus: ActionPackLibrary.userDirectory))
-        actions.attach(to: palette)
-        // Send to: the same snapshots become payloads, and the usage store ranks the destinations.
+        // Sequences find actions, your commands and destinations through this, once everything below exists.
+        let source = SequenceCatalogueSource()
         let sharePresenter = ShareMenuPresenter()
         self.sharePresenter = sharePresenter
         var sendServices = AppSendServices.live(presenter: sharePresenter)
+        var actionServices = ActionServices.live
         #if DEBUG
-            if AgentMode.isOn { sendServices = AppSendServices.agent() }
+            if AgentMode.isOn {
+                sendServices = AppSendServices.agent()
+                actionServices = AppSequences.fakeActions(
+                    failing: ProcessInfo.processInfo.environment["APROPOS_FIXTURE_SEND_FAIL"] != nil)
+            }
         #endif
+        // Context actions: each finished snapshot feeds the center, which lists what applies in the palette.
+        let actionLibrary = ActionPackLibrary.bundled(plus: ActionPackLibrary.userDirectory)
+        let actions = ContextActionCenter(
+            library: actionLibrary,
+            engine: ActionEngine(
+                functions: actionLibrary.functions,
+                services: AppSequences.engineServices(
+                    base: actionServices, functions: actionLibrary.functions, send: sendServices, source: source,
+                    privacy: { ContextPrivacy.load() })))
+        actions.attach(to: palette)
+        // Send to: the same snapshots become payloads, and the usage store ranks the destinations.
         let send = SendToCenter(
             library: .bundled(plus: DestinationLibrary.userDirectory), services: sendServices,
             folders: SendFolderStore(
@@ -107,11 +123,23 @@ final class AppController {
         send.chooseFolder = { move in await FolderChooser.choose(move: move) }
         palette.attachSend(send)
         self.send = send
+        // The sequence builder: a draft in memory, run through the same engines, saved through the commands store.
+        source.actions = actions
+        source.send = send
+        source.commands = self.userCommands
+        let parts = AppSequences.parts(functions: actionLibrary.functions, actions: actionServices, send: sendServices)
+        let sequences = SequenceCenter(
+            store: self.userCommands, runner: parts.runner, catalogue: { source.current() },
+            privacy: { [weak settings] in settings?.contextPrivacy ?? ContextPrivacy() })
+        palette.attachSequences(sequences)
+        self.sequences = sequences
+        self.sequenceSource = source
         var service = ContextService()
         service.onSnapshot = { snapshot in
             Task { @MainActor in
                 actions.update(with: snapshot)
                 send.update(with: snapshot)
+                sequences.update(with: snapshot)
             }
         }
         self.actions = actions
@@ -196,7 +224,11 @@ final class AppController {
         Task { [actions] in
             await actions.runWithLiveContext(
                 command, target: target, sensing: sensing,
-                confirm: { CommandConfirmation.ask($0, reason: "You pressed its shortcut.") })
+                confirm: { [sequenceSource] in
+                    CommandConfirmation.ask(
+                        $0, reason: "You pressed its shortcut.",
+                        effects: AppSequences.confirmationLines(for: $0, source: sequenceSource))
+                })
         }
     }
 
@@ -207,6 +239,7 @@ final class AppController {
         if !settings.contextSensing {
             actions.clear()
             send.clear()
+            sequences.clear()
         }
         if settings.hotKey != combo {
             combo = settings.hotKey

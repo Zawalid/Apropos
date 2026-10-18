@@ -6,10 +6,12 @@ import Apropos
 @MainActor
 enum CommandConfirmation {
     /// Returns true when the person chose to run it.
-    static func ask(_ command: UserCommand, reason: String) -> Bool {
+    static func ask(_ command: UserCommand, reason: String, effects: [String] = []) -> Bool {
         let alert = NSAlert()
         alert.messageText = "Run \u{201C}\(command.title)\u{201D}?"
-        alert.informativeText = reason + "\n\n" + CommandSummary.lines(for: command).joined(separator: "\n")
+        // A sequence lists what it will do outside Apropos; everything else lists what it runs.
+        let lines = effects.isEmpty ? CommandSummary.lines(for: command) : effects
+        alert.informativeText = reason + "\n\n" + lines.joined(separator: "\n")
         alert.addButton(withTitle: "Run")
         alert.addButton(withTitle: "Cancel")
         NSApp.activate()
