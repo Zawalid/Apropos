@@ -56,3 +56,13 @@ lets a script drive the palette without synthesizing keystrokes.
 - Items that are hidden alternates (for example Empty Trash with Option) are listed as separate commands.
 - A menu item that opens a modal sheet can keep its app busy past the accessibility timeout; Cue treats the
   timeout as delivered.
+
+## Agent runs are isolated
+
+Automated checks never touch the copy you run. `scripts/shots.sh` builds to `build/agent` and runs with
+`CUE_AGENT=1`, which removes the status item, the hotkey, the welcome window and activation, and makes the windows
+transparent. The debug remote control only exists in that mode, so a script cannot open the panel on your screen.
+
+`scripts/dev.sh` re-signs the app with a stable code signing certificate after each build (the first one in your
+keychain, or `CUE_SIGN_IDENTITY`). macOS keys the Accessibility grant to that signature, so you grant it once and it
+survives rebuilds. Without a certificate the app is ad hoc signed and the grant is lost on every build.
