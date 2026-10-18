@@ -105,8 +105,8 @@ struct ContextActionIntegrationTests {
 
     @Test func runningAContextActionUsesTheEngineAndKeepsTheOutcome() async {
         let rig = rig(target: app)
-        rig.center.update(with: snapshot(ContextValues(selectedText: "hello world")))
         rig.model.prepareForOpen()
+        rig.center.update(with: snapshot(ContextValues(selectedText: "hello world")))
         rig.model.query = "uppercase"
         let closed = await rig.model.runSelected()
         #expect(closed)
