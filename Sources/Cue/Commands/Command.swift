@@ -52,6 +52,26 @@ public enum CommandSource: Sendable, Hashable {
     case menuItem(bundleID: String?)
 }
 
+/// An Option-key variant of a menu item, such as Empty Trash Securely next to Empty Trash. It is a second way to run
+/// the same row, not a row of its own.
+public struct CommandAlternate: Sendable {
+    public let stableID: CommandID
+    public let title: String
+    public let shortcut: KeyShortcut?
+    public let isEnabled: Bool
+    public let target: (any CommandTarget)?
+
+    public init(
+        stableID: CommandID, title: String, shortcut: KeyShortcut?, isEnabled: Bool, target: (any CommandTarget)?
+    ) {
+        self.stableID = stableID
+        self.title = title
+        self.shortcut = shortcut
+        self.isEnabled = isEnabled
+        self.target = target
+    }
+}
+
 /// One runnable thing in the palette.
 public struct Command: Identifiable, Sendable {
     public let id: String
@@ -65,6 +85,11 @@ public struct Command: Identifiable, Sendable {
     public let target: (any CommandTarget)?
     /// The identity to save anything under. Unlike `id` it survives relaunches and app updates.
     public internal(set) var stableID: CommandID
+    /// Option-key variants folded into this command. Empty when the app has none or when alternates are shown as
+    /// rows of their own.
+    public internal(set) var alternates: [CommandAlternate] = []
+    /// Set on a row that is itself an alternate (only when alternates are shown): the command it varies.
+    public internal(set) var alternateOf: CommandID?
 
     public init(
         id: String, title: String, path: [String], shortcut: KeyShortcut? = nil, isEnabled: Bool = true,

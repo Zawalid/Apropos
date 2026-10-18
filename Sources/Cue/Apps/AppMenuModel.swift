@@ -24,6 +24,16 @@ public final class AppMenuModel {
     /// Moves every time `commands` is replaced; lets dependants cache work per list.
     public private(set) var revision = 0
 
+    /// Whether Option-key alternates (Empty Trash Securely) get rows of their own. Mirror
+    /// `SettingsStore.bool(.showAlternateCommands)` here; changing it re-reads the menus.
+    public var showAlternates = false {
+        didSet {
+            guard showAlternates != oldValue else { return }
+            cache = [:]
+            refresh()
+        }
+    }
+
     @ObservationIgnored private let tracker: FrontmostAppTracker
     @ObservationIgnored private let permission: AccessibilityPermission
     @ObservationIgnored private let reader: AXMenuReader
@@ -70,11 +80,12 @@ public final class AppMenuModel {
         let reader = self.reader
         let pid = app.pid
         let bundleID = app.bundleID
+        let showAlternates = self.showAlternates
         loadTask = Task { [weak self] in
             let outcome = await Task.detached(priority: .userInitiated) { () -> Result<[Command], MenuReadError> in
                 do {
                     let bar = try reader.readMenuBar(pid: pid)
-                    return .success(MenuCommandMapper.commands(from: bar, bundleID: bundleID))
+                    return .success(MenuCommandMapper.commands(from: bar, bundleID: bundleID, showAlternates: showAlternates))
                 } catch let error as MenuReadError {
                     return .failure(error)
                 } catch {

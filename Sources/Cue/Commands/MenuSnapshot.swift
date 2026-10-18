@@ -38,17 +38,25 @@ public enum MenuCommandMapper {
     static let skippedMenus: Set<String> = ["Services", "Dienste", "Services "]
 
     /// Flattens the menu bar. Separators, the Apple menu and submenu headers are dropped; every remaining item
-    /// becomes a command whose path is the chain of menus above it. Ids are the index path, so they are unique and
-    /// stable for one snapshot.
-    public static func commands(from menuBar: [MenuItemSnapshot], bundleID: String?) -> [Command] {
+    /// becomes a command whose path is the chain of menus above it. `id` is the index path, unique for one snapshot;
+    /// `stableID` is the identity to save things under.
+    ///
+    /// Option-key alternates (see `isAlternate`) are folded into their primary command's `alternates`, unless
+    /// `showAlternates` is true, in which case they stay as rows with `alternateOf` set.
+    public static func commands(
+        from menuBar: [MenuItemSnapshot], bundleID: String?, showAlternates: Bool = false
+    ) -> [Command] {
         var result: [Command] = []
+        var primaries: [Int: Int] = [:]
         for (index, top) in menuBar.enumerated() {
             if isAppleMenu(top, at: index) { continue }
             let title = top.title.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !title.isEmpty else { continue }
-            collect(top.children, path: [title], indexPath: [index], bundleID: bundleID, into: &result)
+            collect(
+                top.children, path: [title], indexPath: [index], bundleID: bundleID, into: &result,
+                primaries: &primaries)
         }
-        return assignStableIDs(result, bundleID: bundleID)
+        return foldAlternates(assignStableIDs(result, bundleID: bundleID), primaries: primaries, show: showAlternates)
     }
 
     /// Gives every command its saved-data identity, unique within the app.
@@ -71,17 +79,31 @@ public enum MenuCommandMapper {
         index == 0 && item.title == "Apple"
     }
 
+    /// `primaries` maps the result index of each alternate to the result index of the command it varies.
     private static func collect(
-        _ items: [MenuItemSnapshot], path: [String], indexPath: [Int], bundleID: String?, into result: inout [Command]
+        _ items: [MenuItemSnapshot], path: [String], indexPath: [Int], bundleID: String?, into result: inout [Command],
+        primaries: inout [Int: Int]
     ) {
+        var run: (item: MenuItemSnapshot, resultIndex: Int)?
         for (index, item) in items.enumerated() {
             let title = item.title.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !title.isEmpty else { continue }
+            guard !title.isEmpty else {
+                run = nil
+                continue
+            }
             let here = indexPath + [index]
             if !item.children.isEmpty {
+                run = nil
                 guard !skippedMenus.contains(title) else { continue }
-                collect(item.children, path: path + [title], indexPath: here, bundleID: bundleID, into: &result)
+                collect(
+                    item.children, path: path + [title], indexPath: here, bundleID: bundleID, into: &result,
+                    primaries: &primaries)
                 continue
+            }
+            if let current = run, isAlternate(item, of: current.item) {
+                primaries[result.count] = current.resultIndex
+            } else {
+                run = (item, result.count)
             }
             result.append(
                 Command(
@@ -94,6 +116,38 @@ public enum MenuCommandMapper {
                     source: .menuItem(bundleID: bundleID),
                     target: item.target))
         }
+    }
+
+    /// AppKit's rule for alternates: the item directly follows its primary, shares its key equivalent, adds the Option
+    /// key, and the primary does not use Option itself. A run of alternates (Close, Close All, ...) all belong to the
+    /// first item of the run.
+    static func isAlternate(_ candidate: MenuItemSnapshot, of primary: MenuItemSnapshot) -> Bool {
+        guard let alt = shortcut(for: candidate), let base = shortcut(for: primary) else { return false }
+        return alt.key == base.key && alt.modifiers.contains(.option) && !base.modifiers.contains(.option)
+            && alt.modifiers.isSuperset(of: base.modifiers)
+    }
+
+    private static func foldAlternates(_ commands: [Command], primaries: [Int: Int], show: Bool) -> [Command] {
+        guard !primaries.isEmpty else { return commands }
+        var result = commands
+        for (alternate, primary) in primaries {
+            if show {
+                result[alternate].alternateOf = commands[primary].stableID
+            } else {
+                let source = commands[alternate]
+                result[primary].alternates.append(
+                    CommandAlternate(
+                        stableID: source.stableID, title: source.title, shortcut: source.shortcut,
+                        isEnabled: source.isEnabled, target: source.target))
+            }
+        }
+        if show { return result }
+        for index in result.indices where result[index].alternates.count > 1 {
+            // Dictionary order is arbitrary; keep the menu order.
+            let order = Dictionary(uniqueKeysWithValues: commands.enumerated().map { ($1.stableID, $0) })
+            result[index].alternates.sort { (order[$0.stableID] ?? 0) < (order[$1.stableID] ?? 0) }
+        }
+        return result.enumerated().filter { primaries[$0.offset] == nil }.map(\.element)
     }
 
     /// Builds the shortcut from the key character or, when the item uses a special key, its glyph or virtual key.
