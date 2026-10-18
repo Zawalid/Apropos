@@ -4,6 +4,21 @@ import Testing
 
 @testable import Apropos
 
+private final class Flag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var raised = false
+    func raise() {
+        lock.lock()
+        raised = true
+        lock.unlock()
+    }
+    var isRaised: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return raised
+    }
+}
+
 @MainActor
 @Suite("Usually next")
 struct PalettePredictionTests {
@@ -129,14 +144,14 @@ struct PalettePredictionTests {
     @Test func refreshingPredictionsRedrawsAListThatIsOnScreen() {
         let model = makeModel(list)
         model.setPredictor { _ in [] }
-        var redrawn = false
+        let redrawn = Flag()
         withObservationTracking {
             _ = model.results
         } onChange: {
-            redrawn = true
+            redrawn.raise()
         }
         model.refreshPredictions()
-        #expect(redrawn)
+        #expect(redrawn.isRaised)
     }
 
     @Test func runTopPredictionRunsItWhateverIsHighlighted() async {
