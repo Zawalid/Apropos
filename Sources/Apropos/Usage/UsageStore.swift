@@ -74,6 +74,9 @@ public final class UsageStore {
     public private(set) var lastSaveError: String?
     /// True when the file existed but was not valid; it was copied aside and the store started empty.
     public private(set) var recoveredFromCorruption = false
+    /// Called after the learned ranking was reset, with the bundle id when only one app was reset. Whatever else learns
+    /// from use (the run log behind next-action prediction) forgets alongside.
+    public var onLearnedRankingReset: ((String?) -> Void)?
 
     private var file = UsageFile()
     @ObservationIgnored private var pendingWrite: Task<Void, Never>?
@@ -122,6 +125,7 @@ public final class UsageStore {
 
     /// Forgets everything learned from use. Pins, hidden commands and aliases are kept.
     public func resetLearnedRanking() {
+        onLearnedRankingReset?(nil)
         guard !file.usage.isEmpty else { return }
         file.usage = [:]
         scheduleWrite()
@@ -129,6 +133,7 @@ public final class UsageStore {
 
     /// Forgets the learned ranking of one app only.
     public func resetLearnedRanking(forBundleID bundleID: String) {
+        onLearnedRankingReset?(bundleID)
         let before = file.usage.count
         file.usage = file.usage.filter { $0.key.bundleID != bundleID }
         if file.usage.count != before { scheduleWrite() }

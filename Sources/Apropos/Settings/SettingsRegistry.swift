@@ -89,6 +89,8 @@ public struct SettingID: RawRepresentable, Hashable, Sendable, ExpressibleByStri
     public static let contextChips: SettingID = "contextChips"
     public static let contextIgnoreList: SettingID = "contextIgnoreList"
     public static let checkForUpdates: SettingID = "checkForUpdates"
+    public static let predictNextCommand: SettingID = "predictNextCommand"
+    public static let showPredictionReasons: SettingID = "showPredictionReasons"
 }
 
 /// Everything the settings window needs to draw and search one setting, and everything the store needs to validate it.
@@ -267,6 +269,17 @@ public enum SettingsRegistry {
             detail: "Password managers and banks. Apropos reads nothing in them, not even the document title.",
             keywords: ["password", "bank", "secret", "ignore", "block", "bundle"], page: .privacyAndData,
             type: .stringList, defaultValue: .stringList(defaultIgnoreList)),
+        SettingDefinition(
+            id: .predictNextCommand, title: "Predict what comes next",
+            detail:
+                "Learn which command you usually run next and offer it under Usually next. Learned on this Mac from command names and times only. Off stops predicting and stops recording new runs.",
+            keywords: ["usually next", "suggest", "learn", "sequence", "history", "habit", "reset"],
+            page: .privacyAndData, type: .bool, defaultValue: .bool(true)),
+        SettingDefinition(
+            id: .showPredictionReasons, title: "Show why a command is predicted",
+            detail: "Under each Usually next row, say what it is based on, such as \"After Run Tests you chose Commit 9 of 12 times\".",
+            keywords: ["reason", "explain", "usually next", "prediction"], page: .privacyAndData, type: .bool,
+            defaultValue: .bool(true)),
     ]
 
     private static let updates: [SettingDefinition] = [

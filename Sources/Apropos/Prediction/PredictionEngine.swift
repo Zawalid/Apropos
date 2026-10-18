@@ -106,6 +106,24 @@ public final class PredictionEngine {
         self.prior = prior
     }
 
+    /// Reads the person's choices: whether to predict at all and whether to show reasons.
+    public func configure(from settings: SettingsStore) {
+        isEnabled = settings.bool(.predictNextCommand)
+        showsReasons = settings.bool(.showPredictionReasons)
+    }
+
+    /// Forgets one app's part of the log and relearns from what is left.
+    public func reset(forApp bundleID: String) {
+        log.clear(forApp: bundleID)
+        generation += 1
+        model = PredictionModel(settings: model.settings, calendar: calendar)
+        model.train(log.events)
+        lastRun = log.events.last { $0.kind == .run }
+        offer = nil
+        isReady = true
+        revision += 1
+    }
+
     /// Forgets the log and everything learned from it.
     public func reset() {
         log.clear()

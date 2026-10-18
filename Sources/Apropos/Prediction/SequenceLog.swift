@@ -139,6 +139,24 @@ public final class SequenceLog {
         if events.count > Self.maxEvents { events.removeFirst(events.count - Self.maxEvents) }
     }
 
+    /// Forgets one app: its runs, the runs of its commands, and every mention of its commands as a previous command or
+    /// an offered one.
+    public func clear(forApp bundleID: String) {
+        let before = events
+        events = events.compactMap { event in
+            guard event.app != bundleID, event.command.bundleID != bundleID else { return nil }
+            let previous = event.previous?.bundleID == bundleID ? nil : event.previous
+            let offered = event.offered?.bundleID == bundleID ? nil : event.offered
+            guard previous != event.previous || offered != event.offered else { return event }
+            return RunEvent(
+                kind: event.kind, time: event.time, command: event.command, app: event.app, previous: previous,
+                kindNames: event.contextKinds, offered: offered)
+        }
+        guard events != before else { return }
+        revision += 1
+        scheduleWrite()
+    }
+
     /// Forgets the whole log.
     public func clear() {
         guard !events.isEmpty else { return }
