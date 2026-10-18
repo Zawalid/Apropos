@@ -8,6 +8,12 @@ public struct TargetApp: Identifiable, Equatable, Sendable {
     public let name: String
 
     public var id: pid_t { pid }
+
+    public init(pid: pid_t, bundleID: String?, name: String) {
+        self.pid = pid
+        self.bundleID = bundleID
+        self.name = name
+    }
 }
 
 /// Follows the frontmost app. NSWorkspace says which app is in front; an AXObserver on that app says when its window

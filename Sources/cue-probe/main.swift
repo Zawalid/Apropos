@@ -5,10 +5,47 @@ import Cue
 //
 //   swift run cue-probe com.apple.finder              list the commands of an app
 //   swift run cue-probe com.apple.finder --run "View > as List"   press one item
+//   swift run cue-probe --context [bundle id] [--wait 3] [--show]   print the live context snapshot
+//     with no bundle id it uses the frontmost app after the wait, so switch to it; --show also prints the raw
+//     URL and selection (default prints only lengths, like the app's logs)
 //
 // Needs Accessibility access for the terminal (or whatever launched it).
 
 let arguments = Array(CommandLine.arguments.dropFirst())
+
+func value(after flag: String) -> String? {
+    guard let index = arguments.firstIndex(of: flag), arguments.indices.contains(index + 1) else { return nil }
+    return arguments[index + 1]
+}
+
+if arguments.first == "--context" {
+    let wait = value(after: "--wait").flatMap(Double.init) ?? 0
+    if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
+    let explicit = arguments.dropFirst().first { !$0.hasPrefix("--") && Double($0) == nil }
+    let running =
+        explicit.flatMap { NSRunningApplication.runningApplications(withBundleIdentifier: $0).first }
+        ?? NSWorkspace.shared.frontmostApplication
+    guard let running else {
+        print("no application found")
+        exit(1)
+    }
+    let app = TargetApp(
+        pid: running.processIdentifier, bundleID: running.bundleIdentifier,
+        name: running.localizedName ?? running.bundleIdentifier ?? "App")
+    let started = Date()
+    let snapshot = await ContextService().snapshot(for: app)
+    let ms = Date().timeIntervalSince(started) * 1000
+    let show = arguments.contains("--show")
+    print(String(format: "%@ (%@) in %.0f ms, gaps: %@", app.name, app.bundleID ?? "?", ms, "\(snapshot.gaps)"))
+    for item in snapshot.items { print("  [\(item.kind.rawValue)] \(item.label)  (\(item.symbol))") }
+    let f = snapshot.fields
+    print("  windowTitle: \(f.windowTitle ?? "-")  windows: \(f.windowCount.map(String.init) ?? "-")")
+    print("  documentPath: \(f.documentPath ?? "-")  folder: \(f.folderPath ?? "-")  workspace: \(f.workspace ?? "-")")
+    print("  url: \(show ? (f.url ?? "-") : (f.url == nil ? "-" : "<\(f.url?.count ?? 0) chars>"))")
+    print("  selection: \(show ? (f.selectedText ?? "-") : (f.selectedText == nil ? "-" : "<\(f.selectedText?.count ?? 0) chars>"))")
+    print("  selectedItems: \(f.selectedItemCount.map(String.init) ?? "-")  branch: \(f.gitBranch ?? "-")")
+    exit(0)
+}
 guard let bundleID = arguments.first else {
     print("usage: cue-probe <bundle id> [--run \"Menu > Item\"]")
     exit(2)
