@@ -14,10 +14,10 @@ private enum ListEntry: Identifiable {
         }
     }
 
-    var height: CGFloat {
+    func height(_ metrics: InterfaceMetrics) -> CGFloat {
         switch self {
-        case .section: Theme.sectionHeight
-        case .row: Theme.rowHeight
+        case .section: metrics.section
+        case .row: metrics.rowHeight
         }
     }
 }
@@ -27,6 +27,7 @@ struct ResultsList: View {
     let actions: PaletteActions
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.interfaceMetrics) private var metrics
     @State private var entrance = RowEntrance()
     @State private var lastMouse = NSEvent.mouseLocation
 
@@ -52,10 +53,11 @@ struct ResultsList: View {
                         ForEach(entries) { entry in
                             switch entry {
                             case .section(_, let title):
-                                SectionHeader(title: title)
+                                SectionHeader(title: title, height: metrics.section)
                             case .row(let ranked, let index):
                                 CommandRow(
-                                    ranked: ranked, appName: model.targetApp?.name, showsFullPath: !isGrouped
+                                    ranked: ranked, appName: model.targetApp?.name, appPID: model.targetApp?.pid,
+                                    showsFullPath: !isGrouped
                                 )
                                 .rowRise(index: index, entrance: entrance)
                                 .id(ranked.id)
@@ -122,8 +124,8 @@ struct ResultsList: View {
         guard let selectedID else { return nil }
         var y: CGFloat = 0
         for entry in entries {
-            if case .row(let ranked, _) = entry, ranked.id == selectedID { return (y, entry.height) }
-            y += entry.height
+            if case .row(let ranked, _) = entry, ranked.id == selectedID { return (y, entry.height(metrics)) }
+            y += entry.height(metrics)
         }
         return nil
     }
@@ -131,6 +133,7 @@ struct ResultsList: View {
 
 private struct SectionHeader: View {
     let title: String
+    let height: CGFloat
 
     var body: some View {
         Text(title)
@@ -139,7 +142,7 @@ private struct SectionHeader: View {
             .padding(.horizontal, 10)
             .padding(.top, 10)
             .frame(
-                maxWidth: .infinity, minHeight: Theme.sectionHeight, maxHeight: Theme.sectionHeight, alignment: .leading
+                maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .leading
             )
             .accessibilityAddTraits(.isHeader)
     }

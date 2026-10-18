@@ -17,6 +17,7 @@ struct PaletteView: View {
     let state: PanelState
     let context: ContextModel
     let permission: AccessibilityPermission
+    let settings: SettingsModel
     let actions: PaletteActions
 
     @FocusState private var searchFocused: Bool
@@ -45,6 +46,8 @@ struct PaletteView: View {
         .frame(width: PanelPlacement.size.width, height: PanelPlacement.size.height)
         .cueGlass(in: RoundedRectangle(cornerRadius: Theme.panelRadius, style: .continuous))
         .tint(Theme.accentText)
+        .environment(\.interfaceMetrics, settings.metrics)
+        .environment(settings)
         .onChange(of: state.focusToken) { searchFocused = true }
         .onAppear { searchFocused = true }
     }

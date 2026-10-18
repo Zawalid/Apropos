@@ -6,9 +6,8 @@ struct CueApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        MenuBarExtra("Cue", systemImage: "command.square") {
-            MenuBarContent(controller: appDelegate.controller)
-        }
+        // The menu bar item is an NSStatusItem owned by the controller; SwiftUI needs a scene, and this one is empty.
+        Settings { EmptyView() }
     }
 }
 
@@ -18,22 +17,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         controller.start()
-    }
-}
-
-private struct MenuBarContent: View {
-    let controller: AppController
-
-    var body: some View {
-        Button("Open Cue (\(controller.combo.display))") { controller.togglePanel() }
-        if !controller.permission.isTrusted {
-            Button("Allow Accessibility Access…") { controller.showOnboarding() }
-        }
-        Divider()
-        Button("Settings…") { controller.showSettings() }
-            .keyboardShortcut(",")
-        Divider()
-        Button("Quit Cue") { NSApp.terminate(nil) }
-            .keyboardShortcut("q")
     }
 }

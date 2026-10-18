@@ -1,5 +1,5 @@
-import Foundation
 import Cue
+import Foundation
 import Observation
 
 /// The context items shown as chips. Refreshed each time the panel opens, off the main thread: the panel is already
@@ -14,25 +14,37 @@ final class ContextModel {
     @ObservationIgnored private let service: ContextService
     @ObservationIgnored private var task: Task<Void, Never>?
 
-    init(service: ContextService = ContextService()) {
+    /// Called on the main actor whenever new items arrive.
+    @ObservationIgnored var onChange: (() -> Void)?
+    @ObservationIgnored private let settings: SettingsModel
+
+    init(settings: SettingsModel, service: ContextService = ContextService()) {
+        self.settings = settings
         self.service = service
     }
 
     func refresh(for app: TargetApp?) {
         task?.cancel()
-        guard let app else {
+        guard let app, settings.values.contextEnabled else {
             items = []
             itemsPID = nil
+            onChange?()
             return
         }
         // Another app's context must not linger under this app's chip; the same app keeps its chips until fresh ones arrive.
         if itemsPID != app.pid { items = [] }
-        let service = self.service
+        var service = self.service
+        service.privacy = ContextPrivacy(
+            disabledBundleIDs: settings.contextDisabledApps,
+            selectionBlockedBundleIDs: service.privacy.selectionBlockedBundleIDs)
+        let hidden = settings.values.hiddenChips
+        let sensing = service
         task = Task { [weak self] in
-            let snapshot = await service.snapshot(for: app)
+            let snapshot = await sensing.snapshot(for: app)
             guard !Task.isCancelled, let self else { return }
             self.itemsPID = app.pid
-            self.items = snapshot.items
+            self.items = snapshot.items.filter { !hidden.contains($0.kind.rawValue) }
+            self.onChange?()
         }
     }
 }

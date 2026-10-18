@@ -12,13 +12,16 @@ final class AppController {
     let tracker = FrontmostAppTracker()
     let menus: AppMenuModel
     let palette: PaletteModel
+    let settings = SettingsModel()
+    let context: ContextModel
     private(set) var combo: HotKeyCombo
     private(set) var isHotKeyRegistered = true
 
     @ObservationIgnored private let store = HotKeyStore()
     @ObservationIgnored private var hotKey: GlobalHotKey?
     @ObservationIgnored private var panel: PanelController?
-    @ObservationIgnored private var settingsWindow: NSWindow?
+    @ObservationIgnored private var settingsController: SettingsWindowController?
+    @ObservationIgnored private var statusItem: StatusItemController?
     @ObservationIgnored private var onboardingWindow: NSWindow?
 
     init() {
@@ -26,20 +29,26 @@ final class AppController {
         self.menus = menus
         self.palette = PaletteModel(menus: menus, tracker: tracker)
         self.combo = store.load()
+        self.context = ContextModel(settings: settings)
     }
 
     func start() {
         permission.startMonitoring()
         tracker.start()
         let panel = PanelController(
-            model: palette, tracker: tracker, permission: permission,
+            model: palette, tracker: tracker, permission: permission, settings: settings, context: context,
             openSettings: { [weak self] in self?.showSettings() })
+        statusItem = StatusItemController(controller: self)
         self.panel = panel
         #if DEBUG
             if let name = ProcessInfo.processInfo.environment["CUE_FIXTURE_COMMANDS"] {
                 menus.seed(DebugFixtures.commands(named: name))
             }
             DebugSnapshot.installRemoteControl(panel: panel, model: palette)
+            DebugSnapshot.installSettingsControl(controller: self)
+            if let name = ProcessInfo.processInfo.environment["CUE_APPEARANCE"] {
+                NSApp.appearance = NSAppearance(named: name == "light" ? .aqua : .darkAqua)
+            }
         #endif
         let hotKey = GlobalHotKey { [weak panel] in panel?.toggle() }
         self.hotKey = hotKey
@@ -64,11 +73,13 @@ final class AppController {
         }
     }
 
-    func showSettings() {
-        let window = settingsWindow ?? makeWindow(title: "Cue Settings", content: SettingsView(controller: self))
-        settingsWindow = window
-        present(window)
+    func showSettings(page: SettingsPage? = nil) {
+        let controller = settingsController ?? SettingsWindowController(controller: self)
+        settingsController = controller
+        controller.show(page: page)
     }
+
+    var settingsWindow: NSWindow? { settingsController?.currentWindow }
 
     func showOnboarding() {
         let content = PermissionView(permission: permission, style: .full)

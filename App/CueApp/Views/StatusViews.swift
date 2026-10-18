@@ -41,6 +41,7 @@ struct StatusView: View {
 /// Placeholder rows shown while an app's menus are being read. Static on purpose: nothing moves in this state.
 struct LoadingRows: View {
     private let titleWidths: [CGFloat] = [180, 140, 220, 120, 160]
+    @Environment(\.interfaceMetrics) private var metrics
 
     var body: some View {
         VStack(spacing: 0) {
@@ -48,12 +49,12 @@ struct LoadingRows: View {
                 HStack(spacing: Theme.Spacing.md) {
                     RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
                         .fill(Theme.tile)
-                        .frame(width: Theme.tileSize, height: Theme.tileSize)
+                        .frame(width: 24, height: 24)
                     Capsule().fill(Theme.tile).frame(width: width, height: 10)
                     Spacer()
                 }
                 .padding(.horizontal, 10)
-                .frame(height: Theme.rowHeight)
+                .frame(height: metrics.rowHeight)
                 .opacity(0.8)
             }
             Spacer(minLength: 0)

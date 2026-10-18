@@ -8,8 +8,12 @@ import SwiftUI
 final class PanelController: NSObject {
     private let panel = PalettePanel()
     private let state = PanelState()
-    private let context = ContextModel()
+    private let context: ContextModel
+    private let settings: SettingsModel
+    private var lastHide = Date.distantPast
+    private var lastQuery = ""
     private let model: PaletteModel
+    private let openSettings: () -> Void
     private var resignObserver: NSObjectProtocol?
     private var clickMonitor: Any?
 
@@ -17,13 +21,16 @@ final class PanelController: NSObject {
 
     init(
         model: PaletteModel, tracker: FrontmostAppTracker, permission: AccessibilityPermission,
-        openSettings: @escaping () -> Void
+        settings: SettingsModel, context: ContextModel, openSettings: @escaping () -> Void
     ) {
         self.model = model
+        self.settings = settings
+        self.context = context
+        self.openSettings = openSettings
         super.init()
 
         let root = PaletteView(
-            model: model, state: state, context: context, permission: permission,
+            model: model, state: state, context: context, permission: permission, settings: settings,
             actions: PaletteActions(
                 run: { [weak self] in self?.runSelected() },
                 runCommand: { [weak self] command in self?.run(command) },
@@ -49,17 +56,25 @@ final class PanelController: NSObject {
         resignObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.didResignKeyNotification, object: panel, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.hide() }
+            MainActor.assumeIsolated {
+                guard let self, self.settings.values.closeOnFocusLoss else { return }
+                self.hide()
+            }
         }
     }
 
     func toggle() {
-        if isVisible { hide() } else { show() }
+        if isVisible {
+            hide()
+        } else if !settings.isIgnored(model.targetApp?.bundleID) {
+            show()
+        }
     }
 
     /// Opening is ordering a ready window to the front: no animation, the content is already drawn.
     func show() {
         model.prepareForOpen()
+        if Date().timeIntervalSince(lastHide) < settings.values.resetQuery.seconds { model.query = lastQuery }
         context.refresh(for: model.targetApp)
         closeActions(animated: false)
         position()
@@ -79,6 +94,8 @@ final class PanelController: NSObject {
     func hide(immediately: Bool = false) {
         guard panel.isVisible else { return }
         closeActions(animated: false)
+        lastHide = Date()
+        lastQuery = model.query
         panel.orderOut(nil)
     }
 
@@ -109,6 +126,7 @@ final class PanelController: NSObject {
         case .close: hide()
         case .run: runSelected()
         case .actions: toggleActions()
+        case .settings: actionsOpenSettings()
         case .move(let delta): model.moveSelection(by: delta)
         case .first: model.selectFirst()
         case .last: model.selectLast()
@@ -121,6 +139,7 @@ final class PanelController: NSObject {
         let items = availableActions
         switch key {
         case .close, .actions: closeActions(animated: true)
+        case .settings: actionsOpenSettings()
         case .move(let delta):
             guard !items.isEmpty else { return true }
             state.actionIndex = min(max(state.actionIndex + (delta > 0 ? 1 : -1), 0), items.count - 1)
@@ -134,6 +153,11 @@ final class PanelController: NSObject {
 
     private var availableActions: [PaletteAction] {
         PaletteAction.available(for: model.selected?.command, appName: model.targetApp?.name)
+    }
+
+    private func actionsOpenSettings() {
+        hide()
+        openSettings()
     }
 
     private func toggleActions() {

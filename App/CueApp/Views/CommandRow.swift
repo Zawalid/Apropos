@@ -5,22 +5,32 @@ import SwiftUI
 struct CommandRow: View {
     let ranked: RankedCommand
     let appName: String?
+    var appPID: pid_t?
+    @Environment(\.interfaceMetrics) private var metrics
+    @Environment(SettingsModel.self) private var settings
     /// False under a section header that already names the first menu.
     var showsFullPath = true
 
     var body: some View {
         let command = ranked.command
         HStack(spacing: 12) {
-            IconTile(symbol: CommandDisplay.symbol(for: command), isEnabled: command.isEnabled)
+            switch settings.values.rowIcons {
+            case .glyph:
+                IconTile(symbol: CommandDisplay.symbol(for: command), isEnabled: command.isEnabled)
+            case .appLogo:
+                if let appPID { AppIcon(pid: appPID, size: metrics.tile).opacity(command.isEnabled ? 1 : 0.4) }
+            case .none:
+                EmptyView()
+            }
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(highlightedTitle)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: metrics.title, weight: .medium))
                     .tracking(-0.07)
                     .foregroundStyle(command.isEnabled ? Theme.text : Theme.text3)
                     .lineLimit(1)
                     .layoutPriority(1)
                 Text(subtitle)
-                    .font(.system(size: 12))
+                    .font(.system(size: metrics.subtitle))
                     .foregroundStyle(Theme.text3)
                     .lineLimit(1)
             }
@@ -39,7 +49,7 @@ struct CommandRow: View {
             }
         }
         .padding(.horizontal, 10)
-        .frame(height: Theme.rowHeight)
+        .frame(height: metrics.rowHeight)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
@@ -61,7 +71,7 @@ struct CommandRow: View {
             let next = result.index(afterCharacter: index)
             if matched.contains(offset) {
                 result[index..<next].foregroundColor = Theme.accentText
-                result[index..<next].font = .system(size: 14, weight: .semibold)
+                result[index..<next].font = .system(size: metrics.title, weight: .semibold)
             }
             index = next
         }
@@ -74,12 +84,13 @@ struct IconTile: View {
     let symbol: String
     var isEnabled = true
     var accented = false
+    @Environment(\.interfaceMetrics) private var metrics
 
     var body: some View {
         Image(systemName: symbol)
-            .font(.system(size: 13.5, weight: .medium))
+            .font(.system(size: metrics.symbol, weight: .medium))
             .foregroundStyle(accented ? Theme.accentText : (isEnabled ? Theme.tileInk : Theme.text3))
-            .frame(width: Theme.tileSize, height: Theme.tileSize)
+            .frame(width: metrics.tile, height: metrics.tile)
             .background(
                 RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
                     .fill(accented ? Theme.accentSoft : Theme.tile)

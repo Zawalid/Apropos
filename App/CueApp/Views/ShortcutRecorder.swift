@@ -27,9 +27,9 @@ struct ShortcutRecorder: View {
                         }
                     }
                 }
-                .frame(minWidth: 150, minHeight: 24)
+                .frame(minWidth: 140, minHeight: 24)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(RecorderButtonStyle())
             .accessibilityLabel("Global shortcut, \(combo.display)")
             if let hint {
                 Text(hint).font(.system(size: 12)).foregroundStyle(Theme.cautionText)
@@ -76,5 +76,17 @@ struct ShortcutRecorder: View {
         }
         stop()
         onChange(candidate)
+    }
+}
+
+private struct RecorderButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 8)
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.chip))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.chipEdge, lineWidth: 1))
+            .brightness(configuration.isPressed ? -0.05 : 0)
+            .contentShape(Rectangle())
+            .cueFocusRing(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }

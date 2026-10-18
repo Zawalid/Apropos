@@ -18,23 +18,37 @@
                     (["Edit"], "Find\u{2026}", KeyShortcut(key: "F", modifiers: cmd), true, false),
                     (["View"], "Show Sidebar", KeyShortcut(key: "S", modifiers: [.shift, cmd]), true, true),
                     (["View"], "Enter Reader", KeyShortcut(key: "R", modifiers: [.shift, cmd]), true, false),
-                    (["History"], "Reopen Last Closed Tab", KeyShortcut(key: "T", modifiers: [.shift, cmd]), true, false),
+                    (
+                        ["History"], "Reopen Last Closed Tab", KeyShortcut(key: "T", modifiers: [.shift, cmd]), true,
+                        false
+                    ),
                     (["Bookmarks"], "Add Bookmark\u{2026}", KeyShortcut(key: "D", modifiers: cmd), true, false),
                     (["Window"], "Minimize", KeyShortcut(key: "M", modifiers: cmd), true, false),
                     (["Window"], "Software Update, 1 update", nil, false, false),
                 ]
             case "xcode":
                 spec = [
-                    (["File", "New"], "Project\u{2026}", KeyShortcut(key: "N", modifiers: [.shift, cmd]), true, false),
+                    (
+                        ["File", "New"], "Project\u{2026}", KeyShortcut(key: "N", modifiers: [.shift, cmd]), true, false
+                    ),
                     (["File"], "Open Quickly\u{2026}", KeyShortcut(key: "O", modifiers: [.shift, cmd]), true, false),
-                    (["Edit"], "Find in Project\u{2026}", KeyShortcut(key: "F", modifiers: [.shift, cmd]), true, false),
-                    (["Navigate"], "Jump to Definition", KeyShortcut(key: "J", modifiers: [.control, cmd]), true, false),
+                    (
+                        ["Edit"], "Find in Project\u{2026}", KeyShortcut(key: "F", modifiers: [.shift, cmd]), true,
+                        false
+                    ),
+                    (
+                        ["Navigate"], "Jump to Definition", KeyShortcut(key: "J", modifiers: [.control, cmd]), true,
+                        false
+                    ),
                     (["Editor"], "Re-Indent", KeyShortcut(key: "I", modifiers: .control), true, false),
                     (["Product"], "Run", KeyShortcut(key: "R", modifiers: cmd), true, false),
                     (["Product"], "Test", KeyShortcut(key: "U", modifiers: cmd), true, false),
                     (["Product"], "Clean Build Folder", KeyShortcut(key: "K", modifiers: [.shift, cmd]), true, false),
                     (["Debug"], "Pause", KeyShortcut(key: "Y", modifiers: [.control, cmd]), false, false),
-                    (["Source Control"], "Commit\u{2026}", KeyShortcut(key: "C", modifiers: [.option, cmd]), true, false),
+                    (
+                        ["Source Control"], "Commit\u{2026}", KeyShortcut(key: "C", modifiers: [.option, cmd]), true,
+                        false
+                    ),
                     (["Window"], "Minimize", KeyShortcut(key: "M", modifiers: cmd), true, false),
                 ]
             default:

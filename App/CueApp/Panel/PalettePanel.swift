@@ -8,6 +8,7 @@ enum PaletteKey {
     case first
     case last
     case actions
+    case settings
 }
 
 /// The floating window the palette lives in. It is a non-activating panel, so opening it never takes focus from the
@@ -59,6 +60,7 @@ final class PalettePanel: NSPanel {
         case 125 where flags.isEmpty: return .move(1)
         case 126 where flags.isEmpty: return .move(-1)
         case 40 where flags == .command: return .actions  // command-K
+        case 43 where flags == .command: return .settings  // command-comma
         case 125 where flags == .command: return .last
         case 126 where flags == .command: return .first
         case 48 where flags.isEmpty: return .move(1)

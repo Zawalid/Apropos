@@ -68,6 +68,10 @@ enum Theme {
     static let tileInk = adaptive(light: rgba(18, 28, 24, 0.82), dark: rgba(255, 255, 255, 0.9))
     static let keyFill = adaptive(light: rgba(0, 0, 0, 0.04), dark: rgba(255, 255, 255, 0.07))
     static let keyEdge = adaptive(light: rgba(0, 0, 0, 0.14), dark: rgba(255, 255, 255, 0.15))
+    static let windowBackground = adaptive(light: rgba(242, 245, 243, 1), dark: rgba(22, 25, 24, 1))
+    static let sidebarBackground = adaptive(light: rgba(234, 238, 236, 1), dark: rgba(27, 31, 30, 1))
+    static let card = adaptive(light: rgba(255, 255, 255, 0.8), dark: rgba(255, 255, 255, 0.045))
+    static let cardEdge = adaptive(light: rgba(0, 0, 0, 0.07), dark: rgba(255, 255, 255, 0.07))
     static let divider = adaptive(light: rgba(0, 0, 0, 0.07), dark: rgba(255, 255, 255, 0.07))
 }
 

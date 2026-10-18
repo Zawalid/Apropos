@@ -15,10 +15,12 @@
                         .null, .optionIncludingWindow, CGWindowID(panel.windowNumber), [.bestResolution])
                 else { return }
                 let rep = NSBitmapImageRep(cgImage: image)
-                let stamp = Int(Date().timeIntervalSince1970)
+                let stamp =
+                    ProcessInfo.processInfo.environment["CUE_SNAPSHOT_NAME"]
+                    ?? "palette-\(Int(Date().timeIntervalSince1970))"
                 try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
                 if let png = rep.representation(using: .png, properties: [:]) {
-                    try? png.write(to: URL(fileURLWithPath: "\(dir)/palette-\(stamp).png"))
+                    try? png.write(to: URL(fileURLWithPath: "\(dir)/\(stamp).png"))
                 }
                 let top = model.results.prefix(12).map {
                     "\($0.command.breadcrumb) > \($0.command.title) \($0.command.shortcut?.display ?? "")"
@@ -26,12 +28,40 @@
                 let text =
                     "app=\(model.targetApp?.name ?? "none") query=\(model.query) count=\(model.results.count)\n"
                     + top.joined(separator: "\n")
-                try? text.write(toFile: "\(dir)/palette-\(stamp).txt", atomically: true, encoding: .utf8)
+                try? text.write(toFile: "\(dir)/\(stamp).txt", atomically: true, encoding: .utf8)
             }
         }
     }
 
     extension DebugSnapshot {
+        /// Writes a PNG of any window of this app into CUE_SNAPSHOT_DIR.
+        static func capture(_ window: NSWindow, name: String) {
+            guard let dir = ProcessInfo.processInfo.environment["CUE_SNAPSHOT_DIR"],
+                let image = CGWindowListCreateImage(
+                    .null, .optionIncludingWindow, CGWindowID(window.windowNumber), [.bestResolution])
+            else { return }
+            try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+            if let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) {
+                try? png.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))
+            }
+        }
+
+        /// Notification "com.zawalid.cue.debug.settings" (object = page name) opens that Settings page and snapshots it.
+        static func installSettingsControl(controller: AppController) {
+            DistributedNotificationCenter.default().addObserver(
+                forName: Notification.Name("com.zawalid.cue.debug.settings"), object: nil, queue: .main
+            ) { note in
+                let name = note.object as? String ?? "general"
+                MainActor.assumeIsolated {
+                    controller.showSettings(page: SettingsPage(rawValue: name))
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(700))
+                        if let window = controller.settingsWindow { capture(window, name: "settings-\(name)") }
+                    }
+                }
+            }
+        }
+
         /// Debug builds only: lets a script open the palette and run the best match for a query without synthesizing
         /// keystrokes, through distributed notifications "com.zawalid.cue.debug.toggle" and "...debug.run" (object = query).
         static func installRemoteControl(panel: PanelController, model: PaletteModel) {

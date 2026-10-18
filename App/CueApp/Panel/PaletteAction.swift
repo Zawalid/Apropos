@@ -18,7 +18,8 @@ struct PaletteAction: Identifiable {
         var list = [PaletteAction(kind: .run, title: "Run", symbol: "play", keys: ["↩"])]
         list.append(PaletteAction(kind: .copyPath, title: "Copy menu path", symbol: "link", keys: []))
         if let shortcut = command.shortcut {
-            list.append(PaletteAction(kind: .copyShortcut, title: "Copy shortcut", symbol: "keyboard", keys: shortcut.caps))
+            list.append(
+                PaletteAction(kind: .copyShortcut, title: "Copy shortcut", symbol: "keyboard", keys: shortcut.caps))
         }
         return list
     }
