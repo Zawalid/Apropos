@@ -29,14 +29,18 @@ struct GeneralPage: View {
 
     var body: some View {
         @Bindable var settings = settings
-        SettingsSection {
+        SettingsSection(title: "Startup") {
             SettingToggleRow(
                 id: .openAtLogin,
                 isOn: Binding(get: { settings.launchAtLogin }, set: { settings.setLaunchAtLogin($0) }))
             SettingToggleRow(id: .showInMenuBar, isOn: $settings.showInMenuBar)
+        }
+        SettingsSection(
+            title: "Shortcut", footer: "Apropos runs alongside your launcher. Pick a shortcut it does not use."
+        ) {
             SettingsRow(
                 title: title(.openHotKey),
-                detail: "Apropos runs alongside your launcher. Pick a shortcut it does not use.",
+                detail: "Press it in any app to open the panel.",
                 settingID: .openHotKey
             ) {
                 ShortcutRecorder(
@@ -83,23 +87,37 @@ struct AppearancePage: View {
 
     var body: some View {
         @Bindable var settings = settings
-        SettingsSection {
-            SettingsRow(title: title(.theme), settingID: .theme) {
-                ValueMenu(
-                    options: AppearanceMode.allCases.map { ($0, $0.title) }, selection: $settings.appearance)
+        SettingsSection(title: title(.theme)) {
+            ChoiceCards(
+                options: AppearanceMode.allCases.map { ($0, $0.title) }, selection: $settings.appearance
+            ) { mode in
+                switch mode {
+                case .system: SplitMiniPanel()
+                case .light: MiniPanel(scheme: .light)
+                case .dark: MiniPanel(scheme: .dark)
+                }
             }
-            .settingsAnchor(SettingID.theme.rawValue)
+        }
+        .settingsAnchor(SettingID.theme.rawValue)
+        SettingsSection(title: "Panel") {
             SettingsRow(title: title(.interfaceSize), detail: detail(.interfaceSize), settingID: .interfaceSize) {
                 SizePicker(selection: $settings.interfaceSize)
             }
             .settingsAnchor(SettingID.interfaceSize.rawValue)
-            SettingsRow(title: title(.rowIcons), detail: detail(.rowIcons), settingID: .rowIcons) {
-                ValueMenu(
-                    options: RowIconStyle.allCases.map { ($0, $0.title) }, selection: $settings.rowIcons)
-            }
-            .settingsAnchor(SettingID.rowIcons.rawValue)
             SettingToggleRow(id: .reduceMotion, isOn: $settings.reduceMotion)
         }
+        SettingsSection(title: title(.rowIcons), footer: detail(.rowIcons)) {
+            ChoiceCards(
+                options: RowIconStyle.allCases.map { ($0, $0.title) }, selection: $settings.rowIcons
+            ) { style in
+                switch style {
+                case .glyph: MiniPanel(scheme: .dark, leading: .glyph)
+                case .appLogo: MiniPanel(scheme: .dark, leading: .logos)
+                case .none: MiniPanel(scheme: .dark, leading: .none)
+                }
+            }
+        }
+        .settingsAnchor(SettingID.rowIcons.rawValue)
     }
 }
 
