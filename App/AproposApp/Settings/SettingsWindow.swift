@@ -231,7 +231,9 @@ struct SettingsRoot: View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach([SettingPage.general, .appearance], id: \.self) { pageRow($0) }
             Color.clear.frame(height: 14)
-            ForEach([SettingPage.context, .privacyAndData], id: \.self) { pageRow($0) }
+            ForEach([SettingPage.commands, .destinations], id: \.self) { pageRow($0) }
+            Color.clear.frame(height: 14)
+            ForEach([SettingPage.context, .prediction, .integrations, .privacyAndData], id: \.self) { pageRow($0) }
             Color.clear.frame(height: 14)
             ForEach([SettingPage.updates, .about], id: \.self) { pageRow($0) }
         }
@@ -374,6 +376,12 @@ struct SettingsRoot: View {
         switch page {
         case .general: "Opens with \(controller.combo.caps.joined(separator: " "))"
         case .appearance: settings.appearance.title
+        case .commands:
+            controller.userCommands.commands.isEmpty
+                ? "None yet" : "\(controller.userCommands.commands.count) of your own"
+        case .destinations: "\(controller.send.library.runnable.count) available"
+        case .prediction: settings.predictNextCommand ? "Learning on this Mac" : "Off"
+        case .integrations: "apropos:// links"
         case .context: settings.contextSensing ? "Sensing is on" : "Sensing is off"
         case .privacyAndData: controller.permission.isTrusted ? "Accessibility allowed" : "Needs Accessibility"
         case .updates: settings.checkForUpdates ? "Checks automatically" : "Checks when you ask"
@@ -420,6 +428,10 @@ struct SettingsRoot: View {
         switch navigation.page {
         case .general: GeneralPage(controller: controller, settings: settings)
         case .appearance: AppearancePage(settings: settings)
+        case .commands: CommandsPage(controller: controller)
+        case .destinations: DestinationsPage(controller: controller)
+        case .prediction: PredictionPage(controller: controller, settings: settings)
+        case .integrations: IntegrationsPage(controller: controller)
         case .context: ContextPage(settings: settings)
         case .privacyAndData: PrivacyPage(controller: controller, settings: settings)
         case .updates: UpdatesPage(settings: settings)

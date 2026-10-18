@@ -101,6 +101,16 @@ final class SettingsModel {
         set { write(.bool(newValue), .checkForUpdates) }
     }
 
+    var predictNextCommand: Bool {
+        get { store.bool(.predictNextCommand) }
+        set { write(.bool(newValue), .predictNextCommand) }
+    }
+
+    var showPredictionReasons: Bool {
+        get { store.bool(.showPredictionReasons) }
+        set { write(.bool(newValue), .showPredictionReasons) }
+    }
+
     var ignoreList: [String] {
         get { store.stringList(.contextIgnoreList) }
         set { write(.stringList(newValue), .contextIgnoreList) }

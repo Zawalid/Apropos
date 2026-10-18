@@ -231,17 +231,3 @@ extension View {
         }
     }
 }
-
-/// The colour of a page's tile in the sidebar, in the manner of System Settings: a flat squircle with a white symbol.
-enum TileColor {
-    static func color(for page: SettingPage) -> Color {
-        switch page {
-        case .general: Color(red: 0.55, green: 0.56, blue: 0.60)
-        case .appearance: Color(red: 0.20, green: 0.52, blue: 0.98)
-        case .context: Color(red: 0.12, green: 0.72, blue: 0.62)
-        case .privacyAndData: Color(red: 0.36, green: 0.42, blue: 0.95)
-        case .updates: Color(red: 0.97, green: 0.55, blue: 0.20)
-        case .about: Color(red: 0.55, green: 0.56, blue: 0.60)
-        }
-    }
-}

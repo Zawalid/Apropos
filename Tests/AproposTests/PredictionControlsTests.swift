@@ -22,7 +22,7 @@ struct PredictionControlsTests {
         let store = SettingsStore(url: directory().appendingPathComponent("settings.json"), writeDelay: .zero)
         #expect(store.bool(.predictNextCommand))
         #expect(store.bool(.showPredictionReasons))
-        #expect(SettingsRegistry.definition(for: .predictNextCommand)?.page == .privacyAndData)
+        #expect(SettingsRegistry.definition(for: .predictNextCommand)?.page == .prediction)
         #expect(!SettingsRegistry.search("usually next").isEmpty)
         #expect(SettingsRegistry.search("reset").contains { $0.id == .predictNextCommand })
     }

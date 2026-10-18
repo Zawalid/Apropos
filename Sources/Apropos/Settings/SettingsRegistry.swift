@@ -4,7 +4,11 @@ import Foundation
 public enum SettingPage: String, Sendable, CaseIterable, Codable {
     case general
     case appearance
+    case commands
+    case destinations
     case context
+    case prediction
+    case integrations
     case privacyAndData
     case updates
     case about
@@ -13,7 +17,11 @@ public enum SettingPage: String, Sendable, CaseIterable, Codable {
         switch self {
         case .general: "General"
         case .appearance: "Appearance"
+        case .commands: "Commands"
+        case .destinations: "Destinations"
         case .context: "Context"
+        case .prediction: "Prediction"
+        case .integrations: "Integrations"
         case .privacyAndData: "Privacy and data"
         case .updates: "Updates"
         case .about: "About"
@@ -25,7 +33,11 @@ public enum SettingPage: String, Sendable, CaseIterable, Codable {
         switch self {
         case .general: "gearshape"
         case .appearance: "paintbrush"
+        case .commands: "command"
+        case .destinations: "paperplane"
         case .context: "text.viewfinder"
+        case .prediction: "sparkles"
+        case .integrations: "link"
         case .privacyAndData: "lock.shield"
         case .updates: "arrow.triangle.2.circlepath"
         case .about: "info.circle"
@@ -274,11 +286,11 @@ public enum SettingsRegistry {
             detail:
                 "Learn which command you usually run next and offer it under Usually next. Learned on this Mac from command names and times only. Off stops predicting and stops recording new runs.",
             keywords: ["usually next", "suggest", "learn", "sequence", "history", "habit", "reset"],
-            page: .privacyAndData, type: .bool, defaultValue: .bool(true)),
+            page: .prediction, type: .bool, defaultValue: .bool(true)),
         SettingDefinition(
             id: .showPredictionReasons, title: "Show why a command is predicted",
             detail: "Under each Usually next row, say what it is based on, such as \"After Run Tests you chose Commit 9 of 12 times\".",
-            keywords: ["reason", "explain", "usually next", "prediction"], page: .privacyAndData, type: .bool,
+            keywords: ["reason", "explain", "usually next", "prediction"], page: .prediction, type: .bool,
             defaultValue: .bool(true)),
     ]
 
