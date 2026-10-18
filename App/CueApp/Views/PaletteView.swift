@@ -64,6 +64,10 @@ private struct SearchHeader: View {
     var searchFocused: FocusState<Bool>.Binding
 
     var body: some View {
+        let chips = ContextChips.chips(
+            for: model.targetApp, items: context.itemsPID == model.targetApp?.pid ? context.items : [])
+        let appChip = chips.first(where: \.isApp)
+        let others = chips.filter { !$0.isApp }
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
                 Image(systemName: "magnifyingglass")
@@ -78,13 +82,19 @@ private struct SearchHeader: View {
                     .focused(searchFocused)
                     .autocorrectionDisabled()
                     .accessibilityLabel("Search commands")
+                if let appChip {
+                    ContextChipView(chip: appChip)
+                        .accessibilityLabel("Commands for \(appChip.text)")
+                }
             }
             .padding(.horizontal, 22)
             .padding(.top, 16)
-            .padding(.bottom, 10)
-            ChipRow(app: model.targetApp, items: context.itemsPID == model.targetApp?.pid ? context.items : [])
-                .padding(.horizontal, 22)
-                .padding(.bottom, 10)
+            .padding(.bottom, others.isEmpty ? 12 : 10)
+            if !others.isEmpty {
+                ChipRow(chips: others)
+                    .padding(.horizontal, 22)
+                    .padding(.bottom, 10)
+            }
         }
     }
 
@@ -94,12 +104,11 @@ private struct SearchHeader: View {
     }
 }
 
+/// The optional row of context chips under the search field. Empty by default; the person turns pieces on in Settings.
 private struct ChipRow: View {
-    let app: TargetApp?
-    let items: [ContextItem]
+    let chips: [ContextChip]
 
     var body: some View {
-        let chips = ContextChips.chips(for: app, items: items)
         HStack(spacing: 6) {
             ForEach(Array(chips.enumerated()), id: \.element.id) { index, chip in
                 ContextChipView(chip: chip).chipRise(index: index)

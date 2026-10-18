@@ -255,9 +255,10 @@ public enum SettingsRegistry {
             keywords: ["per app", "disable", "exclude", "bundle"], page: .context, type: .stringList,
             defaultValue: .stringList([])),
         SettingDefinition(
-            id: .contextChips, title: "Context chips", detail: "Which pieces of context appear above the results.",
+            id: .contextChips, title: "Context chips",
+            detail: "Which pieces of context appear under the search field. Off by default until context drives actions.",
             keywords: ["chips", "document", "url", "branch", "folder", "selection"], page: .context,
-            type: .multiChoice(contextChipOptions), defaultValue: .stringList(contextChipOptions.map(\.value))),
+            type: .multiChoice(contextChipOptions), defaultValue: .stringList([])),
     ]
 
     private static let privacy: [SettingDefinition] = [

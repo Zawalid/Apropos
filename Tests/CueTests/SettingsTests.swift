@@ -32,6 +32,7 @@ struct SettingsTests {
         #expect(store.string(.theme) == "system")
         #expect(store.bool(.checkForUpdates) == false)
         #expect(store.bool(.contextSensing))
+        #expect(store.visibleContextKinds().isEmpty, "context chips stay off until they do something")
         #expect(store.stringList(.contextIgnoreList).contains("com.1password.1password"))
         #expect(store.loadOutcome == .created)
     }
