@@ -8,6 +8,7 @@ struct PaletteActions {
     let toggleActions: () -> Void
     let openSettings: () -> Void
     let retry: () -> Void
+    var openGuide: () -> Void = {}
 }
 
 /// The palette: a glass panel with the search field and context chips on top, the ranked list below, and a floating
@@ -182,7 +183,7 @@ private struct PaletteContentView: View {
         case .results:
             ResultsList(model: model, actions: actions)
         case .needsPermission:
-            PermissionView(permission: permission, style: .compact)
+            PermissionView(permission: permission, onHelp: actions.openGuide)
         case .loading:
             LoadingRows()
         case .noApp:

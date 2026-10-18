@@ -1,89 +1,53 @@
 import Apropos
 import SwiftUI
 
-/// Explains why Apropos needs Accessibility access, sends the person to System Settings, and flips to a confirmation the
-/// moment access arrives (the model polls, so no restart is needed).
+/// What the palette shows while Accessibility access is missing: why it is needed, one button, and a way to the guide
+/// when Apropos is not in the system list. It flips to a confirmation the moment access arrives (the model polls).
 struct PermissionView: View {
-    enum Style { case compact, full }
-
     let permission: AccessibilityPermission
-    let style: Style
+    var onHelp: () -> Void = {}
 
     var body: some View {
-        VStack(spacing: Theme.Spacing.md) {
-            if permission.isTrusted {
-                granted
-            } else {
-                missing
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(Theme.Spacing.xl)
-        .animation(.smooth(duration: 0.25), value: permission.isTrusted)
-    }
-
-    private var missing: some View {
-        VStack(spacing: Theme.Spacing.md) {
-            Image(systemName: "hand.raised.fill")
-                .font(.system(size: style == .full ? 38 : 28, weight: .light))
-                .foregroundStyle(Theme.accentText)
-            Text("Apropos needs Accessibility access")
-                .font(.system(size: style == .full ? 20 : 15, weight: .semibold))
+        VStack(spacing: 8) {
+            Image(systemName: permission.isTrusted ? "checkmark" : "hand.raised")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(permission.isTrusted ? Theme.accentInk : Theme.Settings.tileInk)
+                .frame(width: 44, height: 44)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(permission.isTrusted ? Theme.accent : Theme.Settings.tile)
+                )
+                .padding(.bottom, 4)
+                .accessibilityHidden(true)
+            Text(permission.isTrusted ? "Accessibility access is on" : "Allow Accessibility access")
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.text)
             Text(
-                "To list an app's menu commands and run them, macOS requires you to allow Apropos under Accessibility. Apropos reads menu names only, on this Mac, and nothing leaves it."
+                permission.isTrusted
+                    ? "Switch to any app and open Apropos to see its commands."
+                    : "Apropos reads the menu bar of the app you are using, so it can list and run its commands. Nothing leaves this Mac."
             )
             .font(.system(size: 13))
             .foregroundStyle(Theme.text2)
             .multilineTextAlignment(.center)
-            .frame(maxWidth: 420)
-            VStack(alignment: .leading, spacing: 5) {
-                step("1", "Open System Settings, Privacy & Security, Accessibility.")
-                step("2", "Turn on Apropos in the list. Add it with the + button if it is missing.")
-                step("3", "Come back. Apropos notices on its own.")
-            }
-            .padding(.top, 2)
-            HStack(spacing: Theme.Spacing.sm) {
+            .frame(maxWidth: 380)
+            .fixedSize(horizontal: false, vertical: true)
+            if !permission.isTrusted {
                 Button("Open System Settings") {
                     permission.requestPrompt()
                     permission.openSystemSettings()
                 }
                 .buttonStyle(AccentButtonStyle())
-                .focusable()
-            }
-            .padding(.top, 4)
-            HStack(spacing: 6) {
-                ProgressView().controlSize(.small)
-                Text("Waiting for access")
-                    .font(.system(size: 12))
+                .padding(.top, 8)
+                Button("Not in the list?", action: onHelp)
+                    .buttonStyle(.plain)
+                    .font(.system(size: 12.5))
                     .foregroundStyle(Theme.text3)
+                    .aproposFocusRing(Capsule())
             }
         }
-    }
-
-    private var granted: some View {
-        VStack(spacing: Theme.Spacing.sm) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: style == .full ? 38 : 28, weight: .light))
-                .foregroundStyle(Theme.accentText)
-            Text("Accessibility access is on")
-                .font(.system(size: style == .full ? 20 : 15, weight: .semibold))
-                .foregroundStyle(Theme.text)
-            Text("Switch to any app and press the shortcut to see its commands.")
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.text2)
-        }
-    }
-
-    private func step(_ number: String, _ text: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(number)
-                .font(.data(.caption, weight: .semibold))
-                .foregroundStyle(Theme.accentText)
-                .frame(width: 14)
-            Text(text)
-                .font(.system(size: 12.5))
-                .foregroundStyle(Theme.text2)
-        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.bottom, Theme.footerInset)
+        .accessibilityElement(children: .contain)
     }
 }

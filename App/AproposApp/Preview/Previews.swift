@@ -13,6 +13,7 @@
     enum PreviewCatalog {
         static let palette = CGSize(width: 776, height: 536)
         static let settings = CGSize(width: 800, height: 560)
+        static let onboarding = OnboardingView.size
 
         private static func palette(_ id: String, _ options: PaletteOptions) -> PreviewScene {
             PreviewScene(id: id, size: palette, backdrop: true) {
@@ -34,6 +35,29 @@
                         initialQuery: query))
             }
         }
+
+        private static func onboarding(
+            _ id: String, step: OnboardingStep, trusted: Bool = false, panelOpened: Bool = false, help: Bool = false
+        ) -> PreviewScene {
+            PreviewScene(id: id, size: onboarding) {
+                let permission = AccessibilityPermission(probe: { trusted })
+                let model = OnboardingModel(
+                    permission: permission, hotKey: { .default }, start: step, panelOpened: panelOpened,
+                    showsHelp: help)
+                return AnyView(OnboardingView(model: model))
+            }
+        }
+
+        // Onboarding
+
+        static let onboardingWelcome = onboarding("onboarding-welcome", step: .welcome)
+        static let onboardingPermission = onboarding("onboarding-permission", step: .permission)
+        static let onboardingPermissionHelp = onboarding("onboarding-permission-help", step: .permission, help: true)
+        static let onboardingPermissionAllowed = onboarding(
+            "onboarding-permission-allowed", step: .permission, trusted: true)
+        static let onboardingTry = onboarding("onboarding-try", step: .tryIt)
+        static let onboardingTryDone = onboarding("onboarding-try-done", step: .tryIt, panelOpened: true)
+        static let onboardingDone = onboarding("onboarding-done", step: .done, trusted: true)
 
         // Palette lists
 
@@ -102,7 +126,8 @@
             palettePermission, paletteReadFailed, paletteRunFailed, paletteActions, paletteChips, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,
             settingsGeneral, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
-            settingsUpdates, settingsAbout, settingsSearch,
+            settingsUpdates, settingsAbout, settingsSearch, onboardingWelcome, onboardingPermission,
+            onboardingPermissionHelp, onboardingPermissionAllowed, onboardingTry, onboardingTryDone, onboardingDone,
         ]
     }
 
@@ -168,4 +193,14 @@
     #Preview("Settings, Updates") { PairedPreview(PreviewCatalog.settingsUpdates) }
     #Preview("Settings, About") { PairedPreview(PreviewCatalog.settingsAbout) }
     #Preview("Settings, sidebar search") { PairedPreview(PreviewCatalog.settingsSearch) }
+
+    // MARK: Onboarding
+
+    #Preview("Onboarding, welcome") { PairedPreview(PreviewCatalog.onboardingWelcome) }
+    #Preview("Onboarding, permission") { PairedPreview(PreviewCatalog.onboardingPermission) }
+    #Preview("Onboarding, permission, not in the list") { PairedPreview(PreviewCatalog.onboardingPermissionHelp) }
+    #Preview("Onboarding, permission, allowed") { PairedPreview(PreviewCatalog.onboardingPermissionAllowed) }
+    #Preview("Onboarding, try it") { PairedPreview(PreviewCatalog.onboardingTry) }
+    #Preview("Onboarding, try it, worked") { PairedPreview(PreviewCatalog.onboardingTryDone) }
+    #Preview("Onboarding, done") { PairedPreview(PreviewCatalog.onboardingDone) }
 #endif

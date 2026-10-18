@@ -22,7 +22,8 @@ final class PanelController: NSObject {
 
     init(
         model: PaletteModel, tracker: FrontmostAppTracker, permission: AccessibilityPermission,
-        settings: SettingsModel, context: ContextModel, usage: UsageController, openSettings: @escaping () -> Void
+        settings: SettingsModel, context: ContextModel, usage: UsageController, openSettings: @escaping () -> Void,
+        openGuide: @escaping () -> Void = {}
     ) {
         self.model = model
         self.settings = settings
@@ -43,7 +44,11 @@ final class PanelController: NSObject {
                     self?.hide(immediately: true)
                     openSettings()
                 },
-                retry: { [weak self] in self?.model.prepareForOpen() }))
+                retry: { [weak self] in self?.model.prepareForOpen() },
+                openGuide: { [weak self] in
+                    self?.hide(immediately: true)
+                    openGuide()
+                }))
         let hosting = NSHostingView(rootView: root)
         hosting.sizingOptions = []
         hosting.frame = NSRect(origin: .zero, size: PanelPlacement.size)
@@ -84,6 +89,7 @@ final class PanelController: NSObject {
         panel.makeKeyAndOrderFront(nil)
         AgentMode.conceal(panel)
         panel.invalidateShadow()
+        NotificationCenter.default.post(name: .aproposPanelOpened, object: nil)
         state.focusToken += 1
         AproposLog.panel.info(
             "show target=\(self.model.targetApp?.name ?? "none", privacy: .public) commands=\(self.model.results.count)"

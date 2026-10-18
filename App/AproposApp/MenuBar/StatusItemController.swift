@@ -86,6 +86,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         switch action {
         case .open: #selector(openApropos)
         case .allowAccess: #selector(allowAccess)
+        case .welcomeGuide: #selector(welcomeGuide)
         case .settings: #selector(openSettings)
         case .checkForUpdates: #selector(checkForUpdates)
         case .quit: #selector(quit)
@@ -112,7 +113,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     }
 
     @objc private func openApropos() { controller.togglePanel() }
-    @objc private func allowAccess() { controller.showOnboarding() }
+    @objc private func allowAccess() { controller.showOnboarding(step: .permission) }
+    @objc private func welcomeGuide() { controller.showOnboarding() }
     @objc private func openSettings() { controller.showSettings() }
     @objc private func checkForUpdates() { controller.settings.checkForUpdatesNow() }
     @objc private func quit() { NSApp.terminate(nil) }
@@ -120,7 +122,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
 /// What the menu lists, as plain values: the status item turns them into `NSMenuItem`s and the previews draw them.
 enum MenuBarContent {
-    enum Action { case open, allowAccess, settings, checkForUpdates, quit }
+    enum Action { case open, allowAccess, welcomeGuide, settings, checkForUpdates, quit }
 
     enum Entry {
         case separator
@@ -142,6 +144,7 @@ enum MenuBarContent {
         if !hasAccess { list.append(.action(.allowAccess, title: "Allow Accessibility Access\u{2026}", key: "")) }
         list.append(.separator)
         list.append(.action(.settings, title: "Settings\u{2026}", key: ","))
+        list.append(.action(.welcomeGuide, title: "Welcome Guide", key: ""))
         list.append(.action(.checkForUpdates, title: "Check for Updates\u{2026}", key: ""))
         list.append(.separator)
         list.append(.action(.quit, title: "Quit Apropos", key: "q"))
