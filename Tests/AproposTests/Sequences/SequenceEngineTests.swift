@@ -160,7 +160,7 @@ struct SequenceEngineTests {
 
     @Test func externalEffectsNeedTheConfirmationThatTheCommandAsks() async {
         let rig = SequenceRig()
-        let steps = [Seq.upper(output: "a"), Seq.send("dest:notes", from: .output("a"))]
+        let steps = [Seq.upper(output: "a"), Seq.send("dest:mail", from: .output("a"))]
         let command = CommandSequence(title: "Test", steps: steps).userCommand(needsConfirmation: true)
         let asked = await rig.engine.run(command.action, values: textValues("x"), target: nil, confirmed: false)
         #expect(asked == .failure(.confirmationRequired))
@@ -317,7 +317,7 @@ struct SequenceInjectionTests {
                 Issue.record("expected failure for \(bad.prefix(8))")
                 continue
             }
-            #expect(sentence.contains("not a web address"))
+            #expect(sentence.contains("not a web address"), "\(bad): \(sentence)")
         }
         #expect(rig.actions.opened.isEmpty)
     }

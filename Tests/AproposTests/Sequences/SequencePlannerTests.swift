@@ -137,6 +137,18 @@ struct SequenceConfirmationTests {
         #expect(plan(Seq.upper(output: "a")).effects.isEmpty)
     }
 
+    @Test func handingTextToAnAppAloneAsksForNothingButIsListedWhenSomethingElseAsks() {
+        let quiet = plan(Seq.upper(output: "a"), Seq.send("dest:notes", from: .output("a")))
+        #expect(quiet.effects.map(\.kind) == [.sendsToApp])
+        #expect(!quiet.requiresConfirmation)
+        let loud = plan(
+            Seq.upper(output: "a"), Seq.send("dest:notes", from: .output("a")),
+            Seq.link("https://example.com/?q={text}"))
+        #expect(loud.requiresConfirmation)
+        #expect(loud.confirmation.lines().count == 2)
+        #expect(loud.confirmation.lines()[0].contains("Notes"))
+    }
+
     @Test func pureTextStepsAskForNothing() {
         let plan = plan(
             Seq.upper(output: "a"),

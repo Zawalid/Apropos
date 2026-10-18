@@ -122,8 +122,9 @@ public struct SequencePlan: Sendable {
 
     public var effects: [SequenceEffect] { steps.flatMap(\.effects) }
 
-    /// Anything that leaves a trace outside Apropos is confirmed once, for the whole sequence, before the first step.
-    public var requiresConfirmation: Bool { !effects.isEmpty }
+    /// Anything that leaves a trace outside Apropos beyond handing text to an app is confirmed once, for the whole
+    /// sequence, before the first step. The confirmation then lists every effect, the quiet ones too.
+    public var requiresConfirmation: Bool { confirmation.isRequired }
 
     /// The combined confirmation, one line per external effect, in order.
     public var confirmation: SequenceConfirmation { SequenceConfirmation(effects: effects) }

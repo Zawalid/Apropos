@@ -29,8 +29,13 @@ public enum SequenceLevel: Equatable, Sendable {
     /// The form that turns the draft into a command.
     case save
 
-    /// The breadcrumb chip: "Sequence draft".
-    public var title: String { "Sequence draft" }
+    /// The breadcrumb chip: "Sequence draft" or "Save as command".
+    public var title: String {
+        switch self {
+        case .steps: "Sequence draft"
+        case .save: "Save as command"
+        }
+    }
 }
 
 /// A question asked before the run, in the panel's search field.

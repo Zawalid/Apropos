@@ -19,6 +19,15 @@ public enum SequenceEffectKind: String, Sendable, Equatable {
     case replacesSelection
     /// An action that asks before it runs.
     case asksFirst
+
+    /// Whether this effect alone is enough to ask. Handing text to an app like Notes does not (the send-to layer does
+    /// not ask for it either); it is still listed when something else makes the sequence ask.
+    public var asks: Bool {
+        switch self {
+        case .sendsToApp: false
+        default: true
+        }
+    }
 }
 
 /// One external effect of a sequence, worded for the person who is about to allow it.
@@ -34,7 +43,7 @@ public struct SequenceEffect: Sendable, Equatable {
 public struct SequenceConfirmation: Sendable, Equatable {
     public let effects: [SequenceEffect]
 
-    public var isRequired: Bool { !effects.isEmpty }
+    public var isRequired: Bool { effects.contains { $0.kind.asks } }
 
     /// The question on top: "Run these 3 steps?".
     public var heading: String {
