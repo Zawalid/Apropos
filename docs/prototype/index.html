@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cue design prototype</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
+  --ease-io:cubic-bezier(0.77,0,0.175,1);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+}
+html[data-theme=dark]{
+  --glass:rgba(26,29,28,.62);--glass-edge:rgba(255,255,255,.13);--glass-edge-top:rgba(255,255,255,.22);
+  --text:#F2F5F3;--text2:rgba(242,245,243,.64);--text3:rgba(242,245,243,.44);
+  --hl:rgba(255,255,255,.09);--chip:rgba(255,255,255,.07);--chip-edge:rgba(255,255,255,.08);
+  --tile:rgba(255,255,255,.08);--tile-ink:rgba(255,255,255,.9);
+  --accent:#8CF2CC;--accent-ink:#0B100F;--accent-soft:rgba(140,242,204,.16);--accent-text:#8CF2CC;
+  --key-bg:rgba(255,255,255,.07);--key-edge:rgba(255,255,255,.15);--divider:rgba(255,255,255,.07);
+  --shadow:0 30px 80px rgba(0,0,0,.55),0 8px 24px rgba(0,0,0,.35);
+  --wall:radial-gradient(60% 70% at 18% 20%,#1d4d46 0%,transparent 60%),radial-gradient(50% 60% at 85% 15%,#23305c 0%,transparent 60%),radial-gradient(70% 70% at 70% 95%,#3b2b57 0%,transparent 60%),#0c1210;
+  --win:rgba(30,34,33,.9);--win-line:rgba(255,255,255,.08);--win-ink:rgba(255,255,255,.14);--bar:rgba(10,14,13,.55);
+}
+html[data-theme=light]{
+  --glass:rgba(247,249,248,.66);--glass-edge:rgba(0,0,0,.09);--glass-edge-top:rgba(255,255,255,.9);
+  --text:#121C18;--text2:rgba(18,28,24,.66);--text3:rgba(18,28,24,.48);
+  --hl:rgba(0,0,0,.06);--chip:rgba(0,0,0,.05);--chip-edge:rgba(0,0,0,.06);
+  --tile:rgba(0,0,0,.06);--tile-ink:rgba(18,28,24,.82);
+  --accent:#0A6B50;--accent-ink:#F4FBF8;--accent-soft:rgba(10,107,80,.13);--accent-text:#0A6B50;
+  --key-bg:rgba(0,0,0,.04);--key-edge:rgba(0,0,0,.14);--divider:rgba(0,0,0,.07);
+  --shadow:0 30px 70px rgba(30,50,45,.28),0 6px 20px rgba(30,50,45,.16);
+  --wall:radial-gradient(60% 70% at 18% 20%,#b9e6d8 0%,transparent 60%),radial-gradient(50% 60% at 85% 15%,#c7d3f2 0%,transparent 60%),radial-gradient(70% 70% at 70% 95%,#e0d0f0 0%,transparent 60%),#e8efec;
+  --win:rgba(255,255,255,.92);--win-line:rgba(0,0,0,.08);--win-ink:rgba(0,0,0,.1);--bar:rgba(255,255,255,.55);
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);color:var(--text);background:var(--wall);-webkit-font-smoothing:antialiased}
+#menubar{position:absolute;inset:0 0 auto 0;height:28px;display:flex;align-items:center;gap:18px;padding:0 16px;background:var(--bar);backdrop-filter:blur(20px);font-size:13px;color:var(--text)}
+#menubar b{font-weight:600}
+#menubar .sp{flex:1}
+#menubar span{color:var(--text2)}
+#win{position:absolute;left:50%;top:70px;width:min(980px,86vw);height:min(560px,70vh);transform:translateX(-50%);background:var(--win);border:1px solid var(--win-line);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
+#win .tb{height:38px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--win-line);font-size:12.5px;color:var(--text2)}
+#win .tb i.d{width:12px;height:12px;border-radius:50%;background:var(--win-ink)}
+#win .tb .t{margin:0 auto;padding-right:60px}
+#winbody{padding:22px;display:grid;gap:14px;transition:opacity .2s var(--ease-out)}
+.bar{height:10px;border-radius:5px;background:var(--win-ink)}
+.blk{border-radius:10px;background:var(--win-ink)}
+.sel{outline:2px solid #4C8DF6;outline-offset:3px;position:relative}
+#dock{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;gap:8px;padding:8px;border-radius:22px;background:var(--glass);backdrop-filter:blur(30px) saturate(1.5);border:1px solid var(--glass-edge)}
+#dock button{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;width:68px;padding:9px 0 7px;border-radius:14px;font-size:11.5px;color:var(--text2);transition:background .15s var(--ease-out),color .15s var(--ease-out),transform .12s var(--ease-out)}
+#dock button i{font-size:22px}
+#dock button:hover{background:var(--chip)}
+#dock button:active{transform:scale(.96)}
+#dock button[aria-pressed=true]{background:var(--hl);color:var(--text)}
+#dock button:focus-visible,#open:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#hint{position:absolute;left:20px;bottom:22px;font-size:12px;color:var(--text2);line-height:1.7;max-width:260px}
+#open{all:unset;cursor:pointer;position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);padding:12px 18px;border-radius:999px;background:var(--glass);backdrop-filter:blur(30px);border:1px solid var(--glass-edge);font-size:14px;display:none}
+body.closed #open{display:block}
+body.closed #panel{display:none}
+
+#panel{position:absolute;left:50%;top:15%;transform:translateX(-50%);width:min(720px,92vw);height:520px;border-radius:26px;background:var(--glass);backdrop-filter:blur(44px) saturate(1.7);-webkit-backdrop-filter:blur(44px) saturate(1.7);border:1px solid var(--glass-edge);box-shadow:var(--shadow),inset 0 1px 0 var(--glass-edge-top);overflow:hidden}
+.search{display:flex;align-items:center;gap:12px;padding:20px 22px 14px}
+.search i{font-size:22px;color:var(--text2)}
+.search input{all:unset;flex:1;font-size:22px;letter-spacing:-.01em;color:var(--text);caret-color:var(--accent)}
+.search input::placeholder{color:var(--text3)}
+.ctx{display:flex;gap:6px;padding:0 22px 12px;flex-wrap:nowrap;overflow:hidden;min-height:38px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;background:var(--chip);border:1px solid var(--chip-edge);font-size:12.5px;color:var(--text2);white-space:nowrap;opacity:0;transform:translateY(4px);animation:chipin .22s var(--ease-out) forwards;animation-delay:var(--d,0ms)}
+.chip i{font-size:14px}
+.chip.app{color:var(--text);font-weight:500}
+.chip.app i{color:var(--appc)}
+@keyframes chipin{to{opacity:1;transform:none}}
+.listwrap{position:absolute;inset:112px 0 0 0;overflow-y:auto;padding:2px 12px 90px;mask-image:linear-gradient(to bottom,#000 calc(100% - 96px),transparent);scrollbar-width:none}
+.listwrap::-webkit-scrollbar{display:none}
+.inner{position:relative}
+.hl{position:absolute;left:0;right:0;top:0;height:46px;border-radius:12px;background:var(--hl);transition:transform .16s var(--ease-out);pointer-events:none}
+.hl.flash{background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.sec{padding:12px 10px 5px;font-size:12px;font-weight:600;color:var(--text3);position:relative}
+.row{position:relative;height:46px;display:flex;align-items:center;gap:12px;padding:0 10px;border-radius:12px;cursor:default;opacity:0;transform:translateY(4px);animation:chipin .2s var(--ease-out) forwards;animation-delay:var(--d,0ms)}
+.tile{width:30px;height:30px;border-radius:8px;background:var(--tile);display:grid;place-items:center;color:var(--tile-ink);flex:none}
+.tile i{font-size:17px}
+.row.rec .tile{background:var(--accent-soft);color:var(--accent-text)}
+.rt{flex:1;min-width:0;display:flex;align-items:baseline;gap:10px}
+.title{font-size:15px;font-weight:500;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title b{font-weight:600;color:var(--accent-text)}
+.sub{font-size:12.5px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.right{display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--text3);flex:none}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)}
+.tag.rc{color:var(--accent-text)}
+.tag i{font-size:13px}
+kbd{font-family:var(--font);font-size:11.5px;min-width:20px;height:20px;padding:0 5px;display:inline-grid;place-items:center;border-radius:6px;background:var(--key-bg);border:1px solid var(--key-edge);color:var(--text2)}
+.empty{padding:60px 20px;text-align:center;color:var(--text3);font-size:14px}
+
+#foot{position:absolute;left:14px;right:14px;bottom:14px;display:flex;align-items:center;justify-content:space-between;pointer-events:none}
+#foot>*{pointer-events:auto}
+.round{all:unset;cursor:pointer;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--glass);backdrop-filter:blur(30px) saturate(1.6);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-edge-top),0 6px 18px rgba(0,0,0,.18);transition:transform .12s var(--ease-out)}
+.round:active{transform:scale(.95)}
+.round i{font-size:19px;color:var(--text2)}
+.round .rd{width:12px;height:12px;border-radius:50%;background:#ff5a52}
+.round:focus-visible,.cap button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cap{display:flex;align-items:center;gap:6px;height:44px;padding:0 8px 0 14px;border-radius:999px;background:var(--glass);backdrop-filter:blur(30px) saturate(1.6);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-edge-top),0 6px 18px rgba(0,0,0,.18);font-size:13.5px}
+.cap button{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border-radius:999px;color:var(--text);transition:background .12s var(--ease-out),transform .12s var(--ease-out)}
+.cap button:hover{background:var(--hl)}
+.cap button:active{transform:scale(.97)}
+.cap button.sec2{color:var(--text2)}
+.cap .vr{width:1px;height:18px;background:var(--divider)}
+#pop{position:absolute;right:14px;bottom:68px;width:250px;padding:6px;border-radius:16px;background:var(--glass);backdrop-filter:blur(40px) saturate(1.7);border:1px solid var(--glass-edge);box-shadow:var(--shadow),inset 0 1px 0 var(--glass-edge-top);transform-origin:bottom right;opacity:0;transform:scale(.96);pointer-events:none;transition:opacity .16s var(--ease-out),transform .16s var(--ease-out)}
+#pop.on{opacity:1;transform:none;pointer-events:auto}
+#pop .pi{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:9px;font-size:13.5px;cursor:default}
+#pop .pi:hover{background:var(--hl)}
+#pop .pi i{font-size:16px;color:var(--text2)}
+#pop .pi span{flex:1}
+#pop hr{border:0;height:1px;background:var(--divider);margin:5px 6px}
+
+#rec{position:absolute;inset:0;display:none;flex-direction:column;padding:22px 26px 90px}
+#panel.rec #rec{display:flex}
+#panel.rec .search,#panel.rec .ctx,#panel.rec .listwrap{display:none}
+.rhead{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600}
+.rdot{width:10px;height:10px;border-radius:50%;background:#ff5a52;animation:pulse 1.2s var(--ease-io) infinite}
+@keyframes pulse{50%{opacity:.35}}
+.timer{margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--text2);font-weight:400}
+.rsub{margin-top:4px;font-size:13px;color:var(--text2)}
+.steps{margin-top:18px;display:grid;gap:6px}
+.step{display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:12px;background:var(--chip);border:1px solid var(--chip-edge);opacity:0;transform:translateY(6px);animation:chipin .26s var(--ease-out) forwards}
+.step .n{width:20px;font-size:12px;color:var(--text3);font-family:var(--mono)}
+.step .tag{margin-left:auto}
+.step.live .tile{background:var(--accent-soft);color:var(--accent-text)}
+.name{margin-top:22px;display:none}
+.name.on{display:block}
+.name label{font-size:12px;font-weight:600;color:var(--text3);display:block;margin-bottom:6px}
+.name input{all:unset;box-sizing:border-box;width:100%;height:42px;padding:0 14px;border-radius:12px;background:var(--chip);border:1px solid var(--chip-edge);font-size:15px;color:var(--text)}
+.name input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.fine{margin-top:10px;font-size:12.5px;color:var(--text3);display:flex;gap:8px;align-items:center}
+.fine i{font-size:14px}
+.cap button.primary{background:var(--accent);color:var(--accent-ink);font-weight:600;padding:0 14px}
+.cap button.primary:hover{background:var(--accent);filter:brightness(1.08)}
+
+#toast{position:absolute;right:20px;top:44px;width:300px;padding:12px 14px;border-radius:16px;background:var(--glass);backdrop-filter:blur(40px) saturate(1.7);border:1px solid var(--glass-edge);box-shadow:var(--shadow);display:flex;gap:10px;align-items:center;font-size:13.5px;opacity:0;transform:translateX(16px);pointer-events:none;transition:opacity .22s var(--ease-out),transform .22s var(--ease-out)}
+#toast.on{opacity:1;transform:none}
+#toast .tile{background:var(--accent-soft);color:var(--accent-text)}
+#toast small{display:block;color:var(--text3);font-size:12px;margin-top:1px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="menubar"><i class="ti ti-brand-apple"></i><b id="mbname">Figma</b><span>File</span><span>Edit</span><span>View</span><span>Window</span><span>Help</span><div class="sp"></div><span id="clock">Sun 9:41</span></div>
+
+<div id="win"><div class="tb"><i class="d"></i><i class="d"></i><i class="d"></i><div class="t" id="wtitle"></div></div><div id="winbody"></div></div>
+
+<div id="hint">Option+Space toggles the panel with no animation, like Raycast. Arrows, Return, Escape, Cmd+K actions, Cmd+R record, L light or dark. Switch the app below to watch the context change.</div>
+
+<div id="dock" role="group" aria-label="Frontmost app"></div>
+<button id="open" type="button">Open Cue <kbd>⌥</kbd><kbd>Space</kbd></button>
+
+<div id="toast" role="status"><span class="tile"><i class="ti ti-check"></i></span><div><div id="toastT"></div><small id="toastS"></small></div></div>
+
+<div id="panel" role="dialog" aria-label="Cue command panel">
+  <div class="search"><i class="ti ti-search" aria-hidden="true"></i><input id="q" placeholder="Search or type a command" autocomplete="off" spellcheck="false" aria-label="Search commands"></div>
+  <div class="ctx" id="ctx" aria-label="Current context"></div>
+  <div class="listwrap" id="lw"><div class="inner" id="inner"><div class="hl" id="hl"></div></div></div>
+
+  <div id="rec">
+    <div class="rhead"><span class="rdot" id="rdot"></span><span id="rtitle">Recording in Figma</span><span class="timer" id="timer">0:00</span></div>
+    <div class="rsub" id="rsub">Do the task once. Cue records what you click, not where.</div>
+    <div class="steps" id="steps"></div>
+    <div class="name" id="name">
+      <label for="cname">Command name</label>
+      <input id="cname" value="Share frame to #design" autocomplete="off">
+      <div class="fine"><i class="ti ti-target"></i>Targets menu items, buttons and text fields by role and label, so it survives UI shifts</div>
+      <div class="fine"><i class="ti ti-keyboard"></i>Works in Figma, hotkey Option S</div>
+    </div>
+  </div>
+
+  <div id="pop" role="menu"></div>
+  <div id="foot">
+    <button class="round" id="recbtn" aria-label="Record a command" title="Record a command"><span class="rd"></span></button>
+    <div class="cap" id="cap"></div>
+  </div>
+</div>
+
+<script>
+const APPS={
+ figma:{name:'Figma',icon:'ti-brand-figma',color:'#A259FF',title:'Landing page, Pricing 1440',
+  ctx:[['ti-frame','Frame: Pricing 1440'],['ti-click','3 layers selected'],['ti-git-branch','feat/pricing']],
+  items:[
+   {k:'now',t:'Export selection as PNG',s:'3 layers, 2x',i:'ti-photo-down',key:'⇧⌘E',msg:'Exported 3 layers as PNG'},
+   {k:'now',t:'Create Linear ticket from this frame',s:'Branch feat/pricing',i:'ti-ticket',tag:['ti-arrows-exchange','Figma + Linear'],msg:'Created FIN-218, linked to feat/pricing'},
+   {k:'now',t:'Copy as CSS',s:'Selected layer',i:'ti-code',key:'⌥⌘C',msg:'Copied CSS to the clipboard'},
+   {k:'now',t:'Create component',s:'From selection',i:'ti-components',key:'⌥⌘K',msg:'Created component Pricing card'},
+   {k:'rec',t:'Share frame to #design',s:'Export, Slack, paste, send',i:'ti-brand-slack',key:'⌥S',msg:'Sent Pricing 1440 to #design'},
+   {k:'menu',t:'Arrange: Bring to front',s:'Object menu',i:'ti-layers-intersect',key:'⇧⌘]',msg:'Brought layers to front'},
+   {k:'menu',t:'View: Zoom to fit',s:'View menu',i:'ti-zoom-scan',key:'⇧1',msg:'Zoomed to fit'}]},
+ safari:{name:'Safari',icon:'ti-brand-safari',color:'#2F9BFF',title:'Pricing, Linear',
+  ctx:[['ti-world','linear.app/pricing'],['ti-text-size','12 words selected'],['ti-layout-list','Tab 4 of 9']],
+  items:[
+   {k:'now',t:'Copy as Markdown link',s:'Title and URL',i:'ti-link',key:'⇧⌘C',msg:'Copied [Pricing, Linear](linear.app/pricing)'},
+   {k:'now',t:'Close other tabs from linear.app',s:'5 tabs',i:'ti-x',msg:'Closed 5 tabs'},
+   {k:'now',t:'Send selection to Notes',s:'With source link',i:'ti-notes',tag:['ti-arrows-exchange','Safari + Notes'],msg:'Saved to Notes, Research'},
+   {k:'now',t:'Summarize this page',s:'On device',i:'ti-sparkles',msg:'Summary ready'},
+   {k:'rec',t:'Save to reading list and tag',s:'Reading list, tag later',i:'ti-bookmark',key:'⌥R',msg:'Saved and tagged'},
+   {k:'menu',t:'History: Reopen last closed tab',s:'History menu',i:'ti-history',key:'⇧⌘T',msg:'Reopened tab'},
+   {k:'menu',t:'View: Enter reader',s:'View menu',i:'ti-book',key:'⇧⌘R',msg:'Reader on'}]},
+ xcode:{name:'Xcode',icon:'ti-hammer',color:'#4C8DF6',title:'PanelView.swift, Cue',
+  ctx:[['ti-file-code','PanelView.swift'],['ti-git-branch','feat/panel'],['ti-device-desktop','My Mac, Debug']],
+  items:[
+   {k:'now',t:'Build and run',s:'Scheme Cue',i:'ti-player-play',key:'⌘R',msg:'Build succeeded in 4.1s'},
+   {k:'now',t:'Run tests',s:'CueTests',i:'ti-flask',key:'⌘U',msg:'38 tests passed'},
+   {k:'now',t:'Open this folder in Terminal',s:'Sources/Cue/Panel',i:'ti-terminal-2',tag:['ti-arrows-exchange','Xcode + Terminal'],msg:'Opened Terminal at Panel'},
+   {k:'now',t:'Reveal in Finder',s:'PanelView.swift',i:'ti-folder-search',key:'⌥⌘R',msg:'Revealed in Finder'},
+   {k:'rec',t:'Archive and upload to TestFlight',s:'7 steps',i:'ti-rocket',key:'⌥T',msg:'Archive started'},
+   {k:'menu',t:'Product: Clean build folder',s:'Product menu',i:'ti-trash',key:'⇧⌘K',msg:'Build folder cleaned'},
+   {k:'menu',t:'Editor: Re-indent',s:'Editor menu',i:'ti-indent-increase',key:'⌃I',msg:'Re-indented'}]},
+ finder:{name:'Finder',icon:'ti-folder',color:'#5AC8FA',title:'Cue',
+  ctx:[['ti-folder','~/Projects/Cue'],['ti-click','3 items selected'],['ti-git-branch','main']],
+  items:[
+   {k:'now',t:'New file here',s:'In Cue',i:'ti-file-plus',msg:'Created untitled'},
+   {k:'now',t:'Open in Terminal',s:'~/Projects/Cue',i:'ti-terminal-2',msg:'Opened Terminal'},
+   {k:'now',t:'Copy path',s:'3 items',i:'ti-copy',key:'⌥⌘C',msg:'Copied 3 paths'},
+   {k:'now',t:'Compress 3 items',s:'Zip',i:'ti-file-zip',msg:'Created Archive.zip'},
+   {k:'rec',t:'Rename with date prefix',s:'Selected items',i:'ti-calendar',key:'⌥D',msg:'Renamed 3 items'},
+   {k:'menu',t:'File: Get info',s:'File menu',i:'ti-info-circle',key:'⌘I',msg:'Opened info'},
+   {k:'menu',t:'View: Show path bar',s:'View menu',i:'ti-route',msg:'Path bar on'}]}
+};
+const SEC={now:'Suggested for this moment',rec:'Your commands',menu:'Menu'};
+let app='figma',rows=[],sel=0,open=true,mode='list',popOn=false,extra=null;
+const $=id=>document.getElementById(id);
+
+function dock(){
+ $('dock').innerHTML=Object.entries(APPS).map(([k,a])=>`<button type="button" data-app="${k}" aria-pressed="${k===app}"><i class="ti ${a.icon}"></i>${a.name}</button>`).join('');
+ $('dock').querySelectorAll('button').forEach(b=>b.onclick=()=>setApp(b.dataset.app));
+}
+function winBody(){
+ const a=APPS[app];$('wtitle').textContent=a.title;$('mbname').textContent=a.name;
+ let h='';
+ if(app==='figma')h=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px"><div class="blk sel" style="height:200px"></div><div class="blk sel" style="height:200px"></div><div class="blk sel" style="height:200px"></div></div><div class="blk" style="height:110px"></div>`;
+ if(app==='safari')h=`<div class="bar" style="width:40%;height:18px"></div><div class="bar" style="width:75%"></div><div class="bar" style="width:68%"></div><div class="bar" style="width:72%;background:var(--accent-soft)"></div><div class="blk" style="height:150px"></div><div class="bar" style="width:60%"></div>`;
+ if(app==='xcode')h=[44,70,58,36,64,52,30,68,46,60].map((w,i)=>`<div class="bar" style="width:${w}%;margin-left:${(i%3)*24}px;height:9px"></div>`).join('');
+ if(app==='finder')h=`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px">${[0,1,2,3,4,5,6,7,8,9].map(i=>`<div class="blk ${i<3?'sel':''}" style="height:84px"></div>`).join('')}</div>`;
+ $('winbody').innerHTML=h;
+}
+function score(q,t){
+ q=q.toLowerCase();const s=t.toLowerCase();let j=0,pos=[],sc=0,last=-2;
+ for(let i=0;i<s.length&&j<q.length;i++){if(s[i]===q[j]){pos.push(i);sc+=(i===last+1?3:1)+(i===0||s[i-1]===' '?2:0);last=i;j++}}
+ return j===q.length?{sc,pos}:null;
+}
+function mark(t,pos){if(!pos||!pos.length)return t;const S=new Set(pos);return [...t].map((c,i)=>S.has(i)?`<b>${c}</b>`:c).join('')}
+function keys(k){return [...k].map(c=>`<kbd>${c}</kbd>`).join('')}
+
+function ctx(){
+ const a=APPS[app];
+ const chips=[['ti '+a.icon,a.name,true],...a.ctx.map(c=>['ti '+c[0],c[1],false])];
+ $('ctx').innerHTML=chips.map((c,i)=>`<span class="chip ${c[2]?'app':''}" style="--d:${i*35}ms;--appc:${a.color}"><i class="${c[0]}"></i>${c[1]}</span>`).join('');
+}
+function build(){
+ const q=$('q').value.trim();const a=APPS[app];
+ let items=[...(extra?[extra]:[]),...a.items].map(x=>({...x}));
+ let list=[];
+ if(q){items.forEach(x=>{const m=score(q,x.t);if(m)list.push({...x,m,k:'res'})});list.sort((a,b)=>b.m.sc-a.m.sc)}
+ else list=items;
+ const inner=$('inner');inner.querySelectorAll('.sec,.row,.empty').forEach(n=>n.remove());
+ rows=[];let cur='',d=0,html='';
+ if(!list.length){inner.insertAdjacentHTML('beforeend',`<div class="empty">No commands for "${q}" in ${a.name}. Press Return to search all apps.</div>`);$('hl').style.opacity=0;footer();return}
+ $('hl').style.opacity=1;
+ list.forEach(x=>{
+  const key=x.k==='res'?(x.k):x.k;
+  if(!q&&x.k!==cur){cur=x.k;html+=`<div class="sec" style="animation:none">${SEC[x.k]}</div>`}
+  const right=x.tag?`<span class="tag"><i class="ti ${x.tag[0]}"></i>${x.tag[1]}</span>`:x.key?keys(x.key):'';
+  const rtag=(x.k==='rec'||x.rec)?`<span class="tag rc"><i class="ti ti-circle-dot"></i>Recorded</span>`:'';
+  const isRec=x.k==='rec'||x.rec;
+  html+=`<div class="row ${isRec?'rec':''}" data-i="${rows.length}" style="--d:${d*14}ms"><span class="tile"><i class="ti ${x.i}"></i></span><span class="rt"><span class="title">${q?mark(x.t,x.m&&x.m.pos):x.t}</span><span class="sub">${x.s}</span></span><span class="right">${isRec&&!x.key?'':''}${isRec?rtag+(x.key?keys(x.key):''):right}</span></div>`;
+  rows.push(x);d++;
+ });
+ inner.insertAdjacentHTML('beforeend',html);
+ inner.querySelectorAll('.row').forEach(r=>{r.onmousemove=()=>{const i=+r.dataset.i;if(i!==sel){sel=i;moveHl()}};r.onclick=()=>run()});
+ if(sel>=rows.length)sel=0;
+ requestAnimationFrame(()=>{moveHl(true);});
+ footer();
+}
+function moveHl(instant){
+ const r=$('inner').querySelector(`.row[data-i="${sel}"]`);if(!r)return;
+ const h=$('hl');if(instant){h.style.transition='none'}
+ h.style.transform=`translateY(${r.offsetTop}px)`;
+ if(instant){void h.offsetWidth;h.style.transition=''}
+ const lw=$('lw'),top=r.offsetTop,bot=top+46;
+ if(top<lw.scrollTop)lw.scrollTop=top-30;
+ else if(bot>lw.scrollTop+lw.clientHeight-90)lw.scrollTop=bot-lw.clientHeight+100;
+ footer();
+}
+function footer(){
+ const x=rows[sel];let primary='Run command';
+ if(mode==='rec')return;
+ if(x&&(x.k==='menu'))primary='Run menu item';
+ if(x&&x.tag)primary='Run across apps';
+ $('cap').innerHTML=`<button type="button" id="runb">${primary}<kbd>↵</kbd></button><span class="vr"></span><button type="button" class="sec2" id="actb">Actions<kbd>⌘</kbd><kbd>K</kbd></button>`;
+ $('runb').onclick=run;$('actb').onclick=togglePop;
+}
+function togglePop(){
+ popOn=!popOn;
+ $('pop').innerHTML=`<div class="pi"><i class="ti ti-player-play"></i><span>Run</span><kbd>↵</kbd></div><div class="pi"><i class="ti ti-pin"></i><span>Pin to top in ${APPS[app].name}</span><kbd>⌘P</kbd></div><div class="pi"><i class="ti ti-edit"></i><span>Edit command</span><kbd>⌘E</kbd></div><div class="pi"><i class="ti ti-link"></i><span>Copy deeplink</span></div><hr><div class="pi"><i class="ti ti-eye-off"></i><span>Hide in ${APPS[app].name}</span></div>`;
+ $('pop').classList.toggle('on',popOn);
+}
+function toast(t,s){$('toastT').textContent=t;$('toastS').textContent=s;$('toast').classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').classList.remove('on'),2600)}
+function run(){
+ const x=rows[sel];if(!x)return;
+ $('hl').classList.add('flash');
+ setTimeout(()=>{$('hl').classList.remove('flash');setOpen(false);toast(x.msg,x.t+' in '+APPS[app].name)},170);
+}
+function setOpen(v){
+ open=v;document.body.classList.toggle('closed',!v);
+ if(v){popOn=false;$('pop').classList.remove('on');setTimeout(()=>$('q').focus(),0)}
+}
+function setApp(k){
+ app=k;sel=0;dock();winBody();ctx();build();
+ $('rtitle').textContent='Recording in '+APPS[k].name;
+}
+/* record flow */
+let rt,steps=[];
+function startRec(){
+ if(app!=='figma')setApp('figma');
+ mode='rec';$('panel').classList.add('rec');popOn=false;$('pop').classList.remove('on');
+ $('steps').innerHTML='';$('name').classList.remove('on');$('rdot').style.display='';$('rtitle').textContent='Recording in '+APPS[app].name;$('rsub').textContent='Do the task once. Cue records what you click, not where.';
+ let s=0;$('timer').textContent='0:00';rt=setInterval(()=>{s++;$('timer').textContent='0:0'+Math.min(s,9)},1000);
+ const seq=[['ti-photo-down','Menu: Export selection as PNG','Figma'],['ti-brand-slack','Switch to Slack','Slack'],['ti-hash','Open channel #design','Slack'],['ti-send','Paste and press Send','Slack']];
+ seq.forEach((x,i)=>setTimeout(()=>{if(mode!=='rec')return;
+  $('steps').querySelectorAll('.live').forEach(n=>n.classList.remove('live'));
+  $('steps').insertAdjacentHTML('beforeend',`<div class="step live"><span class="n">${i+1}</span><span class="tile"><i class="ti ${x[0]}"></i></span><span>${x[1]}</span><span class="tag"><i class="ti ti-app-window"></i>${x[2]}</span></div>`)},500+i*900));
+ $('cap').innerHTML=`<button type="button" class="primary" id="stopb"><i class="ti ti-player-stop"></i>Stop recording<kbd style="background:rgba(0,0,0,.12);border-color:rgba(0,0,0,.2);color:inherit">⌘R</kbd></button>`;
+ $('stopb').onclick=stopRec;
+}
+function stopRec(){
+ clearInterval(rt);$('rdot').style.display='none';$('rtitle').textContent='Name your command';$('rsub').textContent='4 steps captured across Figma and Slack.';
+ $('name').classList.add('on');setTimeout(()=>{$('cname').focus();$('cname').select()},0);
+ $('cap').innerHTML=`<button type="button" class="sec2" id="cancelb">Discard<kbd>esc</kbd></button><span class="vr"></span><button type="button" class="primary" id="saveb"><i class="ti ti-check"></i>Save command<kbd style="background:rgba(0,0,0,.12);border-color:rgba(0,0,0,.2);color:inherit">↵</kbd></button>`;
+ $('cancelb').onclick=endRec;$('saveb').onclick=()=>{extra={k:'rec',t:$('cname').value||'Untitled command',s:'Just recorded',i:'ti-brand-slack',key:'⌥S',msg:'Ran '+($('cname').value||'command'),rec:true};endRec(true)};
+}
+function endRec(saved){
+ clearInterval(rt);mode='list';$('panel').classList.remove('rec');sel=0;build();
+ if(saved===true){const r=$('inner').querySelector('.row[data-i="0"]');setTimeout(()=>{$('hl').classList.add('flash');setTimeout(()=>$('hl').classList.remove('flash'),700)},250)}
+ $('q').focus();
+}
+document.addEventListener('keydown',e=>{
+ if(e.altKey&&e.code==='Space'){e.preventDefault();setOpen(!open);return}
+ if(!open){return}
+ if(mode==='rec'){
+  if(e.key==='Escape'){e.preventDefault();endRec()}
+  if(e.key==='Enter'&&$('name').classList.contains('on')){e.preventDefault();$('saveb').click()}
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='r'){e.preventDefault();$('stopb')&&$('stopb').click()}
+  return}
+ if(e.key==='ArrowDown'){e.preventDefault();sel=Math.min(rows.length-1,sel+1);moveHl()}
+ else if(e.key==='ArrowUp'){e.preventDefault();sel=Math.max(0,sel-1);moveHl()}
+ else if(e.key==='Enter'){e.preventDefault();run()}
+ else if(e.key==='Escape'){e.preventDefault();if(popOn)togglePop();else if($('q').value){$('q').value='';build()}else setOpen(false)}
+ else if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();togglePop()}
+ else if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='r'){e.preventDefault();startRec()}
+ else if(e.key.toLowerCase()==='l'&&document.activeElement!==$('q')){document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'}
+});
+$('q').addEventListener('input',()=>{sel=0;build()});
+$('open').onclick=()=>setOpen(true);
+$('recbtn').onclick=startRec;
+dock();winBody();ctx();build();$('q').focus();
+</script>
+</body>
+</html>
