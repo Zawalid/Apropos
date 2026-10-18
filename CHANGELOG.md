@@ -12,6 +12,14 @@ work lands.
   left untouched. macOS treats the renamed app as new, so grant Accessibility again and remove the stale Cue entry.
 
 ### Added
+- Send to: a keyboard-first "send this to..." layer. With a selection, a page, files or a folder in front, the palette
+  lists Send selection to... in the matching group, plus direct rows for the destinations you use most (counted per kind
+  of thing). The row opens a destination list in the same panel, with a chip for the level and Escape to go back. Built in:
+  Notes, Reminders, Things, Obsidian, Bear, a Mail draft (it never sends), copy or move into a remembered folder, and the
+  system Share menu; each shows only when its app is installed. Mail drafts, moves and the Share menu show a one-line
+  preview and need a confirming Return. Destinations are JSON packs in `Application Support/Apropos/destinations` that
+  reuse the action engine's rules, so a selection can never become code; scripts in your own packs wait for approval.
+  Apropos learns the destination ids only, never what you sent. See docs/destinations.md.
 - UI steps (phase 1 of record-to-command): a command can be a list of menu picks in other apps, run through Accessibility
   without moving the pointer or taking focus. Steps find their item by identifier, role and title, menu path, shortcut,
   then position, refuse ambiguous matches, never touch the Apple menu, recent items, password fields or apps on the
