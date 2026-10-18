@@ -15,6 +15,7 @@ final class AppController {
     let settings: SettingsModel
     let context: ContextModel
     let usage: UsageController
+    let actions: ContextActionCenter
     private(set) var combo: HotKeyCombo
     private(set) var isHotKeyRegistered = true
 
@@ -70,7 +71,13 @@ final class AppController {
         self.palette = palette
         self.usage = UsageController(store: usageStore, palette: palette, defaults: defaults)
         self.combo = settings.hotKey
-        self.context = ContextModel(settings: settings)
+        // Context actions: each finished snapshot feeds the center, which lists what applies in the palette.
+        let actions = ContextActionCenter(library: .bundled(plus: ActionPackLibrary.userDirectory))
+        actions.attach(to: palette)
+        var service = ContextService()
+        service.onSnapshot = { snapshot in Task { @MainActor in actions.update(with: snapshot) } }
+        self.actions = actions
+        self.context = ContextModel(settings: settings, service: service)
     }
 
     func start() {
@@ -120,6 +127,7 @@ final class AppController {
     /// Applies the settings that live outside the views: the hotkey and the alternate-command rows.
     private func settingsChanged() {
         if menus.showAlternates != settings.showAlternates { menus.showAlternates = settings.showAlternates }
+        if !settings.contextSensing { actions.clear() }
         if settings.hotKey != combo {
             combo = settings.hotKey
             isHotKeyRegistered = hotKey?.register(combo) ?? false
