@@ -21,7 +21,7 @@ struct FloatingFooter: View {
             .accessibilityLabel("Open Apropos settings")
             .help("Settings")
             Spacer(minLength: 0)
-            if let error = model.runError {
+            if let error = model.runError, model.sendFailure == nil {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Theme.cautionText)
@@ -37,11 +37,21 @@ struct FloatingFooter: View {
         .frame(maxHeight: .infinity, alignment: .bottom)
     }
 
+    /// What Return does for the highlighted row.
+    private var primaryTitle: String {
+        if model.sendPending != nil { return "Confirm and send" }
+        guard let command = model.selected?.command, case .sendTo(let target) = command.source else {
+            return "Run menu item"
+        }
+        if case .generic = target { return "Choose destination" }
+        return command.needsConfirmation ? "Review and send" : "Send"
+    }
+
     private var actionBar: some View {
         HStack(spacing: 4) {
             Button(action: actions.run) {
                 HStack(spacing: 6) {
-                    Text("Run menu item").foregroundStyle(Theme.text.opacity(0.9))
+                    Text(primaryTitle).foregroundStyle(Theme.text.opacity(0.9))
                     KeyCap(text: "↩", small: true)
                 }
             }

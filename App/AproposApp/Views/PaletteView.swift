@@ -9,6 +9,8 @@ struct PaletteActions {
     let openSettings: () -> Void
     let retry: () -> Void
     var openGuide: () -> Void = {}
+    /// Leaves the destination list (the breadcrumb chip).
+    var back: () -> Void = {}
 }
 
 /// The palette: a glass panel with the search field and context chips on top, the ranked list below, and a floating
@@ -28,9 +30,14 @@ struct PaletteView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
-                SearchHeader(model: model, context: context, searchFocused: $searchFocused)
+                SearchHeader(model: model, context: context, actions: actions, searchFocused: $searchFocused)
                 PaletteContentView(model: model, permission: permission, actions: actions)
             }
+            SendBanner(model: model)
+                .padding(.horizontal, 14)
+                .padding(.bottom, 56)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .transition(.opacity)
             FloatingFooter(
                 model: model, state: state, content: PaletteContentView.resolve(model), actions: actions)
             if state.actionsOpen {
@@ -62,6 +69,7 @@ struct PaletteView: View {
 private struct SearchHeader: View {
     let model: PaletteModel
     let context: ContextModel
+    let actions: PaletteActions
     var searchFocused: FocusState<Bool>.Binding
 
     var body: some View {
@@ -75,6 +83,9 @@ private struct SearchHeader: View {
                     .font(.system(size: 17, weight: .regular))
                     .foregroundStyle(Theme.text2)
                     .accessibilityHidden(true)
+                if let level = model.sendLevel {
+                    BreadcrumbChip(title: level.title, action: actions.back)
+                }
                 TextField(placeholder, text: Bindable(model).query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 18))
@@ -100,6 +111,7 @@ private struct SearchHeader: View {
     }
 
     private var placeholder: String {
+        if model.sendLevel != nil { return "Search destinations" }
         if let app = model.targetApp { return "Search \(app.name) commands" }
         return "Search or type a command"
     }
