@@ -10,7 +10,9 @@ final class SequenceCatalogueSource {
     var actions: ContextActionCenter?
     var send: SendToCenter?
     var commands: UserCommandStore?
-    var isInstalled: @Sendable (String) -> Bool = { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) != nil }
+    var isInstalled: @Sendable (String) -> Bool = {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) != nil
+    }
 
     func current() -> SequenceCatalogue {
         SequenceCatalogue(
@@ -36,7 +38,8 @@ enum AppSequences {
         var inner = actions
         inner.sequences = .unavailable
         let runner = EngineStepRunner(
-            engine: ActionEngine(functions: functions, services: inner), destinations: DestinationRunner(services: send))
+            engine: ActionEngine(functions: functions, services: inner), destinations: DestinationRunner(services: send)
+        )
         return Parts(services: inner, runner: runner)
     }
 

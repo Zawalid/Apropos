@@ -126,10 +126,12 @@ struct SequenceSaveView: View {
             .fill(Theme.tile)
             .frame(width: Theme.tileSize + 8, height: Theme.tileSize + 8)
             .overlay {
-                Image(systemName: NSImage(systemSymbolName: center.form.symbol, accessibilityDescription: nil) == nil
-                    ? "questionmark" : center.form.symbol)
-                    .font(.system(size: 13.5, weight: .medium))
-                    .foregroundStyle(Theme.tileInk)
+                Image(
+                    systemName: NSImage(systemSymbolName: center.form.symbol, accessibilityDescription: nil) == nil
+                        ? "questionmark" : center.form.symbol
+                )
+                .font(.system(size: 13.5, weight: .medium))
+                .foregroundStyle(Theme.tileInk)
             }
             .padding(.top, 18)
             .accessibilityHidden(true)
