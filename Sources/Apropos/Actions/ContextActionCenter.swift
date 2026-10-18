@@ -108,6 +108,40 @@ public final class ContextActionCenter {
         return await engine.run(action, values: values, target: target, confirmed: confirmed)
     }
 
+    /// Runs a user command without the panel: from its global shortcut, a URL or Shortcuts. Context comes from `values`
+    /// (callers decide where it came from). A failure is shown as a short notification, since nothing else is on screen.
+    /// Pending commands never run.
+    @discardableResult
+    public func run(
+        _ command: UserCommand, values: ContextValues, target: TargetApp?, confirmed: Bool = false
+    ) async -> Result<ActionOutcome, ActionError> {
+        guard command.isRunnable else { return .failure(.notApplicable) }
+        let result = await engine.run(command.action, values: values, target: target, confirmed: confirmed)
+        if case .failure(let error) = result, error != .confirmationRequired {
+            await engine.services.notify(error.message)
+        }
+        return result
+    }
+
+    /// Runs a user command on the context of `target`, read now. Used by global shortcuts, which fire with no panel
+    /// open. `confirm` is asked for commands that need confirmation; without it they do not run.
+    @discardableResult
+    public func runWithLiveContext(
+        _ command: UserCommand, target: TargetApp?, sensing: ContextService,
+        confirm: (@MainActor (UserCommand) async -> Bool)? = nil
+    ) async -> Result<ActionOutcome, ActionError> {
+        var service = sensing
+        service.onSnapshot = nil
+        var values = ContextValues()
+        if !command.requires.isEmpty, let target { values = await service.snapshot(for: target).values }
+        var confirmed = false
+        if command.needsConfirmation {
+            guard let confirm, await confirm(command) else { return .failure(.confirmationRequired) }
+            confirmed = true
+        }
+        return await run(command, values: values, target: target, confirmed: confirmed)
+    }
+
     /// Connects the center to the palette: commands flow in, and running a context action goes through `run`.
     public func attach(to palette: PaletteModel) {
         observe { [weak palette] commands, pid in palette?.setContextCommands(commands, forPID: pid) }
