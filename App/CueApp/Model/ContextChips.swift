@@ -18,9 +18,10 @@ struct ContextChip: Identifiable, Equatable {
 /// builds show the app chip alone and debug builds can show fixtures (set CUE_FIXTURE_CONTEXT=1).
 @MainActor
 enum ContextChips {
-    static func chips(for app: TargetApp?) -> [ContextChip] {
+    static func chips(for app: TargetApp?, items: [ContextItem] = []) -> [ContextChip] {
         guard let app else { return [] }
         var chips = [ContextChip(id: "app-\(app.pid)", leading: .appIcon(app.pid), text: app.name)]
+        chips += items.map { ContextChip(id: $0.kind.rawValue, leading: .symbol($0.symbol), text: $0.label) }
         #if DEBUG
             if ProcessInfo.processInfo.environment["CUE_FIXTURE_CONTEXT"] != nil {
                 chips += fixtures(for: app).enumerated().map { index, pair in
@@ -35,11 +36,20 @@ enum ContextChips {
         private static func fixtures(for app: TargetApp) -> [(String, String)] {
             switch app.bundleID {
             case "com.apple.finder":
-                return [("folder", "~/Projects/Cue"), ("cursorarrow.click", "3 items selected"), ("arrow.triangle.branch", "main")]
+                return [
+                    ("folder", "~/Projects/Cue"), ("cursorarrow.click", "3 items selected"),
+                    ("arrow.triangle.branch", "main"),
+                ]
             case "com.apple.Safari":
-                return [("globe", "linear.app/pricing"), ("textformat.size", "12 words selected"), ("rectangle.stack", "Tab 4 of 9")]
+                return [
+                    ("globe", "linear.app/pricing"), ("textformat.size", "12 words selected"),
+                    ("rectangle.stack", "Tab 4 of 9"),
+                ]
             case "com.apple.dt.Xcode":
-                return [("doc.text", "PanelView.swift"), ("arrow.triangle.branch", "feat/panel"), ("desktopcomputer", "My Mac, Debug")]
+                return [
+                    ("doc.text", "PanelView.swift"), ("arrow.triangle.branch", "feat/panel"),
+                    ("desktopcomputer", "My Mac, Debug"),
+                ]
             default:
                 return [("doc.text", "Untitled"), ("cursorarrow.click", "Nothing selected")]
             }
