@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import Testing
 
 @testable import Apropos
@@ -123,6 +124,19 @@ struct PalettePredictionTests {
         #expect(model.predictedCount == 0)
         model.refreshPredictions()
         #expect(model.predictedCount == 1)
+    }
+
+    @Test func refreshingPredictionsRedrawsAListThatIsOnScreen() {
+        let model = makeModel(list)
+        model.setPredictor { _ in [] }
+        var redrawn = false
+        withObservationTracking {
+            _ = model.results
+        } onChange: {
+            redrawn = true
+        }
+        model.refreshPredictions()
+        #expect(redrawn)
     }
 
     @Test func runTopPredictionRunsItWhateverIsHighlighted() async {

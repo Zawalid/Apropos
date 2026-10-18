@@ -48,6 +48,7 @@ final class UsageController {
             recents = []
         }
         palette.setPredictor { [weak self] commands in self?.predictions(for: commands) ?? [] }
+        prediction.onReady = { [weak palette] in palette?.refreshPredictions() }
         let prediction = prediction
         store.onLearnedRankingReset = { bundleID in
             if let bundleID { prediction.reset(forApp: bundleID) } else { prediction.reset() }

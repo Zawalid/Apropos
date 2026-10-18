@@ -20,6 +20,8 @@ public final class PredictionEngine {
     /// Bumped whenever the answer to `rows` could differ, so a view knows to ask again.
     public private(set) var revision = 0
     public private(set) var isReady = false
+    /// Called when the model finished building from the log, so a palette that opened first can ask again.
+    @ObservationIgnored public var onReady: (() -> Void)?
 
     @ObservationIgnored private var model: PredictionModel
     @ObservationIgnored private var prior = FrecencyPrior.empty
@@ -69,6 +71,7 @@ public final class PredictionEngine {
         model = built
         isReady = true
         revision += 1
+        onReady?()
     }
 
     // MARK: Learning

@@ -90,7 +90,8 @@ public final class PaletteModel {
     @ObservationIgnored private var predictionReasons: [String: String] = [:]
     @ObservationIgnored private var predictedRowIDs: Set<String> = []
     @ObservationIgnored private var predictor: (@MainActor ([Command]) -> [Prediction])?
-    @ObservationIgnored private var predictionRevision = 0
+    /// Observed on purpose: asking again for predictions must redraw a list that is already on screen.
+    private var predictionRevision = 0
     @ObservationIgnored private var runner: (@MainActor (Command) async -> Result<Void, CommandRunError>)?
     @ObservationIgnored private var cachedResults: [RankedCommand] = []
     @ObservationIgnored private var cacheKey: CacheKey?
