@@ -16,6 +16,8 @@ final class AppController {
     let context: ContextModel
     let usage: UsageController
     let actions: ContextActionCenter
+    let userCommands: UserCommandStore
+    let commandHotKeys = CommandHotKeyManager()
     private(set) var combo: HotKeyCombo
     private(set) var isHotKeyRegistered = true
 
@@ -29,16 +31,19 @@ final class AppController {
         Self.runLegacyMigration()
         var settingsURL = SettingsStore.defaultURL
         var usageURL = UsageStore.defaultURL
+        var commandsURL = UserCommandStore.defaultDirectory
         #if DEBUG
             // Snapshots and experiments keep their data out of the real files.
             if let dir = ProcessInfo.processInfo.environment["APROPOS_DATA_DIR"] {
                 settingsURL = URL(fileURLWithPath: dir).appendingPathComponent("settings.json")
                 usageURL = URL(fileURLWithPath: dir).appendingPathComponent("usage.json")
+                commandsURL = URL(fileURLWithPath: dir).appendingPathComponent("commands", isDirectory: true)
             }
         #endif
         self.init(
             settings: SettingsModel(store: SettingsStore(url: settingsURL)), usageStore: UsageStore(url: usageURL),
-            permission: AccessibilityPermission(), tracker: FrontmostAppTracker(), defaults: .standard)
+            permission: AccessibilityPermission(), tracker: FrontmostAppTracker(), defaults: .standard,
+            commandsDirectory: commandsURL)
     }
 
     /// Brings data from the former name over before any store opens. Debug runs that redirect their data skip it, so
@@ -58,8 +63,13 @@ final class AppController {
     /// The pieces are passed in so previews can build a controller over in-memory stores and a fixed permission.
     init(
         settings: SettingsModel, usageStore: UsageStore, permission: AccessibilityPermission,
-        tracker: FrontmostAppTracker, defaults: UserDefaults
+        tracker: FrontmostAppTracker, defaults: UserDefaults, commandsDirectory: URL? = nil
     ) {
+        // Previews pass no folder and get an empty throwaway one, so they never read the person's commands.
+        self.userCommands = UserCommandStore(
+            directory: commandsDirectory
+                ?? FileManager.default.temporaryDirectory.appendingPathComponent(
+                    "apropos-commands-\(UUID().uuidString)", isDirectory: true))
         self.permission = permission
         self.tracker = tracker
         self.settings = settings
@@ -81,6 +91,9 @@ final class AppController {
     }
 
     func start() {
+        userCommands.reservedHotKeys = { [weak self] in self.map { [$0.combo] } ?? [] }
+        userCommands.onChange = { [weak self] in self?.userCommandsChanged() }
+        userCommands.reload()
         permission.startMonitoring()
         if !(AgentMode.isOn && ProcessInfo.processInfo.environment["APROPOS_FIXTURE_COMMANDS"] != nil) { tracker.start() }
         let panel = PanelController(
@@ -124,6 +137,28 @@ final class AppController {
         }
     }
 
+    /// The commands changed (edited in the app or on disk): list them in the palette and keep their shortcuts in step.
+    private func userCommandsChanged() {
+        actions.setUserCommands(userCommands.commands)
+        guard !AgentMode.isOn else { return }
+        commandHotKeys.sync(userCommands.commands, reserved: [combo]) { [weak self] command in
+            self?.runFromShortcut(command)
+        }
+    }
+
+    /// Runs a command whose own shortcut was pressed, on the context of the app in front.
+    private func runFromShortcut(_ command: UserCommand) {
+        var sensing = ContextService()
+        sensing.privacy = settings.contextPrivacy
+        if !settings.contextSensing { sensing = ContextService(isTrusted: { false }, makeRoot: { _ in nil }) }
+        let target = tracker.app
+        Task { [actions] in
+            await actions.runWithLiveContext(
+                command, target: target, sensing: sensing,
+                confirm: { CommandConfirmation.ask($0, reason: "You pressed its shortcut.") })
+        }
+    }
+
     /// Applies the settings that live outside the views: the hotkey and the alternate-command rows.
     private func settingsChanged() {
         if menus.showAlternates != settings.showAlternates { menus.showAlternates = settings.showAlternates }
@@ -131,6 +166,7 @@ final class AppController {
         if settings.hotKey != combo {
             combo = settings.hotKey
             isHotKeyRegistered = hotKey?.register(combo) ?? false
+            userCommandsChanged()
         }
     }
 
@@ -145,10 +181,12 @@ final class AppController {
         combo = new
         settings.hotKey = new
         isHotKeyRegistered = hotKey?.register(new) ?? false
+        userCommandsChanged()
     }
 
     /// While the person is choosing a new shortcut, the current one must not fire.
     func setRecording(_ recording: Bool) {
+        commandHotKeys.setPaused(recording)
         if recording {
             hotKey?.unregister()
         } else {
