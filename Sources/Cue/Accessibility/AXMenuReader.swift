@@ -97,7 +97,8 @@ public struct AXMenuReader: Sendable {
         }
     }
 
-    /// CF types cannot be conditionally cast, so the type id is checked before reinterpreting the reference.
+    /// The one place a CF reference becomes an `AXUIElement`. Swift refuses a conditional cast to a CF type, so the type
+    /// id is checked first and anything that is not an accessibility element returns nil instead of being reinterpreted.
     static func element(_ value: AnyObject) -> AXUIElement? {
         guard CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
         return unsafeDowncast(value, to: AXUIElement.self)
