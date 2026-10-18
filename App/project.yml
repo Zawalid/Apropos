@@ -1,0 +1,49 @@
+name: Cue
+options:
+  bundleIdPrefix: com.zawalid
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+packages:
+  Cue:
+    path: ..
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+targets:
+  CueApp:
+    type: application
+    platform: macOS
+    sources:
+      - CueApp
+    dependencies:
+      - package: Cue
+        product: Cue
+    info:
+      path: CueApp/Info.plist
+      properties:
+        # Menu-bar-only: no Dock icon, no main menu bar of its own.
+        LSUIElement: true
+        NSHumanReadableCopyright: Copyright 2026 Walid Zakan
+    settings:
+      base:
+        PRODUCT_NAME: Cue
+        PRODUCT_MODULE_NAME: CueApp
+        PRODUCT_BUNDLE_IDENTIFIER: com.zawalid.cue
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Cue
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+schemes:
+  Cue:
+    build:
+      targets:
+        CueApp: all
+    run:
+      config: Debug
