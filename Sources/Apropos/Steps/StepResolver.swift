@@ -132,6 +132,28 @@ public struct StepResolver: Sendable {
         }
     }
 
+    // MARK: Listing
+
+    /// What the recorder needs to know about one leaf menu item: where it is, what it is called and which key it
+    /// advertises. Plain values; the Apple menu and menus of recent items are never listed.
+    public struct MenuItemInfo: Equatable, Sendable {
+        /// Titles of the menus above the item, then its own: `["File", "Export as PDF"]`.
+        public let path: [String]
+        public let identifier: String
+        public let shortcut: KeyShortcut?
+        public let isEnabled: Bool
+    }
+
+    /// Every leaf item of the app's menu bar, within the budget. Empty when the app has no readable menu bar.
+    public func menuItems(in application: any AXNode) -> [MenuItemInfo] {
+        let collected = collectMenuItems(in: application)
+        return collected.entries.map {
+            MenuItemInfo(
+                path: $0.path, identifier: $0.facts.identifier, shortcut: $0.facts.shortcut,
+                isEnabled: $0.facts.isEnabled)
+        }
+    }
+
     // MARK: Matching
 
     private static func matches(_ locator: StepLocator, entry: Entry) -> Bool {
