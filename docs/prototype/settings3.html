@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apropos Settings, sidebar refined</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace;--out:cubic-bezier(.23,1,.32,1);--spring:cubic-bezier(.3,1.35,.4,1)}
+html[data-theme=dark]{--bg:#0b1418;--bg2:#111d22;--bg3:#182a31;--line:rgba(255,255,255,.08);--tx:#eaf3f1;--tx2:rgba(234,243,241,.64);--tx3:rgba(234,243,241,.46);--mint:#8cf2cc;--mint-ink:#062018;--pearl:#ff8a4c;--page:#060b0e;--danger:#ff6b6b;--shadow:0 30px 80px rgba(0,0,0,.55)}
+html[data-theme=light]{--bg:#f2f5f4;--bg2:#e8eeec;--bg3:#dde6e3;--line:rgba(10,24,28,.1);--tx:#0e1a1d;--tx2:rgba(14,26,29,.66);--tx3:rgba(14,26,29,.5);--mint:#0a8f70;--mint-ink:#f2fbf8;--pearl:#e56f2e;--page:#dfe5e3;--danger:#c73a3a;--shadow:0 30px 70px rgba(20,50,45,.25)}
+*{box-sizing:border-box;margin:0}
+body{font-family:var(--font);background:var(--page);color:var(--tx);-webkit-font-smoothing:antialiased;min-height:100vh}
+#top{position:sticky;top:0;z-index:9;display:flex;gap:18px;justify-content:center;align-items:center;padding:10px;background:color-mix(in srgb,var(--page) 85%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);font-size:12px;color:var(--tx2)}
+.seg{display:inline-flex;padding:2px;border-radius:8px;background:var(--bg3)}
+.seg button{all:unset;cursor:pointer;padding:5px 11px;border-radius:6px;font-size:12.5px;color:var(--tx2)}
+.seg button[aria-pressed=true]{background:var(--bg);color:var(--tx);font-weight:600}
+.seg button:focus-visible,button:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+#stage{display:flex;justify-content:center;padding:34px 20px 80px}
+.win{position:relative;background:var(--bg);border-radius:14px;box-shadow:var(--shadow);border:1px solid var(--line);overflow:hidden;display:flex;height:560px}
+.tl{position:absolute;left:16px;top:15px;display:flex;gap:8px;z-index:4}
+.tl i{width:12px;height:12px;border-radius:50%;background:var(--bg3)}
+/* shared rows */
+.ph{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px}.stat{font-size:12px;color:var(--tx3);display:inline-flex;gap:7px;align-items:center}.pdot{width:6px;height:6px;border-radius:50%;background:var(--pearl);box-shadow:0 0 7px 1px color-mix(in srgb,var(--pearl) 50%,transparent)}
+.page h1{margin-bottom:0 !important;font-size:20px;font-weight:600;letter-spacing:-.015em;margin:0 0 4px}
+.page .lede{font-size:12.5px;color:var(--tx2);margin-bottom:22px}
+.sec{margin-bottom:26px}
+.sec>h3{font-size:12px;font-weight:500;color:var(--tx3);margin:0 0 8px 2px}
+.group{background:var(--bg2);border-radius:12px}
+.row{display:flex;align-items:center;gap:14px;min-height:44px;padding:8px 14px}
+.row+.row{border-top:1px solid var(--line)}
+.row .l{flex:1;min-width:0}
+.row .t{font-size:13.5px;font-weight:500;letter-spacing:-.005em}
+.row .d{font-size:12px;color:var(--tx2);margin-top:1px}
+.row .r{display:flex;align-items:center;gap:8px;color:var(--tx2);font-size:13px;flex:none}
+.tg{width:36px;height:22px;border-radius:11px;background:var(--bg3);position:relative;cursor:pointer;transition:background .16s var(--out);flex:none;border:0}
+.tg::after{content:"";position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:var(--tx);transition:transform .16s var(--out)}
+.tg[aria-checked=true]{background:var(--mint)}
+.tg[aria-checked=true]::after{transform:translateX(14px);background:var(--mint-ink)}
+.sel{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--tx);padding:5px 8px 5px 10px;border-radius:8px;background:var(--bg3)}
+kbd{font:500 11px var(--mono);min-width:20px;height:20px;padding:0 6px;display:inline-grid;place-items:center;border-radius:6px;border:1px solid var(--line);color:var(--tx2);background:var(--bg)}
+.btn{all:unset;cursor:pointer;font-size:13px;padding:6px 12px;border-radius:8px;background:var(--bg3);color:var(--tx)}
+.btn:hover{filter:brightness(1.12)}
+.btn.primary{background:var(--mint);color:var(--mint-ink);font-weight:600}
+.badge{font-size:11px;padding:2px 7px;border-radius:6px;background:var(--bg3);color:var(--tx2)}
+.ok{color:var(--mint)}
+.gl{width:20px;text-align:center;color:var(--tx2);font-size:17px;flex:none}
+.pearl{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--pearl);box-shadow:0 0 8px 1px color-mix(in srgb,var(--pearl) 55%,transparent);transition:transform .42s var(--spring)}
+/* layout A */
+.A{width:800px}
+.A .side{width:216px;background:var(--bg2);padding:44px 12px 16px;position:relative;flex:none;border-right:1px solid var(--line)}
+.A .search{display:flex;gap:8px;align-items:center;height:30px;padding:0 10px;border-radius:8px;background:var(--bg3);color:var(--tx3);font-size:13px;margin-bottom:12px}
+.A .nav{position:relative}
+.A .nav .pearl{left:6px;top:0}
+.A .item{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px 0 22px;border-radius:8px;font-size:13.5px;color:var(--tx2);cursor:pointer;transition:background .12s var(--out),color .12s var(--out)}
+.A .item i{font-size:16px;width:18px;text-align:center}
+.A .item:hover{background:color-mix(in srgb,var(--bg3) 55%,transparent)}
+.A .item[aria-current=page]{background:var(--bg3);color:var(--tx)}
+.A .gap{height:14px}
+.A .content{flex:1;overflow-y:auto;padding:46px 30px 30px;scrollbar-width:none}
+.A .content::-webkit-scrollbar{display:none}
+.A .perm{position:absolute;left:12px;right:12px;bottom:14px;display:flex;gap:8px;align-items:center;font-size:12px;color:var(--tx3);padding:0 10px}.A .perm i{color:var(--mint);font-size:15px}
+.A .search input{all:unset;flex:1;color:var(--tx);font-size:13px}.A .search input::placeholder{color:var(--tx3)}
+.A .search:focus-within{box-shadow:0 0 0 2px color-mix(in srgb,var(--mint) 60%,transparent)}
+/* layout B */
+.B{width:640px;flex-direction:column}
+.B .bar{height:52px;display:flex;align-items:center;padding:0 20px 0 84px;gap:10px;border-bottom:1px solid var(--line);font-size:13.5px;flex:none}
+.B .bar .back{all:unset;cursor:pointer;display:none;align-items:center;gap:4px;color:var(--tx2);font-size:13px;padding:4px 8px 4px 4px;border-radius:6px}
+.B.in .bar .back{display:inline-flex}
+.B .bar .title{font-weight:600;letter-spacing:-.01em}
+.B .viewport{position:relative;flex:1;overflow:hidden}
+.B .pane{position:absolute;inset:0;overflow-y:auto;padding:24px 28px 28px;transition:transform .26s var(--out),opacity .2s var(--out);scrollbar-width:none}
+.B .pane::-webkit-scrollbar{display:none}
+.B .home{transform:none}.B.in .home{transform:translateX(-24px);opacity:0;pointer-events:none}
+.B .detail{transform:translateX(40px);opacity:0;pointer-events:none}.B.in .detail{transform:none;opacity:1;pointer-events:auto}
+.B .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+.B .tile{background:var(--bg2);border-radius:12px;padding:14px 14px 13px;cursor:pointer;display:grid;gap:8px;text-align:left;transition:background .12s var(--out);position:relative}
+.B .tile:hover{background:var(--bg3)}
+.B .tile .h{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600}
+.B .tile .h i{font-size:17px;color:var(--tx2)}
+.B .tile .m{font-size:12px;color:var(--tx2);line-height:1.4}
+.B .tile .live{position:absolute;right:13px;top:15px}
+.B .minor .row{cursor:pointer}
+.B .minor .row:hover{background:var(--bg3)}
+</style>
+</head>
+<body>
+<div id="top">
+ <span>Theme</span><div class="seg" id="segT"><button data-v="dark">Dark</button><button data-v="light">Light</button></div>
+</div>
+<div id="stage"></div>
+<script>
+const $=s=>document.querySelector(s);
+const PAGES={
+ general:{t:'General',i:'ti-adjustments-horizontal',lede:'How Apropos starts and when the panel closes.',secs:[
+  {rows:[{k:'tg',t:'Open at login',v:0},{k:'tg',t:'Show in menu bar',d:'Apropos stays reachable by its hotkey if you hide it.',v:1},{k:'keys',t:'Open Apropos',keys:['⌥','Space']}]},
+  {h:'Panel',rows:[{k:'tg',t:'Close when Apropos loses focus',v:1},{k:'sel',t:'Reset search after',v:'1 minute'}]}]},
+ appearance:{t:'Appearance',i:'ti-palette',lede:'Theme and how dense the command list is.',secs:[
+  {rows:[{k:'seg',t:'Theme',o:['System','Dark','Light'],v:1},{k:'seg',t:'Interface size',o:['Compact','Default','Large'],v:0},{k:'seg',t:'Row icons',o:['Glyph','App logo','None'],v:0},{k:'tg',t:'Reduce motion',v:0}]}]},
+ commands:{t:'Commands',i:'ti-command',lede:'Your own commands and sequences. They run from the panel, a hotkey or a link.',stat:'5 commands · 1 needs review',secs:[
+  {rows:[{k:'cmd',g:'ti-list-numbers',n:'Export PDF to Desktop',s:'Sequence, 4 steps',keys:['⌥','P']},{k:'cmd',g:'ti-notes',n:'Standup note from selection',s:'Selected text to Notes',keys:['⌥','N']},{k:'cmd',g:'ti-terminal-2',n:'Open repo in Terminal',s:'Shell, from the current folder',keys:[]},{k:'cmd',g:'ti-link',n:'Share page to #design',s:'URL scheme',keys:['⌥','S'],b:'Needs review'},{k:'cmd',g:'ti-hammer',n:'Clean build folder',s:'Menu step in Xcode',keys:['⇧','⌘','K']}]},
+  {rows:[{k:'acts',a:['New command','Import…','Reveal folder']}]}]},
+ destinations:{t:'Destinations',i:'ti-send',lede:'Where Send to can put a selection, a page or files.',stat:'6 ready',secs:[
+  {rows:[{k:'tg',t:'Notes',d:'New note with a source link',v:1},{k:'tg',t:'Reminders',v:1},{k:'tg',t:'Things',d:'Not installed',v:0,off:1},{k:'tg',t:'Obsidian',v:1},{k:'tg',t:'Mail draft',d:'Opens a draft. Never sends.',v:1},{k:'tg',t:'Folder',d:'~/Documents/Inbox',v:1},{k:'tg',t:'Share menu',v:1}]}]},
+ context:{t:'Context',i:'ti-focus-2',lede:'What Apropos reads from the app you are in.',stat:'On in 14 apps',secs:[
+  {rows:[{k:'tg',t:'Sense context',d:'Selection, files, page, folder, git branch. Stays on this Mac.',v:1},{k:'tg',t:'Show context chips under the search field',v:0}]},
+  {h:'Apps',rows:[{k:'tg',t:'Finder',v:1},{k:'tg',t:'Safari',v:1},{k:'tg',t:'Xcode',v:1},{k:'tg',t:'1Password',d:'Never read, on the privacy list',v:0,off:1}]}]},
+ prediction:{t:'Prediction',i:'ti-sparkles',lede:'Learns which command you usually run next. Everything stays on this Mac.',stat:'Learning, 213 runs',secs:[
+  {rows:[{k:'tg',t:'Show Usually next',v:1},{k:'tg',t:'Show why',d:'"After Run Tests you chose Commit 9 of 12 times"',v:1}]},
+  {h:'What it knows',rows:[{k:'info',t:'Runs recorded',v:'213 over 14 days'},{k:'info',t:'Stored',v:'Command ids, app, time of day. Never text.'},{k:'acts',a:['Reset learned ranking']}]}]},
+ integrations:{t:'Integrations',i:'ti-plug-connected',lede:'Run commands from Raycast, Shortcuts and links.',stat:'apropos:// on',secs:[
+  {rows:[{k:'tg',t:'Allow apropos:// links',d:'Only for commands you mark as allowed.',v:1},{k:'info',t:'Allowed from links',v:'3 commands'},{k:'info',t:'Shortcuts actions',v:'Run Apropos command, Open Apropos'}]}]},
+ privacy:{t:'Privacy and data',i:'ti-shield-lock',lede:'Permissions and what Apropos keeps.',stat:'Accessibility allowed',secs:[
+  {rows:[{k:'info',t:'Accessibility',v:'<span class="ok"><i class="ti ti-check"></i> Allowed</span>'},{k:'info',t:'Input Monitoring',v:'Not requested. Only needed to record.'}]},
+  {h:'Data',rows:[{k:'acts',a:['Export settings','Import settings','Clear history']}]}]},
+ about:{t:'About',i:'ti-info-circle',lede:'',secs:[
+  {rows:[{k:'info',t:'Version',v:'0.1.0'},{k:'tg',t:'Check for updates automatically',v:0},{k:'acts',a:['Check now']}]}]}
+};
+const GROUPS=[['general','appearance'],['commands','destinations'],['context','prediction','integrations'],['privacy','about']];
+const ORDER=GROUPS.flat();
+let L='A',T='dark',cur='commands';
+function row(r){
+ if(r.k==='tg')return `<div class="row"><div class="l"><div class="t" ${r.off?'style="opacity:.55"':''}>${r.t}</div>${r.d?`<div class="d">${r.d}</div>`:''}</div><div class="r"><button class="tg" role="switch" aria-checked="${r.v?'true':'false'}" aria-label="${r.t}" ${r.off?'disabled style="opacity:.5;cursor:default"':''}></button></div></div>`;
+ if(r.k==='seg')return `<div class="row"><div class="l"><div class="t">${r.t}</div></div><div class="r"><div class="seg">${r.o.map((o,i)=>`<button aria-pressed="${i===r.v}">${o}</button>`).join('')}</div></div></div>`;
+ if(r.k==='sel')return `<div class="row"><div class="l"><div class="t">${r.t}</div></div><div class="r"><span class="sel">${r.v}<i class="ti ti-selector"></i></span></div></div>`;
+ if(r.k==='keys')return `<div class="row"><div class="l"><div class="t">${r.t}</div></div><div class="r">${r.keys.map(k=>`<kbd>${k}</kbd>`).join('')}</div></div>`;
+ if(r.k==='info')return `<div class="row"><div class="l"><div class="t">${r.t}</div></div><div class="r">${r.v}</div></div>`;
+ if(r.k==='cmd')return `<div class="row"><i class="ti ${r.g} gl"></i><div class="l"><div class="t">${r.n}</div><div class="d">${r.s}</div></div><div class="r">${r.b?`<span class="badge">${r.b}</span>`:''}${r.keys.map(k=>`<kbd>${k}</kbd>`).join('')}</div></div>`;
+ if(r.k==='acts')return `<div class="row" style="gap:8px">${r.a.map((a,i)=>`<button class="btn ${a==='New command'?'primary':''}">${a}</button>`).join('')}</div>`;
+ return '';
+}
+function pageHTML(id){
+ const p=PAGES[id];
+ return `<div class="page"><div class="ph"><h1>${p.t}</h1>${p.stat?`<span class="stat">${id==='prediction'?'<i class="pdot"></i>':''}${p.stat}</span>`:''}</div>${p.lede?`<div class="lede">${p.lede}</div>`:'<div class="lede"></div>'}${p.secs.map(s=>`<div class="sec">${s.h?`<h3>${s.h}</h3>`:''}<div class="group">${s.rows.map(row).join('')}</div></div>`).join('')}</div>`;
+}
+function wire(root){
+ root.querySelectorAll('.tg:not([disabled])').forEach(t=>t.onclick=()=>t.setAttribute('aria-checked',t.getAttribute('aria-checked')==='true'?'false':'true'));
+ root.querySelectorAll('.row .seg').forEach(s=>s.querySelectorAll('button').forEach(b=>b.onclick=()=>{s.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b))}));
+}
+function renderA(){
+ const st=$('#stage');
+ st.innerHTML=`<div class="win A"><div class="tl"><i></i><i></i><i></i></div><div class="side"><label class="search"><i class="ti ti-search"></i><input id="q" placeholder="Search settings" autocomplete="off" aria-label="Search settings"></label><div class="nav" id="nav"><span class="pearl" id="pearl"></span>${GROUPS.map((g,gi)=>`${gi?'<div class="gap"></div>':''}${g.map(id=>`<div class="item" data-id="${id}" role="link" tabindex="0"><i class="ti ${PAGES[id].i}"></i>${PAGES[id].t}</div>`).join('')}`).join('')}</div><div class="perm"><i class="ti ti-circle-check"></i>Accessibility allowed</div></div><div class="content" id="content"></div></div>`;
+ const setNav=(id,instant)=>{st.querySelectorAll('.item').forEach(i=>{if(i.dataset.id===id)i.setAttribute('aria-current','page');else i.removeAttribute('aria-current')});
+  const it=st.querySelector(`.item[data-id="${id}"]`),p=$('#pearl');if(instant)p.style.transition='none';p.style.transform=`translateY(${it.offsetTop+14}px)`;p.style.opacity=1;if(instant){void p.offsetWidth;p.style.transition=''}};
+ const go=(id,instant)=>{cur=id;$('#q').value='';setNav(id,instant);$('#content').innerHTML=pageHTML(id);wire($('#content'));$('#content').scrollTop=0};
+ const search=q=>{
+  q=q.trim().toLowerCase();if(!q){go(cur,true);return}
+  const hits=[];ORDER.forEach(id=>PAGES[id].secs.forEach(sc=>sc.rows.forEach(r=>{const t=(r.t||r.n||'');if(t&&t.toLowerCase().includes(q))hits.push([id,r])})));
+  $('#pearl').style.opacity=0;st.querySelectorAll('.item').forEach(i=>i.removeAttribute('aria-current'));
+  $('#content').innerHTML=`<div class="page"><div class="ph"><h1>Results</h1><span class="stat">${hits.length} found</span></div><div class="lede">For "${q}"</div>${hits.length?`<div class="group">${hits.map(([id,r])=>`<div class="row hit" data-id="${id}" style="cursor:pointer"><div class="l"><div class="t">${r.t||r.n}</div><div class="d">${PAGES[id].t}</div></div><div class="r"><i class="ti ti-chevron-right"></i></div></div>`).join('')}</div>`:'<div class="group"><div class="row"><div class="l"><div class="d">Nothing matches. Try a shorter word.</div></div></div></div>'}</div>`;
+  $('#content').querySelectorAll('.hit').forEach(h=>h.onclick=()=>go(h.dataset.id));
+ };
+ st.querySelectorAll('.item').forEach(i=>{i.onclick=()=>go(i.dataset.id);i.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')go(i.dataset.id)}});
+ $('#q').addEventListener('input',e=>search(e.target.value));
+ document.onkeydown=e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='f'){e.preventDefault();$('#q').focus();return}
+  if(document.activeElement===$('#q')){if(e.key==='Escape'){$('#q').value='';$('#q').blur();go(cur,true)}return}
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const i=ORDER.indexOf(cur);const n=ORDER[Math.max(0,Math.min(ORDER.length-1,i+(e.key==='ArrowDown'?1:-1)))];go(n)}
+ };
+ go(cur,true);
+}
+function renderB(){
+ const st=$('#stage');
+ const tiles=['commands','destinations','context','prediction','integrations','privacy'];
+ const minor=['general','appearance','about'];
+ st.innerHTML=`<div class="win B" id="win"><div class="tl"><i></i><i></i><i></i></div><div class="bar"><button class="back" id="back"><i class="ti ti-chevron-left"></i>Settings</button><span class="title" id="bt">Settings</span></div><div class="viewport"><div class="pane home" id="home"><div class="tiles">${tiles.map(id=>{const p=PAGES[id];return `<div class="tile" data-id="${id}" role="link" tabindex="0"><div class="h"><i class="ti ${p.i}"></i>${p.t}</div><div class="m">${p.stat}</div>${id==='prediction'?'<span class="pearl live" style="position:absolute"></span>':''}</div>`}).join('')}</div><div class="group minor">${minor.map(id=>`<div class="row" data-id="${id}" role="link" tabindex="0"><i class="ti ${PAGES[id].i} gl"></i><div class="l"><div class="t">${PAGES[id].t}</div></div><div class="r"><i class="ti ti-chevron-right"></i></div></div>`).join('')}</div></div><div class="pane detail" id="detail"></div></div></div>`;
+ const win=$('#win');
+ const open=id=>{cur=id;$('#detail').innerHTML=pageHTML(id);wire($('#detail'));$('#detail').scrollTop=0;$('#bt').textContent=PAGES[id].t;win.classList.add('in')};
+ st.querySelectorAll('[data-id]').forEach(e=>{e.onclick=()=>open(e.dataset.id);e.onkeydown=ev=>{if(ev.key==='Enter')open(e.dataset.id)}});
+ $('#back').onclick=()=>{win.classList.remove('in');$('#bt').textContent='Settings'};
+ document.onkeydown=ev=>{if(ev.key==='Escape')$('#back').click()};
+}
+function render(){document.documentElement.dataset.theme=T;L==='A'?renderA():renderB();document.querySelectorAll('#segT button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===T))}
+
+document.querySelectorAll('#segT button').forEach(b=>b.onclick=()=>{T=b.dataset.v;render()});
+render();
+</script>
+</body>
+</html>
