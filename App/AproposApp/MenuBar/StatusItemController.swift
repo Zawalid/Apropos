@@ -15,8 +15,13 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         self.controller = controller
         super.init()
         if let button = statusItem.button {
-            let image = NSImage(systemSymbolName: "command.square", accessibilityDescription: "Apropos")
+            // The ring and pearl mark, drawn as a template so the menu bar tints it for light, dark and selected states.
+            let image =
+                NSImage(named: "MenuBarGlyph")
+                ?? NSImage(systemSymbolName: "command.square", accessibilityDescription: "Apropos")
             image?.isTemplate = true
+            image?.size = NSSize(width: 18, height: 18)
+            image?.accessibilityDescription = "Apropos"
             button.image = image
         }
         menu.delegate = self

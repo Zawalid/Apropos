@@ -344,8 +344,11 @@ private struct DoneStep: View {
                     "It lives in the menu bar. Click its icon for recent commands and Settings, or press the shortcut from any app. To see this guide again, choose Welcome Guide in that menu.",
                 accent: true)
             HStack(spacing: 8) {
-                Image(systemName: "command.square")
-                    .font(.system(size: 14))
+                Image("MenuBarGlyph")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 15, height: 15)
                     .foregroundStyle(Theme.text)
                     .frame(width: 30, height: 22)
                     .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.Settings.highlight))
