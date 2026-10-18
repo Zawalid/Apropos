@@ -79,6 +79,8 @@
         var icons = RowIconStyle.glyph
         var chips = false
         var actionsOpen = false
+        /// How many Usually next rows to show (0 to 2), with sample reasons.
+        var predicted = 0
         /// Runs the selected command against a runner that fails, so the footer shows the failure note.
         var failedRun = false
     }
@@ -122,6 +124,18 @@
             tracker.pin(target)
             if options.learned { DebugFixtures.seedUsage(usage, commands: commands) }
             if options.chips { context.seed(Self.chipItems(for: options.app), pid: target.pid) }
+            if options.predicted > 0 {
+                let after = commands.dropFirst(7).first?.displayTitle ?? "that"
+                let picks = Array(commands.dropFirst(4).filter(\.isEnabled).prefix(min(options.predicted, 2)))
+                let rows = picks.enumerated().map { index, command in
+                    let reason =
+                        index == 0
+                        ? "After \(after) you chose \(command.displayTitle) 9 of 12 times"
+                        : "On weekday mornings you chose \(command.displayTitle) 14 of 20 times"
+                    return Prediction(command: command.stableID, confidence: 0.82, reason: reason, basis: .afterCommand)
+                }
+                model.setPredictor { _ in rows }
+            }
             model.query = options.query
             state.actionsOpen = options.actionsOpen
             if options.failedRun {

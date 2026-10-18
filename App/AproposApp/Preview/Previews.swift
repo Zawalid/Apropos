@@ -79,6 +79,10 @@
         static let paletteRunFailed = palette("palette-run-failed", PaletteOptions(failedRun: true))
         static let paletteActions = palette("palette-actions", PaletteOptions(actionsOpen: true))
         static let paletteChips = palette("palette-chips", PaletteOptions(chips: true))
+        static let paletteUsuallyNext = palette("palette-usually-next", PaletteOptions(predicted: 2))
+        static let paletteUsuallyNextOne = palette("palette-usually-next-one", PaletteOptions(app: "safari", predicted: 1))
+        static let paletteUsuallyNextFresh = palette(
+            "palette-usually-next-fresh", PaletteOptions(learned: false, predicted: 2))
 
         // Palette appearance settings
 
@@ -123,7 +127,8 @@
         /// Every scene, in the order the renderer writes them.
         static let all: [PreviewScene] = [
             paletteFinder, paletteSafari, paletteXcode, paletteFresh, paletteMatches, paletteNoResults, paletteLoading,
-            palettePermission, paletteReadFailed, paletteRunFailed, paletteActions, paletteChips, paletteCompact,
+            palettePermission, paletteReadFailed, paletteRunFailed, paletteActions, paletteChips, paletteUsuallyNext, paletteUsuallyNextOne,
+            paletteUsuallyNextFresh, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,
             settingsGeneral, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
             settingsUpdates, settingsAbout, settingsSearch, onboardingWelcome, onboardingPermission,
@@ -168,6 +173,9 @@
     #Preview("Palette, command failed") { PairedPreview(PreviewCatalog.paletteRunFailed) }
     #Preview("Palette, actions popover") { PairedPreview(PreviewCatalog.paletteActions) }
     #Preview("Palette, context chips on") { PairedPreview(PreviewCatalog.paletteChips) }
+    #Preview("Palette, Usually next") { PairedPreview(PreviewCatalog.paletteUsuallyNext) }
+    #Preview("Palette, Usually next, one row") { PairedPreview(PreviewCatalog.paletteUsuallyNextOne) }
+    #Preview("Palette, Usually next, no history") { PairedPreview(PreviewCatalog.paletteUsuallyNextFresh) }
 
     // MARK: Interface size and row icons
 
