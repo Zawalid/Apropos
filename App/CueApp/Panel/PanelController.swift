@@ -50,6 +50,10 @@ final class PanelController: NSObject {
         panel.alphaValue = 1
         panel.makeKeyAndOrderFront(nil)
         state.focusToken += 1
+        CueLog.panel.info("show target=\(self.model.targetApp?.name ?? "none") commands=\(self.model.results.count)")
+        #if DEBUG
+        DebugSnapshot.scheduleIfRequested(of: panel, model: model)
+        #endif
         // The window is up already; the content eases in on the next turn of the run loop so the spring is visible.
         DispatchQueue.main.async { [state] in
             withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) { state.isPresented = true }
@@ -106,6 +110,7 @@ final class PanelController: NSObject {
         Task { [weak self] in
             guard let self else { return }
             let closed = await self.model.run(command)
+            CueLog.panel.info("ran \(command.breadcrumb) > \(command.title) ok=\(closed)")
             if !closed { self.reopenWithError() }
         }
     }
