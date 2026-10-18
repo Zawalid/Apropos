@@ -167,6 +167,11 @@ public struct ActionPackLibrary: Sendable {
         }
     }
 
+    /// `~/Library/Application Support/Apropos/actions`, where user packs live.
+    @MainActor public static var userDirectory: URL {
+        SettingsStore.supportDirectory.appendingPathComponent("\(SettingsStore.folderName)/actions", isDirectory: true)
+    }
+
     /// The built-in catalogue.
     public static func bundled(functions: ActionFunctionRegistry = .builtin) -> ActionPackLibrary {
         var library = ActionPackLibrary(functions: functions)

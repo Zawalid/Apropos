@@ -8,6 +8,8 @@ import Apropos
 //   swift run apropos-probe --context [bundle id] [--wait 3] [--show]   print the live context snapshot
 //     with no bundle id it uses the frontmost app after the wait, so switch to it; --show also prints the raw
 //     URL and selection (default prints only lengths, like the app's logs)
+//   swift run apropos-probe --actions [bundle id] [--wait 3] [--all]   print the context actions that apply now
+//     same app selection as --context; --all also lists the actions that do not apply and why
 //
 // Needs Accessibility access for the terminal (or whatever launched it).
 
@@ -18,7 +20,8 @@ func value(after flag: String) -> String? {
     return arguments[index + 1]
 }
 
-if arguments.first == "--context" {
+if arguments.first == "--context" || arguments.first == "--actions" {
+    let listActions = arguments.first == "--actions"
     let wait = value(after: "--wait").flatMap(Double.init) ?? 0
     if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
     let explicit = arguments.dropFirst().first { !$0.hasPrefix("--") && Double($0) == nil }
@@ -35,6 +38,33 @@ if arguments.first == "--context" {
     let started = Date()
     let snapshot = await ContextService().snapshot(for: app)
     let ms = Date().timeIntervalSince(started) * 1000
+    if listActions {
+        let library = ActionPackLibrary.bundled(plus: ActionPackLibrary.userDirectory)
+        print(String(format: "%@ (%@) in %.0f ms, gaps: %@", app.name, app.bundleID ?? "?", ms, "\(snapshot.gaps)"))
+        if snapshot.gaps.contains(.notTrusted) {
+            print("  no Accessibility access for this terminal, so no context was read; grant it to the terminal and retry")
+        }
+        print("  context: \(snapshot.values)")
+        let applicable = library.applicable(to: snapshot.values, bundleID: app.bundleID)
+        for group in ActionGroup.allCases {
+            let inGroup = applicable.filter { $0.group == group }
+            guard !inGroup.isEmpty else { continue }
+            print("  \(group.title)")
+            for action in inGroup { print("    \(action.id.rawValue)  \(action.title)  -> \(action.output.rawValue)") }
+        }
+        if applicable.isEmpty { print("  no actions apply") }
+        if arguments.contains("--all") {
+            for action in library.actions where !applicable.contains(where: { $0.id == action.id }) {
+                let missing = action.requires.filter { !snapshot.values.has($0) }.map(\.rawValue).sorted()
+                let reason = missing.isEmpty ? "condition or app filter" : "needs " + missing.joined(separator: ", ")
+                print("  [off] \(action.id.rawValue)  (\(reason))")
+            }
+        }
+        for issue in library.issues {
+            print("  [skipped] \(issue.source) \(issue.actionID ?? "-"): \(issue.reason)")
+        }
+        exit(0)
+    }
     let show = arguments.contains("--show")
     print(String(format: "%@ (%@) in %.0f ms, gaps: %@", app.name, app.bundleID ?? "?", ms, "\(snapshot.gaps)"))
     for item in snapshot.items { print("  [\(item.kind.rawValue)] \(item.label)  (\(item.symbol))") }
