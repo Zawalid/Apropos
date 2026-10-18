@@ -54,7 +54,10 @@ final class PanelController: NSObject {
                     self?.hide(immediately: true)
                     openGuide()
                 },
-                back: { [weak self] in _ = self?.model.goBack() }))
+                back: { [weak self] in _ = self?.model.goBack() },
+                openDraft: { [weak self] in
+                    if let row = self?.model.sequences?.rootCommands.first { self?.runSend(row) }
+                }))
         let hosting = NSHostingView(rootView: root)
         hosting.sizingOptions = []
         hosting.frame = NSRect(origin: .zero, size: PanelPlacement.size)
@@ -150,6 +153,11 @@ final class PanelController: NSObject {
         case .actions: toggleActions()
         case .settings: actionsOpenSettings()
         case .move(let delta):
+            if model.content == .sequenceSave {
+                // In the save form the arrows and Tab move between its fields.
+                state.formField = (state.formField + (delta > 0 ? 1 : 2)) % 3
+                return true
+            }
             model.cancelPending()
             model.moveSelection(by: delta)
         case .first:
@@ -158,6 +166,13 @@ final class PanelController: NSObject {
         case .last:
             model.cancelPending()
             model.selectLast()
+        case .deleteStep(let command):
+            // Plain Backspace edits the query; it only deletes a step when there is nothing to erase.
+            guard model.selectedStepID != nil, command || model.query.isEmpty else { return false }
+            model.deleteSelectedStep()
+        case .moveStep(let delta):
+            guard model.selectedStepID != nil else { return false }
+            model.moveSelectedStep(by: delta)
         }
         return true
     }
@@ -175,7 +190,7 @@ final class PanelController: NSObject {
         case .last: state.actionIndex = max(items.count - 1, 0)
         case .run:
             if items.indices.contains(state.actionIndex) { perform(items[state.actionIndex]) }
-        case .runPrediction: break
+        case .runPrediction, .deleteStep, .moveStep: break
         }
         return true
     }
@@ -184,7 +199,8 @@ final class PanelController: NSObject {
         PaletteAction.available(
             for: model.selected?.command, appName: model.targetApp?.name,
             isPinned: model.selected.map { usage.isPinned($0.command) } ?? false,
-            isPredicted: model.selected.map { model.isPredicted(rowID: $0.id) } ?? false)
+            isPredicted: model.selected.map { model.isPredicted(rowID: $0.id) } ?? false,
+            sequence: model.sequences)
     }
 
     private func actionsOpenSettings() {
@@ -238,6 +254,22 @@ final class PanelController: NSObject {
         case .copyShortcut:
             PaletteAction.copy(command.shortcut?.display ?? "")
             hide()
+        case .addToSequence:
+            // The panel stays open: a sequence is built one row after another, and a refusal says why.
+            model.addToSequence(command)
+            closeActions(animated: true)
+        case .moveStep(let delta):
+            model.moveSelectedStep(by: delta)
+            closeActions(animated: true)
+        case .deleteStep:
+            model.deleteSelectedStep()
+            closeActions(animated: true)
+        case .askMe(let asking):
+            if let id = model.selectedStepID { model.sequences?.setAsking(asking, stepID: id) }
+            closeActions(animated: true)
+        case .useSelection(let usesSelection):
+            if let id = model.selectedStepID { model.sequences?.setUsesSelection(usesSelection, stepID: id) }
+            closeActions(animated: true)
         }
     }
 
@@ -246,6 +278,19 @@ final class PanelController: NSObject {
     private func runSelected() {
         if model.sendPending != nil {
             confirmSend()
+            return
+        }
+        if model.sequenceAsking != nil || model.sequencePending != nil {
+            // A question in the search field, or the combined confirmation: Return answers or confirms.
+            Task { [weak self] in
+                guard let self else { return }
+                let closed = await self.model.runSelected()
+                self.finishSend(closed: closed)
+            }
+            return
+        }
+        if model.content == .sequenceSave {
+            model.saveSequence()
             return
         }
         guard let command = model.selected?.command else { return }
@@ -287,7 +332,7 @@ final class PanelController: NSObject {
     /// Closes the panel first so the key window goes back to the app underneath, then presses the item. If that fails
     /// the panel comes back with the reason.
     private func run(_ command: Command) {
-        if model.isSendRow(command) {
+        if model.isSendRow(command) || model.isSequenceRow(command) {
             runSend(command)
             return
         }

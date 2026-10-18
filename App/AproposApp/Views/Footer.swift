@@ -30,7 +30,7 @@ struct FloatingFooter: View {
                     .frame(height: 28)
                     .aproposGlass(in: Capsule())
             }
-            if content == .results { actionBar }
+            if content == .results || content == .sequenceSave { actionBar }
         }
         .padding(.horizontal, 14)
         .padding(.bottom, 14)
@@ -40,6 +40,18 @@ struct FloatingFooter: View {
     /// What Return does for the highlighted row.
     private var primaryTitle: String {
         if model.sendPending != nil { return "Confirm and send" }
+        if model.sequencePending != nil { return "Confirm and run" }
+        if model.sequenceAsking != nil { return "Continue" }
+        if content == .sequenceSave { return "Save command" }
+        if let command = model.selected?.command, case .sequence(let target) = command.source {
+            switch target {
+            case .draft: return "Open draft"
+            case .run: return "Run sequence"
+            case .save: return "Save as command"
+            case .discard: return "Discard draft"
+            case .step: return "Edit with Actions"
+            }
+        }
         guard let command = model.selected?.command, case .sendTo(let target) = command.source else {
             return "Run menu item"
         }
@@ -57,16 +69,18 @@ struct FloatingFooter: View {
             }
             .buttonStyle(CapsuleButtonStyle())
             .focusable()
-            Rectangle().fill(Theme.divider).frame(width: 1, height: 18)
-            Button(action: actions.toggleActions) {
-                HStack(spacing: 4) {
-                    Text("Actions").foregroundStyle(Theme.text2)
-                    KeyCap(text: "⌘", small: true)
-                    KeyCap(text: "K", small: true)
+            if content == .results {
+                Rectangle().fill(Theme.divider).frame(width: 1, height: 18)
+                Button(action: actions.toggleActions) {
+                    HStack(spacing: 4) {
+                        Text("Actions").foregroundStyle(Theme.text2)
+                        KeyCap(text: "⌘", small: true)
+                        KeyCap(text: "K", small: true)
+                    }
                 }
+                .buttonStyle(CapsuleButtonStyle())
+                .focusable()
             }
-            .buttonStyle(CapsuleButtonStyle())
-            .focusable()
         }
         .font(.system(size: 12.5))
         .padding(.horizontal, 6)

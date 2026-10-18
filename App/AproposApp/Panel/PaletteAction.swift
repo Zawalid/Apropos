@@ -11,6 +11,13 @@ struct PaletteAction: Identifiable {
         case hide
         case copyPath
         case copyShortcut
+        case addToSequence
+        case moveStep(Int)
+        case deleteStep
+        /// Ask for the step's text when the sequence runs (true), or go back to the chain (false).
+        case askMe(Bool)
+        /// Read the selection instead of the previous step's result (true), or go back to the chain (false).
+        case useSelection(Bool)
     }
 
     let kind: Kind
@@ -21,11 +28,19 @@ struct PaletteAction: Identifiable {
     var id: String { "\(kind)-\(title)" }
 
     /// The actions available for a command, in display order.
+    @MainActor
     static func available(
-        for command: Command?, appName: String?, isPinned: Bool, isPredicted: Bool = false
+        for command: Command?, appName: String?, isPinned: Bool, isPredicted: Bool = false,
+        sequence: SequenceCenter? = nil
     ) -> [PaletteAction] {
         guard let command else { return [] }
+        if case .sequence(let target) = command.source { return sequenceActions(for: target, sequence: sequence) }
         var list = [PaletteAction(kind: .run, title: "Run", symbol: "play", keys: ["↩"])]
+        if canJoinSequence(command) {
+            list.append(
+                PaletteAction(
+                    kind: .addToSequence, title: "Add to sequence", symbol: "plus.square.on.square", keys: []))
+        }
         if isPredicted {
             list.append(PaletteAction(kind: .notNow, title: "Not now", symbol: "moon.zzz", keys: []))
         }
@@ -46,6 +61,52 @@ struct PaletteAction: Identifiable {
             list.append(
                 PaletteAction(kind: .copyShortcut, title: "Copy shortcut", symbol: "keyboard", keys: shortcut.caps))
         }
+        return list
+    }
+
+    /// Menu items, context actions, your commands and named destinations can become steps. The generic "Send to..." row
+    /// needs a choice first, so it cannot.
+    static func canJoinSequence(_ command: Command) -> Bool {
+        switch command.source {
+        case .menuItem, .contextAction:
+            return command.isEnabled
+        case .sendTo(let target):
+            guard case .destination = target else { return false }
+            return command.isEnabled
+        case .sequence:
+            return false
+        }
+    }
+
+    /// What the Cmd+K popover offers on a row of the sequence draft.
+    @MainActor
+    private static func sequenceActions(for target: SequenceTarget, sequence: SequenceCenter?) -> [PaletteAction] {
+        guard case .step(let id) = target, let sequence else {
+            return [PaletteAction(kind: .run, title: "Open", symbol: "play", keys: ["↩"])]
+        }
+        var list = [
+            PaletteAction(kind: .moveStep(-1), title: "Move up", symbol: "arrow.up", keys: ["⌥", "↑"]),
+            PaletteAction(kind: .moveStep(1), title: "Move down", symbol: "arrow.down", keys: ["⌥", "↓"]),
+        ]
+        if sequence.hasTextInput(stepID: id) {
+            if sequence.isAsking(stepID: id) {
+                list.append(
+                    PaletteAction(kind: .askMe(false), title: "Stop asking me", symbol: "text.cursor", keys: []))
+            } else {
+                if sequence.canChain(stepID: id) {
+                    let selection = sequence.usesSelection(stepID: id)
+                    list.append(
+                        PaletteAction(
+                            kind: .useSelection(!selection),
+                            title: selection ? "Use the previous result" : "Use the selection instead",
+                            symbol: "arrow.triangle.merge", keys: []))
+                }
+                list.append(
+                    PaletteAction(
+                        kind: .askMe(true), title: "Ask me for the text", symbol: "text.cursor", keys: []))
+            }
+        }
+        list.append(PaletteAction(kind: .deleteStep, title: "Delete step", symbol: "trash", keys: ["⌫"]))
         return list
     }
 

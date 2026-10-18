@@ -11,6 +11,8 @@ struct PaletteActions {
     var openGuide: () -> Void = {}
     /// Leaves the destination list (the breadcrumb chip).
     var back: () -> Void = {}
+    /// Opens the sequence draft (its chip in the search field).
+    var openDraft: () -> Void = {}
 }
 
 /// The palette: a glass panel with the search field and context chips on top, the ranked list below, and a floating
@@ -31,9 +33,14 @@ struct PaletteView: View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
                 SearchHeader(model: model, context: context, actions: actions, searchFocused: $searchFocused)
-                PaletteContentView(model: model, permission: permission, actions: actions)
+                PaletteContentView(model: model, state: state, permission: permission, actions: actions)
             }
             SendBanner(model: model)
+                .padding(.horizontal, 14)
+                .padding(.bottom, 56)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .transition(.opacity)
+            SequenceBanner(model: model)
                 .padding(.horizontal, 14)
                 .padding(.bottom, 56)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
@@ -44,7 +51,8 @@ struct PaletteView: View {
                 ActionsPopover(
                     items: PaletteAction.available(
                         for: model.selected?.command, appName: model.targetApp?.name,
-                        isPinned: model.selected.map { usage.isPinned($0.command) } ?? false),
+                        isPinned: model.selected.map { usage.isPinned($0.command) } ?? false,
+                        sequence: model.sequences),
                     selectedIndex: state.actionIndex, actions: actions
                 )
                 .padding(.trailing, 14)
@@ -86,6 +94,9 @@ private struct SearchHeader: View {
                 if let level = model.sendLevel {
                     BreadcrumbChip(title: level.title, action: actions.back)
                 }
+                if let level = model.sequenceLevel {
+                    BreadcrumbChip(title: level.title, action: actions.back)
+                }
                 TextField(placeholder, text: Bindable(model).query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 18))
@@ -94,6 +105,9 @@ private struct SearchHeader: View {
                     .focused(searchFocused)
                     .autocorrectionDisabled()
                     .accessibilityLabel("Search commands")
+                if model.draftStepCount > 0, model.sequenceLevel == nil {
+                    SequenceDraftChip(count: model.draftStepCount, action: actions.openDraft)
+                }
                 if let appChip {
                     ContextChipView(chip: appChip)
                         .accessibilityLabel("Commands for \(appChip.text)")
@@ -111,6 +125,9 @@ private struct SearchHeader: View {
     }
 
     private var placeholder: String {
+        if let asking = model.sequenceAsking { return asking.prompt }
+        if model.sequenceLevel == .save { return "Save as command" }
+        if model.sequenceLevel != nil { return "Search the draft" }
         if model.sendLevel != nil { return "Search destinations" }
         if let app = model.targetApp { return "Search \(app.name) commands" }
         return "Search or type a command"
@@ -180,6 +197,7 @@ struct AppIcon: View {
 /// Chooses what fills the area under the header.
 private struct PaletteContentView: View {
     let model: PaletteModel
+    let state: PanelState
     let permission: AccessibilityPermission
     let actions: PaletteActions
 
@@ -210,6 +228,8 @@ private struct PaletteContentView: View {
             StatusView(
                 symbol: "exclamationmark.triangle", title: "Could not read menus", detail: message,
                 tint: Theme.cautionText, actionTitle: "Try again", action: actions.retry)
+        case .sequenceSave:
+            if let center = model.sequences { SequenceSaveView(center: center, state: state) }
         case .noMatches(let query):
             StatusView(
                 symbol: "magnifyingglass",

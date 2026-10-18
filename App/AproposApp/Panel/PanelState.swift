@@ -9,4 +9,6 @@ final class PanelState {
     var focusToken = 0
     var actionsOpen = false
     var actionIndex = 0
+    /// Which field of the save-as-command form takes the keyboard: 0 name, 1 alias, 2 symbol.
+    var formField = 0
 }

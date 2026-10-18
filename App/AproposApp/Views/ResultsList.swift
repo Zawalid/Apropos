@@ -114,8 +114,16 @@ struct ResultsList: View {
         for ranked in results { titleCounts[ranked.command.displayTitle.lowercased(), default: 0] += 1 }
         var entries: [ListEntry] = []
         var currentGroup: String?
-        for (index, ranked) in results.enumerated() {
+        // The sequence draft row heads the list, ahead of the pinned rows, under its own header.
+        let draftRows = grouped ? model.draftRowCount : 0
+        for (position, ranked) in results.enumerated() {
             var fullPath = true
+            if position < draftRows {
+                if position == 0 { entries.append(.section(id: "sequence", title: "Sequence", keys: [])) }
+                entries.append(.row(ranked, index: position, fullPath: false))
+                continue
+            }
+            let index = position - draftRows
             if grouped {
                 if index == 0 && leading.pinned > 0 {
                     entries.append(.section(id: "pinned", title: "Pinned", keys: []))
@@ -135,7 +143,7 @@ struct ResultsList: View {
                         || (titleCounts[ranked.command.displayTitle.lowercased()] ?? 0) > 1
                 }
             }
-            entries.append(.row(ranked, index: index, fullPath: fullPath))
+            entries.append(.row(ranked, index: position, fullPath: fullPath))
         }
         return entries
     }

@@ -11,6 +11,10 @@ enum PaletteKey {
     case last
     case actions
     case settings
+    /// Backspace (query empty) or Command-Backspace: delete the highlighted step of the sequence draft.
+    case deleteStep(command: Bool)
+    /// Option-Up or Option-Down: move the highlighted step of the sequence draft.
+    case moveStep(Int)
 }
 
 /// The floating window the palette lives in. It is a non-activating panel, so opening it never takes focus from the
@@ -60,6 +64,10 @@ final class PalettePanel: NSPanel {
         case 36,
             76 where flags.isEmpty:
             return .run
+        case 51 where flags.isEmpty: return .deleteStep(command: false)
+        case 51 where flags == .command: return .deleteStep(command: true)
+        case 125 where flags == .option: return .moveStep(1)
+        case 126 where flags == .option: return .moveStep(-1)
         case 125 where flags.isEmpty: return .move(1)
         case 126 where flags.isEmpty: return .move(-1)
         case 40 where flags == .command: return .actions  // command-K
