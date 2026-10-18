@@ -93,11 +93,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         case .allowAccess: #selector(allowAccess)
         case .welcomeGuide: #selector(welcomeGuide)
         case .settings: #selector(openSettings)
-        case .importCommands: #selector(importCommands)
-        case .exportCommands: #selector(exportCommands)
+        case .manageCommands: #selector(manageCommands)
         case .reviewCommands: #selector(reviewCommands)
-        case .revealCommands: #selector(revealCommands)
-        case .reloadCommands: #selector(reloadCommands)
         case .checkForUpdates: #selector(checkForUpdates)
         case .quit: #selector(quit)
         }
@@ -130,11 +127,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func welcomeGuide() { controller.showOnboarding() }
     @objc private func openSettings() { controller.showSettings() }
     @objc private func checkForUpdates() { controller.settings.checkForUpdatesNow() }
-    @objc private func importCommands() { CommandManagement.importCommands(controller.userCommands) }
-    @objc private func exportCommands() { CommandManagement.exportCommands(controller.userCommands) }
+    @objc private func manageCommands() { controller.showSettings(page: .commands) }
     @objc private func reviewCommands() { CommandManagement.reviewPending(controller.userCommands) }
-    @objc private func revealCommands() { CommandManagement.reveal(controller.userCommands) }
-    @objc private func reloadCommands() { CommandManagement.reload(controller.userCommands) }
     @objc private func quit() { NSApp.terminate(nil) }
 }
 
@@ -142,7 +136,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 enum MenuBarContent {
     enum Action {
         case open, allowAccess, welcomeGuide, settings, checkForUpdates, quit
-        case importCommands, exportCommands, reviewCommands, revealCommands, reloadCommands
+        case manageCommands, reviewCommands
     }
 
     enum Entry {
@@ -159,23 +153,18 @@ enum MenuBarContent {
         var list: [Entry] = [.sectionHeader("Recent")]
         if recents.isEmpty { list.append(.placeholder("No recent commands yet")) }
         for recent in recents {
-            let title = recent.appName.isEmpty ? recent.title : "\(recent.title)  \u{2014}  \(recent.appName)"
+            let title = recent.appName.isEmpty ? recent.title : "\(recent.title)  \u{00B7}  \(recent.appName)"
             list.append(.recent(recent, title: title))
         }
         list.append(.separator)
         list.append(.action(.open, title: "Open Apropos (\(hotKey))", key: ""))
         if !hasAccess { list.append(.action(.allowAccess, title: "Allow Accessibility Access\u{2026}", key: "")) }
-        list.append(.separator)
-        list.append(.sectionHeader("Your commands"))
         if pendingCommands > 0 {
             let title = "Review \(pendingCommands) Imported Command\(pendingCommands == 1 ? "" : "s")\u{2026}"
             list.append(.action(.reviewCommands, title: title, key: ""))
         }
-        list.append(.action(.importCommands, title: "Import Commands\u{2026}", key: ""))
-        list.append(.action(.exportCommands, title: "Export Commands\u{2026}", key: ""))
-        list.append(.action(.revealCommands, title: "Reveal Commands Folder", key: ""))
-        list.append(.action(.reloadCommands, title: "Reload Commands", key: ""))
         list.append(.separator)
+        list.append(.action(.manageCommands, title: "Commands\u{2026}", key: ""))
         list.append(.action(.settings, title: "Settings\u{2026}", key: ","))
         list.append(.action(.welcomeGuide, title: "Welcome Guide", key: ""))
         list.append(.action(.checkForUpdates, title: "Check for Updates\u{2026}", key: ""))

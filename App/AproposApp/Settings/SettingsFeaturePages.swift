@@ -125,6 +125,14 @@ struct CommandsPage: View {
                 Button("Reveal in Finder") { reveal() }
                     .buttonStyle(SecondaryButtonStyle())
             }
+            SettingsRow(title: "Import and export", detail: "Share commands as a single file.") {
+                HStack(spacing: 8) {
+                    Button("Import") { CommandManagement.importCommands(store) }
+                        .buttonStyle(SecondaryButtonStyle())
+                    Button("Export") { CommandManagement.exportCommands(store) }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+            }
         }
         if let message {
             Text(message).font(.system(size: 12)).foregroundStyle(Brand.danger)
