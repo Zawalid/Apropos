@@ -66,10 +66,10 @@ struct SendToFlowTests {
         #expect(generic?.title == "Send selection to...")
         #expect(generic?.path == ["Selected text"])
         #expect(generic?.stableID.rawValue == "send:text")
-        // It sits with the other Selected text rows, after the context actions and before the menus.
-        let lastContext = results.lastIndex { $0.id.hasPrefix("ctx:") }
+        // It heads the Selected text group, in front of the context actions, so it is not buried under a dozen of them.
+        let firstContext = results.firstIndex { $0.id.hasPrefix("ctx:") }
         let genericIndex = results.firstIndex { $0.id == "send:text" }
-        #expect(genericIndex == (lastContext ?? -1) + 1)
+        #expect(genericIndex.map { $0 + 1 } == firstContext)
         // Nothing has been used yet, so there are no direct rows.
         #expect(!titles(rig).contains("Send selection to Notes"))
     }
@@ -95,11 +95,11 @@ struct SendToFlowTests {
                 "Send 2 files to...": "Selected files", "Send selection to...": "Selected text",
                 "Send page to...": "This page",
             ])
-        // Each row follows the context actions of its own group.
+        // Each row heads its own group, in front of that group's context actions.
         let all = rig.model.results.map(\.command)
         for row in rows {
             let index = try #require(all.firstIndex { $0.id == row.id })
-            #expect(all[index - 1].path == row.path)
+            #expect(all[index + 1].path == row.path)
         }
     }
 
@@ -250,6 +250,8 @@ struct SendToFlowTests {
         #expect(rig.recorder.processes.isEmpty)
         let pending = try #require(rig.model.sendPending)
         #expect(pending.line == "Open a draft in Mail: \"Quarterly numbers\" (17 characters)")
+        #expect(pending.heading == "Open a draft in Mail?")
+        #expect(pending.detail == "\"Quarterly numbers\" (17 characters)")
         #expect(rig.model.hasPendingConfirmation)
 
         // Escape cancels the confirmation and stays in the list; nothing was sent.

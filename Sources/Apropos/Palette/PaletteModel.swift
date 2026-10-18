@@ -184,7 +184,8 @@ public final class PaletteModel {
         return center.rootCommands
     }
 
-    /// Context actions followed, in each group, by that group's send rows.
+    /// Context actions with, at the head of each group, that group's send rows: a group has a dozen actions and the send
+    /// rows would otherwise sit at the bottom, out of sight.
     private func listed(context: [Command], send: [Command]) -> [Command] {
         guard !send.isEmpty else { return context }
         var result = context
@@ -195,8 +196,8 @@ public final class PaletteModel {
         }
         for group in groups {
             let rows = send.filter { ($0.path.first ?? "") == group }
-            if let last = result.lastIndex(where: { ($0.path.first ?? "") == group }) {
-                result.insert(contentsOf: rows, at: last + 1)
+            if let first = result.firstIndex(where: { ($0.path.first ?? "") == group }) {
+                result.insert(contentsOf: rows, at: first)
             } else {
                 result.append(contentsOf: rows)
             }

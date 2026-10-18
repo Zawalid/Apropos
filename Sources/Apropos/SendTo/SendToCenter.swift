@@ -35,7 +35,11 @@ public struct SendLevel: Equatable, Sendable {
 public struct SendPending: Sendable {
     public let command: Command
     public let destinationTitle: String
-    /// "Open a draft in Mail: "Title" (240 characters)".
+    /// What will happen, as a question: "Open a draft in Mail?".
+    public let heading: String
+    /// What will be sent: "\"Title\" (240 characters)".
+    public let detail: String
+    /// Both as one line: "Open a draft in Mail: \"Title\" (240 characters)".
     public let line: String
 }
 
@@ -298,7 +302,9 @@ public final class SendToCenter {
             return .sent(outcome, command)
         case .failure(.confirmationRequired):
             pending = SendPending(
-                command: command, destinationTitle: destination.title, line: destination.previewLine(for: payload))
+                command: command, destinationTitle: destination.title,
+                heading: (destination.previewVerb ?? "Send to \(destination.title)") + "?",
+                detail: payload.previewLine, line: destination.previewLine(for: payload))
             pendingPayload = payload
             pendingDestination = destination
             revision += 1
