@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "name": "Claude",
+  "bundleIDs": ["com.anthropic.claudefordesktop", "com.anthropic.claude"],
+  "commands": [
+    { "titles": ["New Chat", "New Conversation", "Nouvelle conversation"], "symbol": "square.and.pencil" },
+    { "titles": ["New Session", "Nouvelle session"], "symbol": "plus.bubble" },
+    { "titles": ["New Window", "Nouvelle fenêtre"], "symbol": "macwindow.badge.plus" },
+    { "titles": ["Search", "Rechercher"], "symbol": "magnifyingglass" },
+    { "titles": ["Toggle Sidebar", "Show Sidebar", "Hide Sidebar"], "symbol": "sidebar.left" },
+    { "titles": ["Settings", "Paramètres"], "symbol": "gearshape" },
+    { "titles": ["Reload", "Force Reload"], "symbol": "arrow.clockwise" },
+    { "titles": ["Toggle Developer Tools"], "symbol": "chevron.left.forwardslash.chevron.right" },
+    { "titles": ["Check for Updates…"], "symbol": "arrow.triangle.2.circlepath" }
+  ]
+}

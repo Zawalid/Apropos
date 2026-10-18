@@ -14,8 +14,10 @@ struct CommandPreference: Codable, Equatable {
     var pinnedAt: Date?
     var isHidden = false
     var aliases: [String] = []
+    /// An SF Symbol the user picked for this command's row.
+    var symbol: String?
 
-    var isEmpty: Bool { pinnedAt == nil && !isHidden && aliases.isEmpty }
+    var isEmpty: Bool { pinnedAt == nil && !isHidden && aliases.isEmpty && symbol == nil }
 }
 
 struct UsageFile: Codable {
@@ -160,6 +162,22 @@ public final class UsageStore {
         let cleaned = aliases.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
             .filter { !$0.isEmpty && $0.count <= 32 && seen.insert($0).inserted }
         update(id) { $0.aliases = cleaned }
+    }
+
+    public func symbolOverride(_ id: CommandID) -> String? { file.preferences[id]?.symbol }
+
+    /// Pins a symbol to a command's row, or clears the choice with nil. Names with whitespace are ignored.
+    public func setSymbolOverride(_ symbol: String?, for id: CommandID) {
+        let cleaned = symbol?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard cleaned?.contains(where: \.isWhitespace) != true else { return }
+        update(id) { $0.symbol = (cleaned?.isEmpty ?? true) ? nil : cleaned }
+    }
+
+    /// A resolver that honours the user's symbol choices. Take a new one after `setSymbolOverride`.
+    public func symbolResolver(library: SymbolPackLibrary = .bundled()) -> SymbolResolver {
+        var overrides: [CommandID: String] = [:]
+        for (id, preference) in file.preferences { if let symbol = preference.symbol { overrides[id] = symbol } }
+        return SymbolResolver(overrides: overrides, library: library)
     }
 
     /// Pinned commands of one app, in the order they were pinned.

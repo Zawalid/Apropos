@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "name": "Safari",
+  "bundleIDs": ["com.apple.Safari"],
+  "commands": [
+    { "titles": ["New Window", "Nouvelle fenêtre"], "symbol": "macwindow.badge.plus" },
+    { "titles": ["New Private Window", "Nouvelle fenêtre de navigation privée"], "symbol": "eye.slash" },
+    { "titles": ["New Tab", "Nouvel onglet"], "symbol": "plus.square.on.square" },
+    { "titles": ["Open Location", "Ouvrir l’adresse"], "symbol": "link" },
+    { "titles": ["Close Tab", "Fermer l’onglet"], "symbol": "xmark.square" },
+    { "titles": ["Reopen Last Closed Tab", "Rouvrir le dernier onglet fermé"], "symbol": "arrow.uturn.backward" },
+    { "titles": ["Export as PDF", "Exporter au format PDF"], "symbol": "doc.richtext" },
+    { "titles": ["Reload Page", "Actualiser la page"], "symbol": "arrow.clockwise" },
+    { "titles": ["Show Reader", "Hide Reader", "Afficher le Lecteur"], "symbol": "text.justify.left" },
+    { "titles": ["Show Sidebar", "Hide Sidebar"], "symbol": "sidebar.left" },
+    { "titles": ["Show Reading List Sidebar", "Afficher la liste de lecture"], "symbol": "eyeglasses" },
+    { "titles": ["Show Tab Overview", "Afficher la présentation des onglets"], "symbol": "square.grid.2x2" },
+    { "titles": ["Show All History", "Afficher tout l’historique"], "symbol": "clock" },
+    { "titles": ["Clear History…", "Effacer l’historique…"], "symbol": "trash" },
+    { "titles": ["Home", "Accueil"], "symbol": "house" },
+    { "titles": ["Add Bookmark…", "Ajouter un signet…"], "symbol": "bookmark" },
+    { "titles": ["Show Bookmarks", "Afficher les signets"], "symbol": "book" },
+    { "titles": ["Add to Reading List", "Ajouter à la liste de lecture"], "symbol": "eyeglasses" },
+    { "titles": ["Show Web Inspector", "Afficher l’inspecteur web"], "symbol": "chevron.left.forwardslash.chevron.right" },
+    { "titles": ["Show JavaScript Console", "Afficher la console JavaScript"], "symbol": "terminal" },
+    { "titles": ["Enter Responsive Design Mode", "Entrer en mode Responsive Design"], "symbol": "iphone" },
+    { "titles": ["Empty Caches", "Vider les caches"], "symbol": "trash" }
+  ]
+}

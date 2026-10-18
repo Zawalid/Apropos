@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "name": "Xcode",
+  "bundleIDs": ["com.apple.dt.Xcode"],
+  "commands": [
+    { "titles": ["Build", "Compiler"], "symbol": "hammer" },
+    { "titles": ["Run", "Exécuter"], "symbol": "play" },
+    { "titles": ["Stop", "Arrêter"], "symbol": "stop" },
+    { "titles": ["Test", "Tester"], "symbol": "checkmark.seal" },
+    { "titles": ["Profile", "Profiler"], "symbol": "waveform.path.ecg" },
+    { "titles": ["Analyze", "Analyser"], "symbol": "scope" },
+    { "titles": ["Archive", "Archiver"], "symbol": "archivebox" },
+    { "titles": ["Clean Build Folder", "Nettoyer le dossier de build"], "symbol": "trash" },
+    { "titles": ["Open Quickly", "Ouverture rapide"], "symbol": "magnifyingglass" },
+    { "titles": ["Jump to Definition", "Aller à la définition"], "symbol": "arrow.turn.down.right" },
+    { "titles": ["Show Navigator", "Hide Navigator"], "symbol": "sidebar.left" },
+    { "titles": ["Show Inspectors", "Hide Inspectors"], "symbol": "sidebar.right" },
+    { "titles": ["Show Debug Area", "Hide Debug Area"], "symbol": "rectangle.bottomthird.inset.filled" },
+    { "titles": ["Show Library", "Show Code Snippets Library"], "symbol": "plus.square" },
+    { "titles": ["Edit All in Scope"], "symbol": "pencil" },
+    { "titles": ["Re-Indent"], "symbol": "increase.indent" },
+    { "titles": ["Add Breakpoint at Current Line", "Toggle Breakpoint"], "symbol": "smallcircle.filled.circle" },
+    { "titles": ["Continue", "Pause"], "symbol": "playpause" },
+    { "titles": ["Step Over"], "symbol": "arrow.turn.down.right" },
+    { "titles": ["Step Into"], "symbol": "arrow.down.to.line" },
+    { "titles": ["Step Out"], "symbol": "arrow.up.to.line" },
+    { "titles": ["Commit…", "Commit"], "symbol": "checkmark.circle" },
+    { "titles": ["Push…", "Push"], "symbol": "arrow.up.circle" },
+    { "titles": ["Pull…", "Pull"], "symbol": "arrow.down.circle" },
+    { "titles": ["Discard All Changes…"], "symbol": "arrow.uturn.backward.circle" }
+  ]
+}

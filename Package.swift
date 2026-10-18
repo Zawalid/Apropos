@@ -9,7 +9,7 @@ let package = Package(
         .executable(name: "cue-probe", targets: ["CueProbe"]),
     ],
     targets: [
-        .target(name: "Cue"),
+        .target(name: "Cue", resources: [.copy("Resources/SymbolPacks")]),
         .executableTarget(name: "CueProbe", dependencies: ["Cue"], path: "Sources/cue-probe"),
         .testTarget(name: "CueTests", dependencies: ["Cue"]),
     ]

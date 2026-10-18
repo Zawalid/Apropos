@@ -63,6 +63,7 @@ public struct CommandID: RawRepresentable, Hashable, Codable, Sendable, Comparab
     /// kept as they are: a French menu gets French identities, which are stable for as long as the app speaks French.
     static func normalize(_ text: String) -> String {
         let cleaned = CommandDisplay.cleanTitle(text).precomposedStringWithCanonicalMapping
+            .replacingOccurrences(of: "\u{2019}", with: "'")
         let folded = cleaned.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: nil)
         let neutral = folded.map { "|>#".contains($0) ? " " : $0 }
         let words = String(neutral).split(whereSeparator: { $0.isWhitespace || $0 == "\u{00A0}" })
