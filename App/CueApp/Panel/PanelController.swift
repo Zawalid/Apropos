@@ -50,9 +50,11 @@ final class PanelController: NSObject {
         panel.alphaValue = 1
         panel.makeKeyAndOrderFront(nil)
         state.focusToken += 1
-        CueLog.panel.info("show target=\(self.model.targetApp?.name ?? "none") commands=\(self.model.results.count)")
+        CueLog.panel.info(
+            "show target=\(self.model.targetApp?.name ?? "none", privacy: .public) commands=\(self.model.results.count)"
+        )
         #if DEBUG
-        DebugSnapshot.scheduleIfRequested(of: panel, model: model)
+            DebugSnapshot.scheduleIfRequested(of: panel, model: model)
         #endif
         // The window is up already; the content eases in on the next turn of the run loop so the spring is visible.
         DispatchQueue.main.async { [state] in
@@ -88,6 +90,9 @@ final class PanelController: NSObject {
     }
 
     private func handle(_ key: PaletteKey) -> Bool {
+        CueLog.panel.info(
+            "key \(String(describing: key), privacy: .public) query=\(self.model.query, privacy: .public) selected=\(self.model.selected?.command.title ?? "none", privacy: .public)"
+        )
         switch key {
         case .close: hide()
         case .run: runSelected()
@@ -97,6 +102,8 @@ final class PanelController: NSObject {
         }
         return true
     }
+
+    func runSelectedForDebug() { runSelected() }
 
     private func runSelected() {
         guard let command = model.selected?.command else { return }
@@ -110,7 +117,9 @@ final class PanelController: NSObject {
         Task { [weak self] in
             guard let self else { return }
             let closed = await self.model.run(command)
-            CueLog.panel.info("ran \(command.breadcrumb) > \(command.title) ok=\(closed)")
+            CueLog.panel.info(
+                "ran \(command.breadcrumb, privacy: .public) > \(command.title, privacy: .public) ok=\(closed) error=\(self.model.runError ?? "none", privacy: .public)"
+            )
             if !closed { self.reopenWithError() }
         }
     }

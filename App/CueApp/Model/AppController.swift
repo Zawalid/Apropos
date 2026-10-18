@@ -33,6 +33,9 @@ final class AppController {
         tracker.start()
         let panel = PanelController(model: palette, tracker: tracker, permission: permission)
         self.panel = panel
+        #if DEBUG
+            DebugSnapshot.installRemoteControl(panel: panel, model: palette)
+        #endif
         let hotKey = GlobalHotKey { [weak panel] in panel?.toggle() }
         self.hotKey = hotKey
         isHotKeyRegistered = hotKey.register(combo)
