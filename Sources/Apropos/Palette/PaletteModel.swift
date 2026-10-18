@@ -50,6 +50,12 @@ public final class PaletteModel {
         return predictionReasons[id]
     }
 
+    /// Whether a row is in the Usually next group, for offering Not now on it.
+    public func isPredicted(rowID id: String) -> Bool {
+        _ = results
+        return predictedRowIDs.contains(id)
+    }
+
     /// The command the top Usually next row stands for, or nil when the group is empty.
     public var topPrediction: Command? {
         let list = results
@@ -82,6 +88,7 @@ public final class PaletteModel {
     @ObservationIgnored private var suggestedCount = 0
     @ObservationIgnored private var predictedRows = 0
     @ObservationIgnored private var predictionReasons: [String: String] = [:]
+    @ObservationIgnored private var predictedRowIDs: Set<String> = []
     @ObservationIgnored private var predictor: (@MainActor ([Command]) -> [Prediction])?
     @ObservationIgnored private var predictionRevision = 0
     @ObservationIgnored private var runner: (@MainActor (Command) async -> Result<Void, CommandRunError>)?
@@ -157,6 +164,7 @@ public final class PaletteModel {
         suggestedCount = 0
         predictedRows = 0
         predictionReasons = [:]
+        predictedRowIDs = []
         guard query.trimmingCharacters(in: .whitespaces).isEmpty else {
             cachedResults = base
             return
@@ -171,7 +179,8 @@ public final class PaletteModel {
             for prediction in predictor(eligible).prefix(PredictionPolicy.maxRows) {
                 guard let row = byStable[prediction.command], !pinnedIDs.contains(prediction.command) else { continue }
                 predicted.append(row)
-                predictionReasons[row.id] = prediction.reason
+                predictedRowIDs.insert(row.id)
+                if !prediction.reason.isEmpty { predictionReasons[row.id] = prediction.reason }
             }
         }
         let predictedIDs = Set(predicted.map(\.command.stableID))

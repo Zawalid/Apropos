@@ -147,7 +147,7 @@ public final class PredictionEngine {
         let predictions = model.predict(
             context, limit: PredictionPolicy.maxRows + 1, candidates: Set(candidates.keys), prior: prior,
             title: { candidates[$0] ?? known[$0] ?? $0.fallbackTitle })
-        let rows = PredictionPolicy.rows(from: predictions)
+        let rows = PredictionPolicy.rows(from: predictions).map { showsReasons ? $0 : $0.withoutReason() }
         if let top = rows.first { offer = (top.command, date) }
         return rows
     }

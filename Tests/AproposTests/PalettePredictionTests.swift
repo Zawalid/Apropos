@@ -47,6 +47,8 @@ struct PalettePredictionTests {
         #expect(model.topPrediction?.title == "Epsilon")
         #expect(model.predictionReason(forRowID: "Epsilon") == "After Alpha you chose Epsilon 9 of 12 times")
         #expect(model.predictionReason(forRowID: "Gamma") == nil)
+        #expect(model.isPredicted(rowID: "Epsilon"))
+        #expect(!model.isPredicted(rowID: "Gamma"))
     }
 
     @Test func atMostTwoRowsAndNeverWhileSearching() {
@@ -95,6 +97,14 @@ struct PalettePredictionTests {
         }
         _ = model.results
         #expect(offered == ["Alpha"])
+    }
+
+    @Test func aPredictionWithoutAReasonStillFormsTheGroup() {
+        let model = makeModel(list)
+        model.setPredictor { _ in [Prediction(command: self.list[2].stableID, confidence: 0.9, reason: "", basis: .afterCommand)] }
+        #expect(model.predictedCount == 1)
+        #expect(model.predictionReason(forRowID: "Gamma") == nil)
+        #expect(model.isPredicted(rowID: "Gamma"))
     }
 
     @Test func noPredictorMeansNoGroup() {
@@ -169,6 +179,16 @@ struct PalettePredictionTests {
         let top = try #require(rows.first)
         #expect(top.command == id("Beta"))
         #expect(top.reason == "After Alpha you chose Beta 30 of 31 times" || top.reason.hasPrefix("After Alpha"))
+    }
+
+    @Test func reasonsCanBeSwitchedOff() throws {
+        let engine = engine()
+        learnRoutine(engine)
+        engine.recordRun(id("Alpha"), app: bundle, at: now)
+        engine.showsReasons = false
+        let top = try #require(engine.rows(app: bundle, candidates: candidates, at: now + 5).first)
+        #expect(top.command == id("Beta"))
+        #expect(top.reason.isEmpty)
     }
 
     @Test func engineIsQuietWithoutHistoryOrWhenOff() {

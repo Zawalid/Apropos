@@ -84,6 +84,15 @@ public struct Prediction: Sendable, Equatable {
     /// A sentence built from real counts, for example "After Run Tests you chose Commit 9 of 12 times".
     public let reason: String
     public let basis: PredictionBasis
+
+    public init(command: CommandID, confidence: Double, reason: String, basis: PredictionBasis) {
+        self.command = command
+        self.confidence = confidence
+        self.reason = reason
+        self.basis = basis
+    }
+
+    func withoutReason() -> Prediction { Prediction(command: command, confidence: confidence, reason: "", basis: basis) }
 }
 
 extension CommandID {
