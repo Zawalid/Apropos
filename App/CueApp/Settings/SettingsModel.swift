@@ -29,9 +29,13 @@ extension Notification.Name {
 @Observable
 final class SettingsModel {
     let store: SettingsStore
+    /// False for previews: the model then never touches the app's appearance or the login item.
+    private let appliesSystemState: Bool
 
-    init(store: SettingsStore = SettingsStore()) {
+    init(store: SettingsStore = SettingsStore(), appliesSystemState: Bool = true) {
         self.store = store
+        self.appliesSystemState = appliesSystemState
+        guard appliesSystemState else { return }
         migrateLegacyHotKey()
         applyAppearance()
         syncLoginItem()
@@ -108,7 +112,7 @@ final class SettingsModel {
 
     func setLaunchAtLogin(_ enabled: Bool) {
         write(.bool(enabled), .openAtLogin)
-        syncLoginItem()
+        if appliesSystemState { syncLoginItem() }
     }
 
     // MARK: Context
@@ -200,6 +204,7 @@ final class SettingsModel {
     }
 
     private func applyAppearance() {
+        guard appliesSystemState else { return }
         #if DEBUG
             if AgentMode.isOn, ProcessInfo.processInfo.environment["CUE_APPEARANCE"] != nil { return }
         #endif

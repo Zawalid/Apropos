@@ -19,6 +19,13 @@ for what to build next.
 - The panel must open instantly and animate smoothly. Treat jank as a bug
 - Commit subjects are lowercase `feat:` / `fix:` / `chore:` lines, no AI attribution lines
 
+## UI work starts in previews
+Check UI changes in the Xcode previews first (`App/CueApp/Preview/Previews.swift`, Option-Command-Return), not by
+relaunching the app. Add or update a scene in `PreviewCatalog` for any screen or state you change, and look at it with
+`scripts/render-previews.sh` (PNGs in `build/previews/`, no app launched). See Live previews in
+[docs/development.md](docs/development.md). Only what needs the real app (hotkey, real glass, live Accessibility) waits
+for the person.
+
 ## Running the app and checking it (agents read this)
 The person keeps their own copy of the app running while they work. Do not disturb it.
 - Never run `scripts/dev.sh`, `open` the app, `pkill` it or bring any other app to the front unless the user asked in

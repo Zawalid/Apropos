@@ -61,31 +61,35 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.addItem(headerItem)
         menu.addItem(.separator())
 
-        menu.addItem(NSMenuItem.sectionHeader(title: "Recent"))
-        let recents = controller.usage.recents
-        if recents.isEmpty {
-            let none = NSMenuItem(title: "No recent commands yet", action: nil, keyEquivalent: "")
-            none.isEnabled = false
-            menu.addItem(none)
+        let entries = MenuBarContent.entries(
+            recents: controller.usage.recents, hotKey: controller.combo.display,
+            hasAccess: controller.permission.isTrusted)
+        for entry in entries {
+            switch entry {
+            case .separator: menu.addItem(.separator())
+            case .sectionHeader(let title): menu.addItem(NSMenuItem.sectionHeader(title: title))
+            case .placeholder(let title):
+                let none = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+                none.isEnabled = false
+                menu.addItem(none)
+            case .recent(let recent, let title):
+                let row = item(title, #selector(runRecent(_:)))
+                row.representedObject = recent.stableID
+                menu.addItem(row)
+            case .action(let action, let title, let key):
+                menu.addItem(item(title, selector(for: action), key: key))
+            }
         }
-        for recent in recents {
-            let title = recent.appName.isEmpty ? recent.title : "\(recent.title)  \u{2014}  \(recent.appName)"
-            let entry = item(title, #selector(runRecent(_:)))
-            entry.representedObject = recent.stableID
-            menu.addItem(entry)
-        }
-        menu.addItem(.separator())
+    }
 
-        menu.addItem(item("Open Cue (\(controller.combo.display))", #selector(openCue)))
-        if !controller.permission.isTrusted {
-            menu.addItem(item("Allow Accessibility Access\u{2026}", #selector(allowAccess)))
+    private func selector(for action: MenuBarContent.Action) -> Selector {
+        switch action {
+        case .open: #selector(openCue)
+        case .allowAccess: #selector(allowAccess)
+        case .settings: #selector(openSettings)
+        case .checkForUpdates: #selector(checkForUpdates)
+        case .quit: #selector(quit)
         }
-        menu.addItem(.separator())
-        let settings = item("Settings\u{2026}", #selector(openSettings), key: ",")
-        menu.addItem(settings)
-        menu.addItem(item("Check for Updates\u{2026}", #selector(checkForUpdates)))
-        menu.addItem(.separator())
-        menu.addItem(item("Quit Cue", #selector(quit), key: "q"))
     }
 
     private func item(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
@@ -114,6 +118,37 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func quit() { NSApp.terminate(nil) }
 }
 
+/// What the menu lists, as plain values: the status item turns them into `NSMenuItem`s and the previews draw them.
+enum MenuBarContent {
+    enum Action { case open, allowAccess, settings, checkForUpdates, quit }
+
+    enum Entry {
+        case separator
+        case sectionHeader(String)
+        case placeholder(String)
+        case recent(UsageController.Recent, title: String)
+        case action(Action, title: String, key: String)
+    }
+
+    static func entries(recents: [UsageController.Recent], hotKey: String, hasAccess: Bool) -> [Entry] {
+        var list: [Entry] = [.sectionHeader("Recent")]
+        if recents.isEmpty { list.append(.placeholder("No recent commands yet")) }
+        for recent in recents {
+            let title = recent.appName.isEmpty ? recent.title : "\(recent.title)  \u{2014}  \(recent.appName)"
+            list.append(.recent(recent, title: title))
+        }
+        list.append(.separator)
+        list.append(.action(.open, title: "Open Cue (\(hotKey))", key: ""))
+        if !hasAccess { list.append(.action(.allowAccess, title: "Allow Accessibility Access\u{2026}", key: "")) }
+        list.append(.separator)
+        list.append(.action(.settings, title: "Settings\u{2026}", key: ","))
+        list.append(.action(.checkForUpdates, title: "Check for Updates\u{2026}", key: ""))
+        list.append(.separator)
+        list.append(.action(.quit, title: "Quit Cue", key: "q"))
+        return list
+    }
+}
+
 @MainActor
 @Observable
 final class ContextHeaderModel {
@@ -122,7 +157,7 @@ final class ContextHeaderModel {
 }
 
 /// The first row of the menu: the app in front and what Cue sees in it.
-private struct ContextHeaderView: View {
+struct ContextHeaderView: View {
     let model: ContextHeaderModel
 
     var body: some View {

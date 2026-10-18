@@ -42,7 +42,35 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Cue
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+  # Debug-only command line tool: draws every preview scene to PNGs (scripts/render-previews.sh). It compiles the app's
+  # sources without the @main entry point and never launches the app.
+  CuePreviewRender:
+    type: tool
+    platform: macOS
+    sources:
+      - path: CueApp
+        excludes:
+          - CueApp.swift
+          - Info.plist
+          - Assets.xcassets
+      - PreviewRender
+    dependencies:
+      - package: Cue
+        product: Cue
+    settings:
+      base:
+        PRODUCT_NAME: CuePreviewRender
+        PRODUCT_MODULE_NAME: CuePreviewRender
+        PRODUCT_BUNDLE_IDENTIFIER: com.zawalid.cue.previewrender
+        GENERATE_INFOPLIST_FILE: YES
+        ENABLE_HARDENED_RUNTIME: NO
 schemes:
+  CuePreviewRender:
+    build:
+      targets:
+        CuePreviewRender: all
+    run:
+      config: Debug
   Cue:
     build:
       targets:

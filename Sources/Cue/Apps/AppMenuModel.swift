@@ -125,6 +125,20 @@ public final class AppMenuModel {
         state = list.isEmpty ? .empty : .loaded(list)
     }
 
+    /// Forces a state with no commands (loading, permission missing, failed), for previews and tests that need to see
+    /// each one without causing the real condition.
+    public func seed(state forced: MenuState) {
+        generation += 1
+        loadTask?.cancel()
+        isSeeded = true
+        if case .loaded(let list) = forced {
+            commands = list
+        } else {
+            commands = []
+        }
+        state = forced
+    }
+
     /// Runs a command's action off the main thread and reports the outcome.
     public func run(_ command: Command) async -> Result<Void, CommandRunError> {
         guard command.isEnabled else { return .failure(.disabled) }

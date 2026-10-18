@@ -34,6 +34,18 @@ struct PaletteModelTests {
         #expect(model.selected?.command.title == "About Finder")
     }
 
+    @Test func seededStatesShowWithoutTheRealCondition() {
+        let (model, menus) = makeModel()
+        menus.seed(state: .loading)
+        #expect(model.content == .loading)
+        menus.seed(state: .failed("The app did not answer."))
+        #expect(model.content == .failed("The app did not answer."))
+        menus.seed(state: .needsPermission)
+        #expect(model.content == .needsPermission)
+        menus.seed(state: .loaded(commands))
+        #expect(model.content == .results)
+    }
+
     @Test func typingFiltersAndSelectsTheBestMatch() {
         let (model, menus) = makeModel()
         menus.seed(commands)

@@ -23,6 +23,13 @@ final class ContextModel {
         self.service = service
     }
 
+    /// Shows `items` for the app with `pid` without reading anything, for previews.
+    func seed(_ items: [ContextItem], pid: pid_t) {
+        task?.cancel()
+        self.items = items
+        itemsPID = pid
+    }
+
     func refresh(for app: TargetApp?) {
         task?.cancel()
         guard let app, settings.contextSensing else {

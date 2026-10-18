@@ -8,8 +8,8 @@ import SwiftUI
 @MainActor
 @Observable
 final class AppController {
-    let permission = AccessibilityPermission()
-    let tracker = FrontmostAppTracker()
+    let permission: AccessibilityPermission
+    let tracker: FrontmostAppTracker
     let menus: AppMenuModel
     let palette: PaletteModel
     let settings: SettingsModel
@@ -24,7 +24,7 @@ final class AppController {
     @ObservationIgnored private var statusItem: StatusItemController?
     @ObservationIgnored private var onboardingWindow: NSWindow?
 
-    init() {
+    convenience init() {
         var settingsURL = SettingsStore.defaultURL
         var usageURL = UsageStore.defaultURL
         #if DEBUG
@@ -34,16 +34,26 @@ final class AppController {
                 usageURL = URL(fileURLWithPath: dir).appendingPathComponent("usage.json")
             }
         #endif
-        let settings = SettingsModel(store: SettingsStore(url: settingsURL))
+        self.init(
+            settings: SettingsModel(store: SettingsStore(url: settingsURL)), usageStore: UsageStore(url: usageURL),
+            permission: AccessibilityPermission(), tracker: FrontmostAppTracker(), defaults: .standard)
+    }
+
+    /// The pieces are passed in so previews can build a controller over in-memory stores and a fixed permission.
+    init(
+        settings: SettingsModel, usageStore: UsageStore, permission: AccessibilityPermission,
+        tracker: FrontmostAppTracker, defaults: UserDefaults
+    ) {
+        self.permission = permission
+        self.tracker = tracker
         self.settings = settings
         let menus = AppMenuModel(tracker: tracker, permission: permission)
         menus.showAlternates = settings.showAlternates
         self.menus = menus
-        let usageStore = UsageStore(url: usageURL)
         let palette = PaletteModel(
             menus: menus, tracker: tracker, ranker: CommandRanker(signal: usageStore.rankingSignal()))
         self.palette = palette
-        self.usage = UsageController(store: usageStore, palette: palette)
+        self.usage = UsageController(store: usageStore, palette: palette, defaults: defaults)
         self.combo = settings.hotKey
         self.context = ContextModel(settings: settings)
     }

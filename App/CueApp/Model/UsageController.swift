@@ -24,15 +24,17 @@ final class UsageController {
     private(set) var recents: [Recent]
 
     @ObservationIgnored private let palette: PaletteModel
+    @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var resolver: SymbolResolver
     @ObservationIgnored private var cachedIDs: [String] = []
     @ObservationIgnored private var cachedSymbols: [String: String] = [:]
 
-    init(store: UsageStore, palette: PaletteModel) {
+    init(store: UsageStore, palette: PaletteModel, defaults: UserDefaults = .standard) {
         self.store = store
         self.palette = palette
+        self.defaults = defaults
         resolver = store.symbolResolver()
-        if let data = UserDefaults.standard.data(forKey: Self.recentsKey),
+        if let data = defaults.data(forKey: Self.recentsKey),
             let stored = try? JSONDecoder().decode([Recent].self, from: data)
         {
             recents = stored
@@ -105,6 +107,6 @@ final class UsageController {
     }
 
     private func saveRecents() {
-        if let data = try? JSONEncoder().encode(recents) { UserDefaults.standard.set(data, forKey: Self.recentsKey) }
+        if let data = try? JSONEncoder().encode(recents) { defaults.set(data, forKey: Self.recentsKey) }
     }
 }
