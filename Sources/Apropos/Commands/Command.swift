@@ -96,6 +96,8 @@ public struct Command: Identifiable, Sendable {
     public internal(set) var symbolName: String?
     /// Extra words the search matches, below the title.
     public internal(set) var keywords: [String] = []
+    /// Names the person gave the command; typing one ranks the command first.
+    public internal(set) var aliases: [String] = []
     /// A line of explanation to show under the title, when the command has one.
     public internal(set) var detail: String?
     /// True when the person should confirm before it runs.

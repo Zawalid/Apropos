@@ -34,6 +34,8 @@ public enum ActionGroup: String, Sendable, CaseIterable, Codable {
     case selectedFiles
     case page
     case folder
+    /// Commands the person made.
+    case yourCommands
 
     public var title: String {
         switch self {
@@ -41,6 +43,7 @@ public enum ActionGroup: String, Sendable, CaseIterable, Codable {
         case .selectedFiles: "Selected files"
         case .page: "This page"
         case .folder: "This folder"
+        case .yourCommands: "Your commands"
         }
     }
 

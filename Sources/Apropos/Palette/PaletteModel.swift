@@ -55,6 +55,7 @@ public final class PaletteModel {
     @ObservationIgnored private var contextCommands: [Command] = []
     @ObservationIgnored private var contextPID: pid_t?
     @ObservationIgnored private var contextRevision = 0
+    @ObservationIgnored private var openHook: ((TargetApp?) -> Void)?
     @ObservationIgnored private var contextRunner:
         (@MainActor (Command, TargetApp?, Bool) async -> Result<ActionOutcome, ActionError>)?
     @ObservationIgnored private var pinnedCount = 0
@@ -97,6 +98,9 @@ public final class PaletteModel {
         contextPID = pid
         contextRevision += 1
     }
+
+    /// Called each time the panel opens, after the old context actions are dropped, with the app being acted on.
+    public func setOpenHook(_ hook: @escaping (TargetApp?) -> Void) { openHook = hook }
 
     public func setContextRunner(
         _ runner: @escaping @MainActor (Command, TargetApp?, Bool) async -> Result<ActionOutcome, ActionError>
@@ -167,6 +171,7 @@ public final class PaletteModel {
             contextCommands = []
             contextRevision += 1
         }
+        openHook?(tracker.app)
         menus.refresh()
     }
 

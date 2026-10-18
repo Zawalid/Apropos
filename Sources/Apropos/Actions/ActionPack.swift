@@ -19,8 +19,8 @@ import Foundation
 /// - `shortcut`: `name`, `input` (variable name)
 /// - `urlScheme`: `url` (template; values are percent-encoded)
 /// - `keyPress`: `keyCode`, `modifiers` (`command`, `option`, `shift`, `control`)
-struct ActionDefinition: Decodable {
-    struct BackendDefinition: Decodable {
+struct ActionDefinition: Codable {
+    struct BackendDefinition: Codable {
         var type: String
         var name: String?
         var executable: String?
@@ -32,6 +32,8 @@ struct ActionDefinition: Decodable {
         var url: ActionTemplate?
         var keyCode: UInt32?
         var modifiers: [String]?
+
+        init(type: String) { self.type = type }
     }
 
     var id: ActionID
@@ -85,6 +87,55 @@ struct ActionDefinition: Decodable {
             id: id, title: title, subtitle: subtitle, symbol: symbol, requires: Set(requires),
             conditions: Set(conditions ?? []), apps: apps ?? .anyApp, backend: built, output: output ?? .clipboard,
             needsConfirmation: confirm ?? false, keywords: keywords ?? [], group: group, timeout: timeout ?? 10)
+    }
+
+    /// The JSON form of an action, for writing user commands back to disk.
+    init(_ action: ContextAction) {
+        id = action.id
+        title = action.title
+        subtitle = action.subtitle
+        symbol = action.symbol
+        requires = ContextRequirement.allCases.filter(action.requires.contains)
+        conditions = ActionCondition.allCases.filter(action.conditions.contains)
+        apps = action.apps
+        output = action.output
+        confirm = action.needsConfirmation
+        keywords = action.keywords
+        group = action.group
+        timeout = action.timeout
+        var backend = BackendDefinition(type: "")
+        switch action.backend {
+        case .function(let name):
+            backend.type = "function"
+            backend.name = name
+        case .shell(let shell):
+            backend.type = "shell"
+            backend.executable = shell.executable
+            backend.arguments = shell.arguments
+            backend.stdin = shell.standardInput
+            backend.cwd = shell.workingDirectory
+        case .appleScript(let script):
+            backend.type = "appleScript"
+            backend.source = script.source
+            backend.arguments = script.arguments
+        case .shortcut(let shortcut):
+            backend.type = "shortcut"
+            backend.name = shortcut.name
+            backend.input = shortcut.input
+        case .urlScheme(let template):
+            backend.type = "urlScheme"
+            backend.url = template
+        case .keyPress(let key):
+            backend.type = "keyPress"
+            backend.keyCode = key.keyCode
+            var names: [String] = []
+            if key.modifiers.contains(.command) { names.append("command") }
+            if key.modifiers.contains(.option) { names.append("option") }
+            if key.modifiers.contains(.shift) { names.append("shift") }
+            if key.modifiers.contains(.control) { names.append("control") }
+            backend.modifiers = names
+        }
+        self.backend = backend
     }
 
     private func need<T>(_ value: T?, _ field: String) throws -> T {

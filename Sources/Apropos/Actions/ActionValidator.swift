@@ -58,13 +58,17 @@ public enum ActionValidator {
     static let launchers: Set<String> = ["env", "xargs", "sudo", "su", "nohup", "exec", "time", "caffeinate", "open"]
     static let blockedSchemes: Set<String> = ["file", "javascript", "data", "vbscript", "about", "blob"]
 
-    public static func validate(_ action: ContextAction, functions: ActionFunctionRegistry) throws {
+    /// - Parameter requireContext: Built-in context actions must need some context; a user command may need none (open a
+    ///   link, run a Shortcut), so it validates with false.
+    public static func validate(
+        _ action: ContextAction, functions: ActionFunctionRegistry, requireContext: Bool = true
+    ) throws {
         guard action.id.isWellFormed else { throw ActionValidationError.badID }
         guard !action.title.trimmingCharacters(in: .whitespaces).isEmpty else { throw ActionValidationError.emptyTitle }
         guard !action.symbol.isEmpty, !action.symbol.contains(where: \.isWhitespace) else {
             throw ActionValidationError.badSymbol
         }
-        guard !action.requires.isEmpty else { throw ActionValidationError.noRequirements }
+        if requireContext, action.requires.isEmpty { throw ActionValidationError.noRequirements }
         guard (0.5...120).contains(action.timeout) else { throw ActionValidationError.badTimeout }
         if action.output == .replaceSelection, !action.requires.contains(.selectedText) {
             throw ActionValidationError.replaceNeedsSelection

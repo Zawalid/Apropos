@@ -19,6 +19,7 @@ public final class ContextActionCenter {
     @ObservationIgnored private var snapshotPID: pid_t?
     @ObservationIgnored private var lastBundleID: String?
     @ObservationIgnored private var byCommandID: [String: ContextAction] = [:]
+    @ObservationIgnored private var userCommands: [UserCommand] = []
     @ObservationIgnored private var onChange: (([Command], pid_t?) -> Void)?
 
     public init(library: ActionPackLibrary = .bundled(), engine: ActionEngine? = nil) {
@@ -57,10 +58,34 @@ public final class ContextActionCenter {
         rebuild()
     }
 
+    /// The person's own commands. Pending (not yet approved) ones are ignored. They are listed under "Your commands",
+    /// ahead of the built-in actions, and the ones that need no context are listed even before a snapshot arrives.
+    public func setUserCommands(_ commands: [UserCommand]) {
+        userCommands = commands.filter(\.isRunnable)
+        rebuild()
+    }
+
+    /// The panel opened for `app`: forget the last snapshot (its selection may be gone) and list what needs no context.
+    /// The fresh snapshot adds the rest when it lands.
+    public func beginSession(for app: TargetApp?) {
+        capturedAt = Date.distantPast
+        values = ContextValues()
+        snapshotPID = app?.pid
+        lastBundleID = app?.bundleID
+        rebuild()
+    }
+
     private func rebuild() {
+        let mine = userCommands.filter { $0.action.applies(to: values, bundleID: lastBundleID) }
         let applicable = library.applicable(to: values, bundleID: lastBundleID)
-        byCommandID = Dictionary(uniqueKeysWithValues: applicable.map { ($0.id.rawValue, $0) })
-        commands = applicable.map(Self.command(for:))
+        var pairs: [(ContextAction, [String])] = mine.map { ($0.action, $0.aliases) }
+        pairs += applicable.map { ($0, []) }
+        byCommandID = Dictionary(pairs.map { ($0.0.id.rawValue, $0.0) }, uniquingKeysWith: { first, _ in first })
+        commands = pairs.map { action, aliases in
+            var command = Self.command(for: action)
+            command.aliases = aliases
+            return command
+        }
         onChange?(commands, snapshotPID)
     }
 
@@ -86,6 +111,7 @@ public final class ContextActionCenter {
     /// Connects the center to the palette: commands flow in, and running a context action goes through `run`.
     public func attach(to palette: PaletteModel) {
         observe { [weak palette] commands, pid in palette?.setContextCommands(commands, forPID: pid) }
+        palette.setOpenHook { [weak self] app in self?.beginSession(for: app) }
         palette.setContextRunner { [weak self] command, target, confirmed in
             guard let self else { return .failure(.notApplicable) }
             return await self.run(command, target: target, confirmed: confirmed)

@@ -92,7 +92,7 @@ public struct CommandRanker: Sendable {
     /// An alias counts like a title; typing it exactly puts the command first.
     private func aliasScore(_ query: String, _ command: Command) -> Int? {
         var best: Int?
-        for alias in signal.aliases(for: command) {
+        for alias in signal.aliases(for: command) + command.aliases {
             guard let match = FuzzyMatcher.match(query, in: alias) else { continue }
             let exact = alias.localizedCaseInsensitiveCompare(query) == .orderedSame
             let score = match.score + (exact ? 150 : 0)
