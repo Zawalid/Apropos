@@ -216,7 +216,7 @@ struct SendToFlowTests {
         let closes = await rig.model.run(notes)
         #expect(closes)
         #expect(rig.model.lastSend?.notice == "Sent to Notes")
-        #expect(rig.model.runError == nil)
+        #expect(rig.model.sendFailure == nil)
         #expect(rig.recorder.processes.count == 1)
         let recorded = try #require(rig.model.lastSentCommand)
         #expect(recorded.stableID.rawValue == "send:text>dest:notes")
@@ -285,7 +285,7 @@ struct SendToFlowTests {
         _ = await rig.model.run(try #require(rig.model.results.first { $0.command.id == "send:text" }).command)
         let notes = try #require(rig.model.results.first { $0.command.title == "Notes" }).command
         #expect(await rig.model.run(notes) == false)
-        let message = try #require(rig.model.runError)
+        let message = try #require(rig.model.sendFailure)
         #expect(message.hasPrefix("Could not send to Notes."))
         #expect(!message.contains("do not lose me"))
         #expect(rig.model.sendLevel != nil)
@@ -306,7 +306,7 @@ struct SendToFlowTests {
         _ = await rig.model.run(try #require(rig.model.results.first { $0.command.id == "send:text" }).command)
         let things = try #require(rig.model.results.first { $0.command.title == "Things" }).command
         #expect(await rig.model.run(things) == false)
-        #expect(rig.model.runError == "Could not send to Things. Things could not open the link.")
+        #expect(rig.model.sendFailure == "Could not send to Things. Things could not open the link.")
     }
 
     @Test func openingThePanelAgainLeavesTheListAndForgetsThePayload() async throws {
@@ -365,7 +365,7 @@ struct SendToFlowTests {
         _ = await rig.model.run(try #require(rig.model.results.first { $0.command.id == "send:files" }).command)
         let choose = try #require(rig.model.results.first { $0.command.title == "Copy to a folder..." }).command
         #expect(await rig.model.run(choose) == false)
-        #expect(rig.model.runError == nil)
+        #expect(rig.model.sendFailure == nil)
         #expect(rig.model.sendLevel != nil)
         #expect(rig.recorder.processes.isEmpty)
     }

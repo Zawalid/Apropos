@@ -17,7 +17,12 @@ public enum PaletteContent: Equatable {
 @Observable
 public final class PaletteModel {
     public var query = "" {
-        didSet { if query != oldValue { selectedID = nil } }
+        didSet {
+            guard query != oldValue else { return }
+            selectedID = nil
+            // Typing is a change of mind: a send waiting for its Return is dropped.
+            sendCenter?.goBackFromPending()
+        }
     }
     /// The ranked commands for the current query. Recomputed only when the query or the command list changes.
     public var results: [RankedCommand] {
@@ -76,6 +81,9 @@ public final class PaletteModel {
     public private(set) var pendingConfirmation: Command?
     /// What the last send-to row did: "Sent to Notes". Cleared when a new command starts.
     public private(set) var lastSend: SendOutcome?
+    /// Why the last send did not happen, in a sentence that names the destination and never the content. The payload
+    /// and the destination list stay as they were, so the person can retry or pick another destination.
+    public private(set) var sendFailure: String?
     /// The row that last sent successfully, for the caller to record in the usage store. Ids only.
     public private(set) var lastSentCommand: Command?
 
@@ -281,6 +289,7 @@ public final class PaletteModel {
         pendingConfirmation = nil
         lastSend = nil
         lastSentCommand = nil
+        sendFailure = nil
         sendCenter?.beginSession(for: tracker.app)
         selectedID = nil
         // Context from the last time the panel was open may be gone. Actions come back when the fresh snapshot lands,
@@ -330,6 +339,7 @@ public final class PaletteModel {
         runError = nil
         lastOutcome = nil
         lastSend = nil
+        sendFailure = nil
         if case .contextAction = command.source { return await runContextAction(command, confirmed: false) }
         if case .sendTo = command.source { return await runSend(command) }
         let outcome: Result<Void, CommandRunError>
@@ -403,7 +413,7 @@ public final class PaletteModel {
         case .failed(.cancelled):
             return false
         case .failed(let error):
-            runError = error.message
+            sendFailure = error.message
             return false
         }
     }
@@ -412,6 +422,7 @@ public final class PaletteModel {
     @discardableResult
     public func confirmPending() async -> Bool {
         runError = nil
+        sendFailure = nil
         if let center = sendCenter, let pending = center.pending {
             guard let step = await center.confirmPending() else { return false }
             return handle(step, command: pending.command)
@@ -430,6 +441,7 @@ public final class PaletteModel {
     @discardableResult
     public func goBack() -> Bool {
         runError = nil
+        sendFailure = nil
         if pendingConfirmation != nil {
             pendingConfirmation = nil
             return true
