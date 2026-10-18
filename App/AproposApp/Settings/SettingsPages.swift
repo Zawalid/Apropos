@@ -118,6 +118,9 @@ struct AppearancePage: View {
             }
         }
         .settingsAnchor(SettingID.rowIcons.rawValue)
+        SettingsSection(title: "Preview") {
+            SettingsPalettePreview(settings: settings)
+        }
     }
 }
 

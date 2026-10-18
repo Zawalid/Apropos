@@ -60,6 +60,15 @@
                 // and mouse-transparent, so nothing is ever visible or in the way.
                 window.alphaValue = 0
                 window.ignoresMouseEvents = true
+                // Never listed in Mission Control, the window switcher or screen sharing, and always closed again, so a
+                // run of many scenes leaves nothing behind.
+                window.collectionBehavior = [.transient, .ignoresCycle, .stationary]
+                window.sharingType = .none
+                window.isExcludedFromWindowsMenu = true
+                defer {
+                    window.orderOut(nil)
+                    window.close()
+                }
                 window.orderFrontRegardless()
                 hosting.frame = NSRect(origin: .zero, size: scene.size)
                 settle(0.6)

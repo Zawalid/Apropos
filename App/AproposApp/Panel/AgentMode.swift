@@ -17,5 +17,8 @@ enum AgentMode {
         guard isOn else { return }
         window.alphaValue = 0
         window.ignoresMouseEvents = true
+        window.collectionBehavior = [.transient, .ignoresCycle, .stationary]
+        window.sharingType = .none
+        window.isExcludedFromWindowsMenu = true
     }
 }
