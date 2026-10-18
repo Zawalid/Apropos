@@ -4,11 +4,14 @@ import SwiftUI
 struct PaletteActions {
     let run: () -> Void
     let runCommand: (Command) -> Void
-    let close: () -> Void
+    let perform: (PaletteAction) -> Void
+    let toggleActions: () -> Void
+    let openSettings: () -> Void
+    let retry: () -> Void
 }
 
-/// The palette: search field on top, ranked list in the middle, status line at the bottom. All behaviour lives in
-/// `PaletteModel`; this view only draws it.
+/// The palette: a glass panel with the search field and context chips on top, the ranked list below, and a floating
+/// footer. All behaviour lives in `PaletteModel`; this view only draws it.
 struct PaletteView: View {
     let model: PaletteModel
     let state: PanelState
@@ -16,99 +19,110 @@ struct PaletteView: View {
     let actions: PaletteActions
 
     @FocusState private var searchFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        VStack(spacing: 0) {
-            searchBar
-            Divider().overlay(Theme.hairline)
-            content
-            Divider().overlay(Theme.hairline)
-            FooterView(model: model)
+        ZStack(alignment: .bottom) {
+            VStack(spacing: 0) {
+                SearchHeader(model: model, searchFocused: $searchFocused)
+                PaletteContentView(model: model, permission: permission, actions: actions)
+            }
+            FloatingFooter(
+                model: model, state: state, content: PaletteContentView.resolve(model), actions: actions)
+            if state.actionsOpen {
+                ActionsPopover(
+                    items: PaletteAction.available(for: model.selected?.command, appName: model.targetApp?.name),
+                    selectedIndex: state.actionIndex, actions: actions
+                )
+                .padding(.trailing, 14)
+                .padding(.bottom, 68)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .transition(
+                    reduceMotion ? .opacity : .scale(scale: 0.96, anchor: .bottomTrailing).combined(with: .opacity))
+            }
         }
         .frame(width: PanelPlacement.size.width, height: PanelPlacement.size.height)
-        .background {
-            ZStack {
-                Rectangle().fill(.ultraThinMaterial)
-                Theme.panelTint
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: Theme.panelRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: Theme.panelRadius, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
-        }
-        .scaleEffect(state.isPresented ? 1 : 0.965, anchor: .top)
-        .opacity(state.isPresented ? 1 : 0)
+        .cueGlass(in: RoundedRectangle(cornerRadius: Theme.panelRadius, style: .continuous))
+        .tint(Theme.accentText)
         .onChange(of: state.focusToken) { searchFocused = true }
+        .onAppear { searchFocused = true }
     }
+}
 
-    private var searchBar: some View {
-        HStack(spacing: Theme.Spacing.md) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(Theme.metaText)
-            TextField(placeholder, text: Bindable(model).query)
-                .textFieldStyle(.plain)
-                .font(.system(size: 21, weight: .regular))
-                .focused($searchFocused)
-                .autocorrectionDisabled()
-            if let app = model.targetApp {
-                AppChip(app: app)
+private struct SearchHeader: View {
+    let model: PaletteModel
+    var searchFocused: FocusState<Bool>.Binding
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 12) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 20, weight: .regular))
+                    .foregroundStyle(Theme.text2)
+                    .accessibilityHidden(true)
+                TextField(placeholder, text: Bindable(model).query)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 22))
+                    .tracking(-0.22)
+                    .foregroundStyle(Theme.text)
+                    .focused(searchFocused)
+                    .autocorrectionDisabled()
+                    .accessibilityLabel("Search commands")
             }
+            .padding(.horizontal, 22)
+            .padding(.top, 20)
+            .padding(.bottom, 14)
+            ChipRow(app: model.targetApp)
+                .padding(.horizontal, 22)
+                .padding(.bottom, 12)
         }
-        .padding(.horizontal, Theme.Spacing.lg + 2)
-        .frame(height: 62)
     }
 
     private var placeholder: String {
         if let app = model.targetApp { return "Search \(app.name) commands" }
-        return "Search commands"
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        switch model.content {
-        case .results:
-            ResultsList(model: model, actions: actions)
-        case .needsPermission:
-            PermissionView(permission: permission, style: .compact)
-        case .loading:
-            StatusView(symbol: "circle.dotted", title: "Reading menus", detail: "One moment.")
-        case .noApp:
-            StatusView(
-                symbol: "app.dashed", title: "No app in front",
-                detail: "Switch to an app and open Cue again to see its commands.")
-        case .noCommands(let name):
-            StatusView(
-                symbol: "menubar.rectangle", title: "No menu commands",
-                detail: "\(name) does not expose a menu bar Cue can read.")
-        case .failed(let message):
-            StatusView(
-                symbol: "exclamationmark.triangle", title: "Could not read menus", detail: message,
-                tint: Theme.cautionText)
-        case .noMatches(let query):
-            StatusView(
-                symbol: "magnifyingglass", title: "No matches",
-                detail: query.isEmpty ? "Nothing to show." : "Nothing in this app matches \"\(query)\".")
-        }
+        return "Search or type a command"
     }
 }
 
-private struct AppChip: View {
-    let app: TargetApp
+private struct ChipRow: View {
+    let app: TargetApp?
+
+    var body: some View {
+        let chips = ContextChips.chips(for: app)
+        HStack(spacing: 6) {
+            ForEach(Array(chips.enumerated()), id: \.element.id) { index, chip in
+                ContextChipView(chip: chip).chipRise(index: index)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 26, alignment: .leading)
+        .clipped()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Current context")
+    }
+}
+
+private struct ContextChipView: View {
+    let chip: ContextChip
 
     var body: some View {
         HStack(spacing: 6) {
-            AppIcon(pid: app.pid, size: 16)
-            Text(app.name)
-                .font(.system(size: 12, weight: .medium))
+            switch chip.leading {
+            case .appIcon(let pid): AppIcon(pid: pid, size: 16)
+            case .symbol(let name):
+                Image(systemName: name)
+                    .font(.system(size: 11.5, weight: .medium))
+                    .accessibilityHidden(true)
+            }
+            Text(chip.text)
+                .font(.system(size: 12.5, weight: chip.isApp ? .medium : .regular))
                 .lineLimit(1)
         }
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 9)
-        .padding(.vertical, 5)
-        .background(Capsule().fill(Color.primary.opacity(0.07)))
-        .accessibilityLabel("Commands for \(app.name)")
+        .foregroundStyle(chip.isApp ? Theme.text : Theme.text2)
+        .padding(.horizontal, 10)
+        .frame(height: 26)
+        .background(Capsule().fill(Theme.chip))
+        .overlay(Capsule().strokeBorder(Theme.chipEdge, lineWidth: 1))
+        .fixedSize()
     }
 }
 
@@ -125,86 +139,69 @@ struct AppIcon: View {
         } else {
             Image(systemName: "app")
                 .font(.system(size: size * 0.8))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.text2)
                 .frame(width: size, height: size)
         }
     }
 }
 
-private struct ResultsList: View {
+/// Chooses what fills the area under the header.
+private struct PaletteContentView: View {
     let model: PaletteModel
+    let permission: AccessibilityPermission
     let actions: PaletteActions
 
+    static func resolve(_ model: PaletteModel) -> PaletteContent {
+        #if DEBUG
+            if let forced = DebugPreviewState.forced { return forced }
+        #endif
+        return model.content
+    }
+
     var body: some View {
-        let results = model.results
-        let selectedID = model.selected?.id
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 2) {
-                    ForEach(results) { ranked in
-                        CommandRow(
-                            ranked: ranked, isSelected: ranked.id == selectedID, appPID: model.targetApp?.pid
-                        )
-                        .id(ranked.id)
-                        .onTapGesture { actions.runCommand(ranked.command) }
-                    }
-                }
-                .padding(Theme.Spacing.sm)
-            }
-            .onChange(of: selectedID) {
-                guard let selectedID else { return }
-                proxy.scrollTo(selectedID)
-            }
-            .onChange(of: model.query) {
-                if let first = results.first?.id { proxy.scrollTo(first, anchor: .top) }
-            }
+        switch Self.resolve(model) {
+        case .results:
+            ResultsList(model: model, actions: actions)
+        case .needsPermission:
+            PermissionView(permission: permission, style: .compact)
+        case .loading:
+            LoadingRows()
+        case .noApp:
+            StatusView(
+                symbol: "app.dashed", title: "No app in front",
+                detail: "Switch to an app and open Cue again to see its commands.")
+        case .noCommands(let name):
+            StatusView(
+                symbol: "menubar.rectangle", title: "No menu commands",
+                detail: "\(name) does not expose a menu bar Cue can read.")
+        case .failed(let message):
+            StatusView(
+                symbol: "exclamationmark.triangle", title: "Could not read menus", detail: message,
+                tint: Theme.cautionText, actionTitle: "Try again", action: actions.retry)
+        case .noMatches(let query):
+            StatusView(
+                symbol: "magnifyingglass",
+                title: query.isEmpty ? "Nothing to show" : "No commands for \"\(query)\"",
+                detail: query.isEmpty
+                    ? "This app has no commands to list."
+                    : "Nothing in \(model.targetApp?.name ?? "this app") matches. Try fewer letters.")
         }
     }
 }
 
-private struct FooterView: View {
-    let model: PaletteModel
-
-    var body: some View {
-        HStack(spacing: Theme.Spacing.md) {
-            if let error = model.runError {
-                Label(error, systemImage: "exclamationmark.triangle.fill")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Theme.cautionText)
-                    .lineLimit(1)
-            } else {
-                Text(summary)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.metaText)
+#if DEBUG
+    /// Debug builds only: CUE_PREVIEW_STATE=permission|loading|failed|empty|nocommands forces a state so each can be
+    /// looked at without breaking the real conditions.
+    enum DebugPreviewState {
+        static var forced: PaletteContent? {
+            switch ProcessInfo.processInfo.environment["CUE_PREVIEW_STATE"] {
+            case "permission": .needsPermission
+            case "loading": .loading
+            case "failed": .failed("The app did not answer in time. Switch back to it and try again.")
+            case "empty": .noMatches(query: "zzq")
+            case "nocommands": .noCommands(appName: "Preview")
+            default: nil
             }
-            Spacer()
-            HintView(keys: ["↩"], label: "Run")
-            HintView(keys: ["↑", "↓"], label: "Move")
-            HintView(keys: ["esc"], label: "Close")
-        }
-        .padding(.horizontal, Theme.Spacing.lg)
-        .frame(height: 38)
-    }
-
-    private var summary: String {
-        let count = model.results.count
-        switch model.content {
-        case .results: return count == 1 ? "1 command" : "\(count) commands"
-        default: return model.targetApp?.name ?? "Cue"
         }
     }
-}
-
-private struct HintView: View {
-    let keys: [String]
-    let label: String
-
-    var body: some View {
-        HStack(spacing: 5) {
-            ForEach(keys, id: \.self) { KeyCap(text: $0) }
-            Text(label)
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.metaText)
-        }
-    }
-}
+#endif

@@ -31,9 +31,14 @@ final class AppController {
     func start() {
         permission.startMonitoring()
         tracker.start()
-        let panel = PanelController(model: palette, tracker: tracker, permission: permission)
+        let panel = PanelController(
+            model: palette, tracker: tracker, permission: permission,
+            openSettings: { [weak self] in self?.showSettings() })
         self.panel = panel
         #if DEBUG
+            if let name = ProcessInfo.processInfo.environment["CUE_FIXTURE_COMMANDS"] {
+                menus.seed(DebugFixtures.commands(named: name))
+            }
             DebugSnapshot.installRemoteControl(panel: panel, model: palette)
         #endif
         let hotKey = GlobalHotKey { [weak panel] in panel?.toggle() }

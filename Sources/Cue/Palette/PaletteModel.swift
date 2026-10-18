@@ -93,6 +93,12 @@ public final class PaletteModel {
         selectedID = list[next].id
     }
 
+    /// Selects a result by id, for the pointer. Unknown ids are ignored.
+    public func select(id: String) {
+        guard selectedID != id, results.contains(where: { $0.id == id }) else { return }
+        selectedID = id
+    }
+
     public func selectFirst() { selectedID = results.first?.id }
     public func selectLast() { selectedID = results.last?.id }
 

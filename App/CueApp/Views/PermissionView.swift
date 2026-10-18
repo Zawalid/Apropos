@@ -29,11 +29,12 @@ struct PermissionView: View {
                 .foregroundStyle(Theme.accentText)
             Text("Cue needs Accessibility access")
                 .font(.system(size: style == .full ? 20 : 15, weight: .semibold))
+                .foregroundStyle(Theme.text)
             Text(
                 "To list an app's menu commands and run them, macOS requires you to allow Cue under Accessibility. Cue reads menu names only, on this Mac, and nothing leaves it."
             )
             .font(.system(size: 13))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.text2)
             .multilineTextAlignment(.center)
             .frame(maxWidth: 420)
             VStack(alignment: .leading, spacing: 5) {
@@ -47,17 +48,15 @@ struct PermissionView: View {
                     permission.requestPrompt()
                     permission.openSystemSettings()
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.mint)
-                .foregroundStyle(Theme.ink)
-                .controlSize(.large)
+                .buttonStyle(AccentButtonStyle())
+                .focusable()
             }
             .padding(.top, 4)
             HStack(spacing: 6) {
                 ProgressView().controlSize(.small)
                 Text("Waiting for access")
                     .font(.system(size: 12))
-                    .foregroundStyle(Theme.metaText)
+                    .foregroundStyle(Theme.text3)
             }
         }
     }
@@ -69,9 +68,10 @@ struct PermissionView: View {
                 .foregroundStyle(Theme.accentText)
             Text("Accessibility access is on")
                 .font(.system(size: style == .full ? 20 : 15, weight: .semibold))
+                .foregroundStyle(Theme.text)
             Text("Switch to any app and press the shortcut to see its commands.")
                 .font(.system(size: 13))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.text2)
         }
     }
 
@@ -83,7 +83,7 @@ struct PermissionView: View {
                 .frame(width: 14)
             Text(text)
                 .font(.system(size: 12.5))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.text2)
         }
     }
 }

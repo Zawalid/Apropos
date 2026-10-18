@@ -9,13 +9,15 @@ final class PanelController: NSObject {
     private let panel = PalettePanel()
     private let state = PanelState()
     private let model: PaletteModel
-    private var hideGeneration = 0
     private var resignObserver: NSObjectProtocol?
     private var clickMonitor: Any?
 
-    var isVisible: Bool { panel.isVisible && state.isPresented }
+    var isVisible: Bool { panel.isVisible }
 
-    init(model: PaletteModel, tracker: FrontmostAppTracker, permission: AccessibilityPermission) {
+    init(
+        model: PaletteModel, tracker: FrontmostAppTracker, permission: AccessibilityPermission,
+        openSettings: @escaping () -> Void
+    ) {
         self.model = model
         super.init()
 
@@ -24,13 +26,24 @@ final class PanelController: NSObject {
             actions: PaletteActions(
                 run: { [weak self] in self?.runSelected() },
                 runCommand: { [weak self] command in self?.run(command) },
-                close: { [weak self] in self?.hide() }))
+                perform: { [weak self] action in self?.perform(action) },
+                toggleActions: { [weak self] in self?.toggleActions() },
+                openSettings: { [weak self] in
+                    self?.hide(immediately: true)
+                    openSettings()
+                },
+                retry: { [weak self] in self?.model.prepareForOpen() }))
         let hosting = NSHostingView(rootView: root)
         hosting.sizingOptions = []
         hosting.frame = NSRect(origin: .zero, size: PanelPlacement.size)
         panel.contentView = hosting
         panel.setContentSize(PanelPlacement.size)
 
+        #if DEBUG
+            if let name = ProcessInfo.processInfo.environment["CUE_APPEARANCE"] {
+                panel.appearance = NSAppearance(named: name == "light" ? .aqua : .darkAqua)
+            }
+        #endif
         panel.keyHandler = { [weak self] key in self?.handle(key) ?? false }
         resignObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.didResignKeyNotification, object: panel, queue: .main
@@ -43,61 +56,39 @@ final class PanelController: NSObject {
         if isVisible { hide() } else { show() }
     }
 
+    /// Opening is ordering a ready window to the front: no animation, the content is already drawn.
     func show() {
-        hideGeneration += 1
         model.prepareForOpen()
+        closeActions(animated: false)
         position()
-        state.isPresented = false
-        panel.alphaValue = 1
         panel.makeKeyAndOrderFront(nil)
-        installClickMonitor()
+        panel.invalidateShadow()
         state.focusToken += 1
         CueLog.panel.info(
             "show target=\(self.model.targetApp?.name ?? "none", privacy: .public) commands=\(self.model.results.count)"
         )
         #if DEBUG
+            applyDebugPreview()
             DebugSnapshot.scheduleIfRequested(of: panel, model: model)
         #endif
-        // The window is up already; the content eases in on the next turn of the run loop so the spring is visible.
-        DispatchQueue.main.async { [state] in
-            withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) { state.isPresented = true }
-        }
     }
 
-    /// Fades the content out and takes the window away. `immediately` skips the fade, for when a command is about to run
-    /// in the app underneath and must not wait for it.
+    /// Takes the window away at once. Closing never animates.
     func hide(immediately: Bool = false) {
-        removeClickMonitor()
         guard panel.isVisible else { return }
-        hideGeneration += 1
-        let generation = hideGeneration
-        if immediately {
-            state.isPresented = false
-            panel.orderOut(nil)
-            return
-        }
-        withAnimation(.easeOut(duration: 0.12)) { state.isPresented = false }
-        Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(130))
-            guard let self, self.hideGeneration == generation else { return }
-            self.panel.orderOut(nil)
-        }
+        closeActions(animated: false)
+        panel.orderOut(nil)
     }
 
-    /// A click in another app does not always take key from a non-activating panel (the desktop, for one), so a click
-    /// anywhere outside Cue also counts as losing focus. Global monitors only see events sent to other apps.
-    private func installClickMonitor() {
-        guard clickMonitor == nil else { return }
-        clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) {
-            [weak self] _ in
-            MainActor.assumeIsolated { self?.hide() }
+    #if DEBUG
+        /// CUE_PREVIEW_QUERY, CUE_PREVIEW_MOVE (rows to move down) and CUE_PREVIEW_ACTIONS shape what a snapshot shows.
+        private func applyDebugPreview() {
+            let env = ProcessInfo.processInfo.environment
+            if let query = env["CUE_PREVIEW_QUERY"] { model.query = query }
+            if let move = env["CUE_PREVIEW_MOVE"].flatMap(Int.init) { model.moveSelection(by: move) }
+            if env["CUE_PREVIEW_ACTIONS"] != nil { toggleActions() }
         }
-    }
-
-    private func removeClickMonitor() {
-        if let clickMonitor { NSEvent.removeMonitor(clickMonitor) }
-        clickMonitor = nil
-    }
+    #endif
 
     private func position() {
         let screens = NSScreen.screens
@@ -111,14 +102,68 @@ final class PanelController: NSObject {
         CueLog.panel.info(
             "key \(String(describing: key), privacy: .public) query=\(self.model.query, privacy: .public) selected=\(self.model.selected?.command.title ?? "none", privacy: .public)"
         )
+        if state.actionsOpen { return handleActions(key) }
         switch key {
         case .close: hide()
         case .run: runSelected()
+        case .actions: toggleActions()
         case .move(let delta): model.moveSelection(by: delta)
         case .first: model.selectFirst()
         case .last: model.selectLast()
         }
         return true
+    }
+
+    /// Keys while the Cmd+K popover is open: it takes the arrows, Return and Escape.
+    private func handleActions(_ key: PaletteKey) -> Bool {
+        let items = availableActions
+        switch key {
+        case .close, .actions: closeActions(animated: true)
+        case .move(let delta):
+            guard !items.isEmpty else { return true }
+            state.actionIndex = min(max(state.actionIndex + (delta > 0 ? 1 : -1), 0), items.count - 1)
+        case .first: state.actionIndex = 0
+        case .last: state.actionIndex = max(items.count - 1, 0)
+        case .run:
+            if items.indices.contains(state.actionIndex) { perform(items[state.actionIndex]) }
+        }
+        return true
+    }
+
+    private var availableActions: [PaletteAction] {
+        PaletteAction.available(for: model.selected?.command, appName: model.targetApp?.name)
+    }
+
+    private func toggleActions() {
+        if state.actionsOpen {
+            closeActions(animated: true)
+        } else if model.selected != nil {
+            state.actionIndex = 0
+            withAnimation(Motion.popover) { state.actionsOpen = true }
+        }
+    }
+
+    private func closeActions(animated: Bool) {
+        guard state.actionsOpen else { return }
+        if animated {
+            withAnimation(Motion.popover) { state.actionsOpen = false }
+        } else {
+            state.actionsOpen = false
+        }
+    }
+
+    private func perform(_ action: PaletteAction) {
+        guard let command = model.selected?.command else { return }
+        switch action.kind {
+        case .run:
+            run(command)
+        case .copyPath:
+            PaletteAction.copy((command.path + [command.displayTitle]).joined(separator: " > "))
+            hide()
+        case .copyShortcut:
+            PaletteAction.copy(command.shortcut?.display ?? "")
+            hide()
+        }
     }
 
     func runSelectedForDebug() { runSelected() }
@@ -143,9 +188,7 @@ final class PanelController: NSObject {
     }
 
     private func reopenWithError() {
-        hideGeneration += 1
         position()
-        state.isPresented = true
         panel.makeKeyAndOrderFront(nil)
         state.focusToken += 1
     }
