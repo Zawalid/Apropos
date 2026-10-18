@@ -11,6 +11,7 @@ final class PanelController: NSObject {
     private let model: PaletteModel
     private var hideGeneration = 0
     private var resignObserver: NSObjectProtocol?
+    private var clickMonitor: Any?
 
     var isVisible: Bool { panel.isVisible && state.isPresented }
 
@@ -49,6 +50,7 @@ final class PanelController: NSObject {
         state.isPresented = false
         panel.alphaValue = 1
         panel.makeKeyAndOrderFront(nil)
+        installClickMonitor()
         state.focusToken += 1
         CueLog.panel.info(
             "show target=\(self.model.targetApp?.name ?? "none", privacy: .public) commands=\(self.model.results.count)"
@@ -65,6 +67,7 @@ final class PanelController: NSObject {
     /// Fades the content out and takes the window away. `immediately` skips the fade, for when a command is about to run
     /// in the app underneath and must not wait for it.
     func hide(immediately: Bool = false) {
+        removeClickMonitor()
         guard panel.isVisible else { return }
         hideGeneration += 1
         let generation = hideGeneration
@@ -79,6 +82,21 @@ final class PanelController: NSObject {
             guard let self, self.hideGeneration == generation else { return }
             self.panel.orderOut(nil)
         }
+    }
+
+    /// A click in another app does not always take key from a non-activating panel (the desktop, for one), so a click
+    /// anywhere outside Cue also counts as losing focus. Global monitors only see events sent to other apps.
+    private func installClickMonitor() {
+        guard clickMonitor == nil else { return }
+        clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) {
+            [weak self] _ in
+            MainActor.assumeIsolated { self?.hide() }
+        }
+    }
+
+    private func removeClickMonitor() {
+        if let clickMonitor { NSEvent.removeMonitor(clickMonitor) }
+        clickMonitor = nil
     }
 
     private func position() {
