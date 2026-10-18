@@ -21,7 +21,9 @@ public final class PaletteModel {
     }
     /// The ranked commands for the current query. Recomputed only when the query or the command list changes.
     public var results: [RankedCommand] {
-        let key = CacheKey(revision: menus.revision, query: query, rankerRevision: rankerRevision)
+        let key = CacheKey(
+            revision: menus.revision, query: query, rankerRevision: rankerRevision, contextRevision: contextRevision,
+            targetPID: tracker.app?.pid)
         if key != cacheKey {
             computeResults()
             cacheKey = key
@@ -39,11 +41,22 @@ public final class PaletteModel {
     public private(set) var selectedID: String?
     /// Shown inline after a command failed to run.
     public private(set) var runError: String?
+    /// The result of the last context action, for a short notice ("Copied", "12 words, 80 characters"). Cleared when a
+    /// new command starts.
+    public private(set) var lastOutcome: ActionOutcome?
+    /// A context action waiting for the person to confirm it. The view asks, then calls `confirmPending()` or
+    /// `cancelPending()`.
+    public private(set) var pendingConfirmation: Command?
 
     @ObservationIgnored private let menus: AppMenuModel
     @ObservationIgnored private let tracker: FrontmostAppTracker
     @ObservationIgnored private var ranker: CommandRanker
     @ObservationIgnored private var rankerRevision = 0
+    @ObservationIgnored private var contextCommands: [Command] = []
+    @ObservationIgnored private var contextPID: pid_t?
+    @ObservationIgnored private var contextRevision = 0
+    @ObservationIgnored private var contextRunner:
+        (@MainActor (Command, TargetApp?, Bool) async -> Result<ActionOutcome, ActionError>)?
     @ObservationIgnored private var pinnedCount = 0
     @ObservationIgnored private var suggestedCount = 0
     @ObservationIgnored private var runner: (@MainActor (Command) async -> Result<Void, CommandRunError>)?
@@ -54,6 +67,8 @@ public final class PaletteModel {
         let revision: Int
         let query: String
         let rankerRevision: Int
+        let contextRevision: Int
+        let targetPID: pid_t?
     }
 
     public init(
@@ -75,8 +90,28 @@ public final class PaletteModel {
         rankerRevision += 1
     }
 
+    /// Context actions for the app with `pid`, built from its latest context snapshot. They are listed only while that
+    /// app is the target, so another app's selection never offers actions here. They come before the menu commands.
+    public func setContextCommands(_ commands: [Command], forPID pid: pid_t?) {
+        contextCommands = commands
+        contextPID = pid
+        contextRevision += 1
+    }
+
+    public func setContextRunner(
+        _ runner: @escaping @MainActor (Command, TargetApp?, Bool) async -> Result<ActionOutcome, ActionError>
+    ) {
+        contextRunner = runner
+    }
+
+    /// The context actions currently listed.
+    private var activeContextCommands: [Command] {
+        guard let pid = tracker.app?.pid, pid == contextPID else { return [] }
+        return contextCommands
+    }
+
     private func computeResults() {
-        let commands = menus.commands
+        let commands = activeContextCommands + menus.commands
         let base = ranker.rank(commands, query: query)
         pinnedCount = 0
         suggestedCount = 0
@@ -123,7 +158,15 @@ public final class PaletteModel {
     public func prepareForOpen() {
         query = ""
         runError = nil
+        lastOutcome = nil
+        pendingConfirmation = nil
         selectedID = nil
+        // Context from the last time the panel was open may be gone. Actions come back when the fresh snapshot lands,
+        // so a stale selection can never be acted on.
+        if !contextCommands.isEmpty {
+            contextCommands = []
+            contextRevision += 1
+        }
         menus.refresh()
     }
 
@@ -154,6 +197,8 @@ public final class PaletteModel {
     @discardableResult
     public func run(_ command: Command) async -> Bool {
         runError = nil
+        lastOutcome = nil
+        if case .contextAction = command.source { return await runContextAction(command, confirmed: false) }
         let outcome: Result<Void, CommandRunError>
         if let runner {
             outcome = await runner(command)
@@ -168,6 +213,38 @@ public final class PaletteModel {
             return false
         }
     }
+
+    private func runContextAction(_ command: Command, confirmed: Bool) async -> Bool {
+        guard let contextRunner else {
+            runError = ActionError.notApplicable.message
+            return false
+        }
+        if command.needsConfirmation, !confirmed {
+            pendingConfirmation = command
+            return false
+        }
+        pendingConfirmation = nil
+        switch await contextRunner(command, tracker.app, confirmed) {
+        case .success(let outcome):
+            lastOutcome = outcome
+            return true
+        case .failure(.confirmationRequired):
+            pendingConfirmation = command
+            return false
+        case .failure(let error):
+            runError = error.message
+            return false
+        }
+    }
+
+    /// Runs the action that was waiting for confirmation. Returns true when the palette can close.
+    @discardableResult
+    public func confirmPending() async -> Bool {
+        guard let command = pendingConfirmation else { return false }
+        return await runContextAction(command, confirmed: true)
+    }
+
+    public func cancelPending() { pendingConfirmation = nil }
 
     public func setRunner(_ runner: @escaping @MainActor (Command) async -> Result<Void, CommandRunError>) {
         self.runner = runner

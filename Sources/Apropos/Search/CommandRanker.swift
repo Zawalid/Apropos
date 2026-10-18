@@ -78,6 +78,17 @@ public struct CommandRanker: Sendable {
         }
     }
 
+    /// A keyword match counts for less than a path match: it only rescues a command the title and path missed.
+    private func keywordScore(_ query: String, _ command: Command) -> Int? {
+        var best: Int?
+        for keyword in command.keywords {
+            guard let match = FuzzyMatcher.match(query, in: keyword) else { continue }
+            let score = match.score - Self.pathPenalty - 20
+            if best == nil || score > (best ?? 0) { best = score }
+        }
+        return best
+    }
+
     /// An alias counts like a title; typing it exactly puts the command first.
     private func aliasScore(_ query: String, _ command: Command) -> Int? {
         var best: Int?
@@ -121,6 +132,10 @@ public struct CommandRanker: Sendable {
                     best = adjusted
                     positions = []
                 }
+            }
+            if best == nil, let keywordScore = keywordScore(trimmed, command) {
+                best = keywordScore
+                positions = []
             }
             if let aliasScore = aliasScore(trimmed, command) {
                 if best == nil || aliasScore > (best ?? 0) {

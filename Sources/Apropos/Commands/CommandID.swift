@@ -27,6 +27,8 @@ public struct CommandID: RawRepresentable, Hashable, Codable, Sendable, Comparab
 
     /// The bundle identifier part, or nil for a command that has none.
     public var bundleID: String? {
+        // Context actions have no bundle: their identity is just `ctx:text.upper`.
+        guard rawValue.contains("|") else { return nil }
         guard let head = rawValue.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false).first else {
             return nil
         }

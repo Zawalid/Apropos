@@ -54,6 +54,7 @@ public struct SymbolResolver: Sendable {
         }
 
         add(overrides[command.stableID], .userOverride)
+        add(command.symbolName, .pack)
         add(
             library.symbol(
                 bundleID: command.stableID.bundleID, title: command.title, path: command.path,

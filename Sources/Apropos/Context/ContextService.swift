@@ -7,6 +7,9 @@ import Foundation
 public struct ContextService: Sendable {
     public let registry: ContextProviderRegistry
     public var privacy: ContextPrivacy
+    /// Called with every finished snapshot, on a background thread, before `snapshot(for:)` returns. The app uses it to
+    /// build context actions; it must not log the snapshot.
+    public var onSnapshot: (@Sendable (ContextSnapshot) -> Void)?
     private let git: any GitBranchLookup
     private let isTrusted: @Sendable () -> Bool
     private let makeRoot: @Sendable (pid_t) -> (any AXNode)?
@@ -35,10 +38,12 @@ public struct ContextService: Sendable {
 
         if privacy.isDisabled(app.bundleID) {
             snapshot.gaps = [.disabledForApp]
+            onSnapshot?(snapshot)
             return snapshot
         }
         guard isTrusted(), let root = makeRoot(app.pid) else {
             snapshot.gaps = [.notTrusted]
+            onSnapshot?(snapshot)
             return snapshot
         }
         let target = ContextTarget(appName: app.name, bundleID: app.bundleID, pid: app.pid, root: root)
@@ -88,6 +93,7 @@ public struct ContextService: Sendable {
         snapshot.capturedAt = Date()
         let elapsed = Int(Date().timeIntervalSince(started) * 1000)
         AproposLog.app.debug("context: \(snapshot.items.count) items in \(elapsed) ms")
+        onSnapshot?(snapshot)
         return snapshot
     }
 }

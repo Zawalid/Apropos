@@ -50,6 +50,8 @@ public protocol CommandTarget: Sendable {
 
 public enum CommandSource: Sendable, Hashable {
     case menuItem(bundleID: String?)
+    /// A context action: it works on what Apropos senses (selection, files, page, folder), in any app.
+    case contextAction(ActionID)
 }
 
 /// An Option-key variant of a menu item, such as Empty Trash Securely next to Empty Trash. It is a second way to run
@@ -90,6 +92,14 @@ public struct Command: Identifiable, Sendable {
     public internal(set) var alternates: [CommandAlternate] = []
     /// Set on a row that is itself an alternate (only when alternates are shown): the command it varies.
     public internal(set) var alternateOf: CommandID?
+    /// An SF Symbol the command brings along (context actions do). Used before any rule of the symbol resolver.
+    public internal(set) var symbolName: String?
+    /// Extra words the search matches, below the title.
+    public internal(set) var keywords: [String] = []
+    /// A line of explanation to show under the title, when the command has one.
+    public internal(set) var detail: String?
+    /// True when the person should confirm before it runs.
+    public internal(set) var needsConfirmation = false
 
     public init(
         id: String, title: String, path: [String], shortcut: KeyShortcut? = nil, isEnabled: Bool = true,
@@ -107,11 +117,12 @@ public struct Command: Identifiable, Sendable {
         if let stableID {
             self.stableID = stableID
         } else {
-            let bundleID: String?
             switch source {
-            case .menuItem(let bundle): bundleID = bundle
+            case .menuItem(let bundle):
+                self.stableID = CommandID.base(bundleID: bundle, path: path, title: title)
+            case .contextAction(let action):
+                self.stableID = CommandID(rawValue: action.rawValue)
             }
-            self.stableID = CommandID.base(bundleID: bundleID, path: path, title: title)
         }
     }
 
