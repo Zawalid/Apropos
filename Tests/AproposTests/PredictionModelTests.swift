@@ -242,7 +242,7 @@ struct PredictionModelTests {
     }
 
     @Test func predictsWithinTwoMillisecondsOnAYearOfData() {
-        var generator = SplitMix64(seed: 7)
+        var generator = SeededGenerator(seed: 7)
         let apps = (0..<12).map { "com.test.app\($0)" }
         let commandsPerApp = 80
         var events: [RunEvent] = []
@@ -274,18 +274,5 @@ struct PredictionModelTests {
         let unrestricted = clock.measure { for _ in 0..<runs { _ = model.predict(context, limit: 3) } }
         let perCallOpen = Double(unrestricted.components.attoseconds) / 1e18 / Double(runs) + Double(unrestricted.components.seconds) / Double(runs)
         #expect(perCallOpen < 0.002, "an unrestricted prediction took \(perCallOpen * 1000) ms")
-    }
-}
-
-/// A small deterministic random source, so tests and the evaluation harness repeat exactly.
-struct SplitMix64: RandomNumberGenerator {
-    private var state: UInt64
-    init(seed: UInt64) { state = seed }
-    mutating func next() -> UInt64 {
-        state &+= 0x9E37_79B9_7F4A_7C15
-        var z = state
-        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
-        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
-        return z ^ (z >> 31)
     }
 }

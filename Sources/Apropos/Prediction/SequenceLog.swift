@@ -64,6 +64,14 @@ public final class SequenceLog {
         load(now: now)
     }
 
+    /// Reads the events of a log file without opening the log: nothing is moved aside or written. For the evaluation
+    /// tool. An unreadable or damaged file gives an empty list.
+    public nonisolated static func readEvents(from url: URL) -> [RunEvent] {
+        guard let data = try? Data(contentsOf: url), let file = try? JSONDecoder().decode(SequenceFile.self, from: data)
+        else { return [] }
+        return file.events.sorted { $0.time < $1.time }
+    }
+
     // MARK: Recording
 
     /// Whether a run of this command may enter the log. Stricter than the usage store: content menus are left out.

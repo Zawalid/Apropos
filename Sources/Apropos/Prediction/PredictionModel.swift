@@ -182,9 +182,12 @@ public struct PredictionModel: Sendable {
             bucket.next[command, default: Counter()].add(at: time, halfLife: halfLife)
             tables[key] = bucket
         }
-        add(TableKey(level: .app, a: app, b: 0, c: 0))
-        add(TableKey(level: .slot, a: app, b: slot, c: 0))
-        if mask != 0 { add(TableKey(level: .kinds, a: app, b: mask, c: 0)) }
+        // Whether something ran a moment ago is part of the moment: the first command after a pause is not the same
+        // question as the next one in a run of work.
+        let continuing: Int32 = event.previous == nil ? 0 : 1
+        add(TableKey(level: .app, a: app, b: 0, c: continuing))
+        add(TableKey(level: .slot, a: app, b: slot, c: continuing))
+        if mask != 0 { add(TableKey(level: .kinds, a: app, b: mask, c: continuing)) }
         if let previous = event.previous {
             let first = intern(previous)
             add(TableKey(level: .prevAny, a: first, b: 0, c: 0))
@@ -227,9 +230,10 @@ public struct PredictionModel: Sendable {
             guard let key, let bucket = tables[key] else { return }
             chain.append((level, bucket, bucket.total.weight(at: now, halfLife: halfLife)))
         }
-        add(.app, appID.map { TableKey(level: .app, a: $0, b: 0, c: 0) })
-        add(.slot, appID.map { TableKey(level: .slot, a: $0, b: slot.packed, c: 0) })
-        if mask != 0 { add(.kinds, appID.map { TableKey(level: .kinds, a: $0, b: mask, c: 0) }) }
+        let continuing: Int32 = first == nil ? 0 : 1
+        add(.app, appID.map { TableKey(level: .app, a: $0, b: 0, c: continuing) })
+        add(.slot, appID.map { TableKey(level: .slot, a: $0, b: slot.packed, c: continuing) })
+        if mask != 0 { add(.kinds, appID.map { TableKey(level: .kinds, a: $0, b: mask, c: continuing) }) }
         add(.prevAny, first.map { TableKey(level: .prevAny, a: $0, b: 0, c: 0) })
         if let appID, let first {
             add(.prevApp, TableKey(level: .prevApp, a: appID, b: first, c: 0))

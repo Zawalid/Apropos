@@ -10,6 +10,11 @@ import Apropos
 //     URL and selection (default prints only lengths, like the app's logs)
 //   swift run apropos-probe --actions [bundle id] [--wait 3] [--all]   print the context actions that apply now
 //     same app selection as --context; --all also lists the actions that do not apply and why
+//   swift run apropos-probe --predict-eval [--file path] [--synthetic [days]] [--train 0.5]
+//       [--noise 0.06] [--interleave 0.12] [--pseudo 2] [--smoothing 0.5] [--half-life 30]   model settings, for tuning
+//     replays the run log (default: the real local one) chronologically, trains on the past, tests on the future and
+//     prints aggregate numbers only: hit rates, coverage, calibration. Never prints a command name. --synthetic uses a
+//     generated log instead, so the numbers in docs/prediction.md can be reproduced.
 //
 // Needs Accessibility access for the terminal (or whatever launched it).
 
@@ -18,6 +23,37 @@ let arguments = Array(CommandLine.arguments.dropFirst())
 func value(after flag: String) -> String? {
     guard let index = arguments.firstIndex(of: flag), arguments.indices.contains(index + 1) else { return nil }
     return arguments[index + 1]
+}
+
+if arguments.first == "--predict-eval" {
+    var events: [RunEvent]
+    var source: String
+    if let index = arguments.firstIndex(of: "--synthetic") {
+        var profile = SyntheticProfile()
+        if arguments.indices.contains(index + 1), let days = Int(arguments[index + 1]) { profile.days = days }
+        profile.driftDay = profile.days * 2 / 3
+        if let noise = value(after: "--noise").flatMap(Double.init) { profile.noise = noise }
+        if let interleave = value(after: "--interleave").flatMap(Double.init) { profile.interleave = interleave }
+        events = SyntheticLog.generate(profile)
+        source = "synthetic, \(profile.days) days, habits change on day \(profile.driftDay ?? 0)"
+    } else {
+        let url = value(after: "--file").map { URL(fileURLWithPath: $0) } ?? SequenceLog.url(besides: UsageStore.defaultURL)
+        events = SequenceLog.readEvents(from: url)
+        source = "local run log"
+    }
+    var evaluator = PredictionEvaluator()
+    if let pseudo = value(after: "--pseudo").flatMap(Double.init) { evaluator.settings.pseudoCount = pseudo }
+    if let smoothing = value(after: "--smoothing").flatMap(Double.init) { evaluator.settings.smoothing = smoothing }
+    if let half = value(after: "--half-life").flatMap(Double.init) { evaluator.settings.halfLifeDays = half }
+    if let fraction = value(after: "--train").flatMap(Double.init) { evaluator.trainFraction = fraction }
+    guard events.count >= 100 else {
+        print("\(source): \(events.count) events, too few to evaluate (need at least 100)")
+        exit(events.isEmpty ? 1 : 0)
+    }
+    let span = (events.last?.time ?? 0) - (events.first?.time ?? 0)
+    print("source: \(source), \(events.count) events over \(Int(span / 86_400)) days")
+    print(evaluator.run(events).render())
+    exit(0)
 }
 
 if arguments.first == "--context" || arguments.first == "--actions" {
