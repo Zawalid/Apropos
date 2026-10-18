@@ -33,6 +33,8 @@ final class OnboardingWindowController {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
+        window.isOpaque = false
+        window.backgroundColor = .clear
         window.center()
         return window
     }
