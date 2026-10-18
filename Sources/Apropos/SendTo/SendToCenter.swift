@@ -154,6 +154,15 @@ public final class SendToCenter {
     /// Recomputes the rows, for example after a send changed what the usage store knows.
     public func refresh() { rebuild() }
 
+    /// Every destination a sequence may name: the whole library (approval is checked by the planner) and the folders
+    /// remembered for copying and moving. The folder choosers are left out: a sequence cannot ask for a folder.
+    public var sequenceDestinations: [Destination] {
+        library.destinations
+            + folders.folders.flatMap { folder in
+                [false, true].compactMap { FolderDestinations.destination(for: folder, move: $0) }
+            }
+    }
+
     // MARK: Rows
 
     /// The rows beside the context actions: per payload, the generic row and the most used destinations.
