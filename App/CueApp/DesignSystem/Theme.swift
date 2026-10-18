@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Colors and metrics shared by every Cue surface. The palette follows Lopper's: a green-tinted grey, mint on dark
-/// and deep emerald on light for anything that has to read as an accent.
+/// Colors and metrics shared by every Cue surface. They follow the interactive prototype in `docs/prototype`: a
+/// green-tinted glass, neutral selection and one mint accent (deep emerald in light mode) used sparingly.
 enum Theme {
     enum Spacing {
         static let xs: CGFloat = 4
@@ -12,9 +12,12 @@ enum Theme {
         static let xl: CGFloat = 24
     }
 
-    static let panelRadius: CGFloat = 18
-    static let rowRadius: CGFloat = 9
+    static let panelRadius: CGFloat = 26
+    static let rowRadius: CGFloat = 12
+    static let tileRadius: CGFloat = 8
     static let controlRadius: CGFloat = 8
+    static let rowHeight: CGFloat = 46
+    static let sectionHeight: CGFloat = 32
 
     private static func adaptive(light: NSColor, dark: NSColor) -> Color {
         Color(
@@ -23,30 +26,44 @@ enum Theme {
             })
     }
 
+    private static func rgba(_ red: Double, _ green: Double, _ blue: Double, _ alpha: Double) -> NSColor {
+        NSColor(srgbRed: red / 255, green: green / 255, blue: blue / 255, alpha: alpha)
+    }
+
+    // MARK: Text
+
+    static let text = adaptive(light: rgba(18, 28, 24, 1), dark: rgba(242, 245, 243, 1))
+    static let text2 = adaptive(light: rgba(18, 28, 24, 0.66), dark: rgba(242, 245, 243, 0.64))
+    static let text3 = adaptive(light: rgba(18, 28, 24, 0.5), dark: rgba(242, 245, 243, 0.44))
+
+    // MARK: Accent
+
     /// The accent as text or an icon.
-    static let accentText = adaptive(
-        light: NSColor(srgbRed: 0.04, green: 0.42, blue: 0.31, alpha: 1),
-        dark: NSColor(srgbRed: 0.50, green: 0.90, blue: 0.74, alpha: 1))
+    static let accentText = adaptive(light: rgba(10, 107, 80, 1), dark: rgba(140, 242, 204, 1))
+    /// The fill of the primary button, carrying `accentInk`.
+    static let accent = adaptive(light: rgba(10, 107, 80, 1), dark: rgba(140, 242, 204, 1))
+    static let accentInk = adaptive(light: rgba(244, 251, 248, 1), dark: rgba(11, 16, 15, 1))
+    static let accentSoft = adaptive(light: rgba(10, 107, 80, 0.13), dark: rgba(140, 242, 204, 0.16))
 
     /// The brand's bright mint, for fills that carry dark text.
-    static let mint = Color(red: 0.55, green: 0.95, blue: 0.80)
+    static let mint = Color(red: 0.549, green: 0.949, blue: 0.8)
     static let ink = Color(red: 0.043, green: 0.063, blue: 0.057)
 
-    /// Supporting text. The tertiary label is too faint on light backgrounds, so light mode uses the secondary one.
-    static let metaText = adaptive(light: .secondaryLabelColor, dark: .tertiaryLabelColor)
+    static let cautionText = adaptive(light: rgba(160, 74, 8, 1), dark: NSColor.systemOrange)
 
-    static let cautionText = adaptive(
-        light: NSColor(srgbRed: 0.63, green: 0.29, blue: 0.03, alpha: 1), dark: .systemOrange)
+    // MARK: Surfaces
 
-    /// The tint laid over the panel's blur so it reads as Cue's green-grey rather than whatever is behind it.
-    static let panelTint = adaptive(
-        light: NSColor(srgbRed: 0.97, green: 0.98, blue: 0.975, alpha: 0.55),
-        dark: NSColor(srgbRed: 0.075, green: 0.09, blue: 0.085, alpha: 0.55))
-
-    static let hairline = Color.primary.opacity(0.08)
-    static let selection = adaptive(
-        light: NSColor(srgbRed: 0.04, green: 0.42, blue: 0.31, alpha: 0.12),
-        dark: NSColor(srgbRed: 0.50, green: 0.90, blue: 0.74, alpha: 0.16))
+    static let glassTint = adaptive(light: rgba(247, 249, 248, 0.66), dark: rgba(26, 29, 28, 0.62))
+    static let glassEdge = adaptive(light: rgba(0, 0, 0, 0.09), dark: rgba(255, 255, 255, 0.13))
+    static let glassEdgeTop = adaptive(light: rgba(255, 255, 255, 0.9), dark: rgba(255, 255, 255, 0.22))
+    static let highlight = adaptive(light: rgba(0, 0, 0, 0.06), dark: rgba(255, 255, 255, 0.09))
+    static let chip = adaptive(light: rgba(0, 0, 0, 0.05), dark: rgba(255, 255, 255, 0.07))
+    static let chipEdge = adaptive(light: rgba(0, 0, 0, 0.06), dark: rgba(255, 255, 255, 0.08))
+    static let tile = adaptive(light: rgba(0, 0, 0, 0.06), dark: rgba(255, 255, 255, 0.08))
+    static let tileInk = adaptive(light: rgba(18, 28, 24, 0.82), dark: rgba(255, 255, 255, 0.9))
+    static let keyFill = adaptive(light: rgba(0, 0, 0, 0.04), dark: rgba(255, 255, 255, 0.07))
+    static let keyEdge = adaptive(light: rgba(0, 0, 0, 0.14), dark: rgba(255, 255, 255, 0.15))
+    static let divider = adaptive(light: rgba(0, 0, 0, 0.07), dark: rgba(255, 255, 255, 0.07))
 }
 
 extension Font {
