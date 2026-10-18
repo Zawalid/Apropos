@@ -17,6 +17,8 @@ enum OnboardingStep: Int, CaseIterable {
 @Observable
 final class OnboardingModel {
     let permission: AccessibilityPermission
+    /// What the stage shows of the person's Mac: the app in front, its commands, the keys held.
+    let live: OnboardingLive
     private(set) var steps: [OnboardingStep]
     private(set) var index = 0
     private(set) var panelOpened: Bool
@@ -29,9 +31,11 @@ final class OnboardingModel {
 
     init(
         permission: AccessibilityPermission, hotKey: @escaping () -> HotKeyCombo, start: OnboardingStep? = nil,
-        panelOpened: Bool = false, showsHelp: Bool = false, finish: @escaping () -> Void = {}
+        panelOpened: Bool = false, showsHelp: Bool = false, live: OnboardingLive? = nil,
+        finish: @escaping () -> Void = {}
     ) {
         self.permission = permission
+        self.live = live ?? .live()
         hotKeyProvider = hotKey
         finishAction = finish
         self.panelOpened = panelOpened
@@ -108,6 +112,7 @@ final class OnboardingModel {
     }
 
     func stopObserving() {
+        live.stop()
         if let panelObserver { NotificationCenter.default.removeObserver(panelObserver) }
         panelObserver = nil
     }

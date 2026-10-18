@@ -37,13 +37,14 @@
         }
 
         private static func onboarding(
-            _ id: String, step: OnboardingStep, trusted: Bool = false, panelOpened: Bool = false, help: Bool = false
+            _ id: String, step: OnboardingStep, trusted: Bool = false, panelOpened: Bool = false, help: Bool = false,
+            live: @escaping @MainActor () -> OnboardingLive = { .fixed(target: PreviewOnboarding.safari) }
         ) -> PreviewScene {
             PreviewScene(id: id, size: onboarding) {
                 let permission = AccessibilityPermission(probe: { trusted })
                 let model = OnboardingModel(
                     permission: permission, hotKey: { .default }, start: step, panelOpened: panelOpened,
-                    showsHelp: help)
+                    showsHelp: help, live: live())
                 return AnyView(OnboardingView(model: model))
             }
         }
@@ -55,8 +56,18 @@
         static let onboardingPermissionHelp = onboarding("onboarding-permission-help", step: .permission, help: true)
         static let onboardingPermissionAllowed = onboarding(
             "onboarding-permission-allowed", step: .permission, trusted: true)
-        static let onboardingTry = onboarding("onboarding-try", step: .tryIt)
-        static let onboardingTryDone = onboarding("onboarding-try-done", step: .tryIt, panelOpened: true)
+        static let onboardingTry = onboarding("onboarding-try", step: .tryIt, trusted: true)
+        static let onboardingTryHolding = onboarding("onboarding-try-holding", step: .tryIt, trusted: true) {
+            .fixed(target: PreviewOnboarding.safari, held: .option)
+        }
+        static let onboardingTryNothingOpen = onboarding(
+            "onboarding-try-nothing-open", step: .tryIt, trusted: true
+        ) {
+            .fixed(target: PreviewOnboarding.finder, othersOpen: false)
+        }
+        static let onboardingTryNoAccess = onboarding("onboarding-try-no-access", step: .tryIt)
+        static let onboardingTryDone = onboarding(
+            "onboarding-try-done", step: .tryIt, trusted: true, panelOpened: true)
         static let onboardingDone = onboarding("onboarding-done", step: .done, trusted: true)
 
         // Palette lists
@@ -161,8 +172,34 @@
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,
             settingsGeneral, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
             settingsUpdates, settingsAbout, settingsSearch, onboardingWelcome, onboardingPermission,
-            onboardingPermissionHelp, onboardingPermissionAllowed, onboardingTry, onboardingTryDone, onboardingDone,
+            onboardingPermissionHelp, onboardingPermissionAllowed, onboardingTry, onboardingTryHolding,
+            onboardingTryNothingOpen, onboardingTryNoAccess, onboardingTryDone, onboardingDone,
         ]
+    }
+
+    /// The Mac the onboarding stage sees in previews: a front app with the commands its menus really have, read once
+    /// from Safari and Finder and kept here so a preview never reads a running app.
+    @MainActor
+    enum PreviewOnboarding {
+        static var safari: StageApp {
+            StageApp(
+                name: "Safari", bundleID: "com.apple.Safari",
+                icon: StageSamples.icon("com.apple.Safari"), pid: 1,
+                rows: [
+                    StageRow(title: "New Window", subtitle: "File", symbol: "macwindow.badge.plus", caps: ["⌘", "N"]),
+                    StageRow(
+                        title: "New Private Window", subtitle: "File", symbol: "hand.raised",
+                        caps: ["⇧", "⌘", "N"]),
+                    StageRow(title: "Open Location", subtitle: "File", symbol: "link", caps: ["⌘", "L"]),
+                    StageRow(title: "Close Tab", subtitle: "File", symbol: "xmark", caps: ["⌘", "W"]),
+                ])
+        }
+
+        static var finder: StageApp {
+            StageApp(
+                name: "Finder", bundleID: "com.apple.finder",
+                icon: StageSamples.icon("com.apple.finder"), pid: 2)
+        }
     }
 
     /// A scene in dark and light, side by side. Each side owns its models, built once when the preview starts.
@@ -256,6 +293,9 @@
     #Preview("Onboarding, permission, not in the list") { PairedPreview(PreviewCatalog.onboardingPermissionHelp) }
     #Preview("Onboarding, permission, allowed") { PairedPreview(PreviewCatalog.onboardingPermissionAllowed) }
     #Preview("Onboarding, try it") { PairedPreview(PreviewCatalog.onboardingTry) }
+    #Preview("Onboarding, try it, holding Option") { PairedPreview(PreviewCatalog.onboardingTryHolding) }
+    #Preview("Onboarding, try it, only Finder open") { PairedPreview(PreviewCatalog.onboardingTryNothingOpen) }
+    #Preview("Onboarding, try it, no access") { PairedPreview(PreviewCatalog.onboardingTryNoAccess) }
     #Preview("Onboarding, try it, worked") { PairedPreview(PreviewCatalog.onboardingTryDone) }
     #Preview("Onboarding, done") { PairedPreview(PreviewCatalog.onboardingDone) }
 #endif

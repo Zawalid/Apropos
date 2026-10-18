@@ -12,7 +12,8 @@ final class OnboardingWindowController {
     func show(model: OnboardingModel, reduceMotion: Bool) {
         self.model?.stopObserving()
         self.model = model
-        let hosting = NSHostingView(rootView: OnboardingView(model: model, reduceMotionSetting: reduceMotion))
+        let hosting = NSHostingView(
+            rootView: OnboardingView(model: model, reduceMotionSetting: reduceMotion, drawsIn: true))
         let window = window ?? makeWindow()
         window.contentView = hosting
         self.window = window

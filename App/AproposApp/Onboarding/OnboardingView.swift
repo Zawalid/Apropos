@@ -13,14 +13,16 @@ extension OnboardingStep {
     }
 }
 
-/// The first-run guide. One idea: the ring of the app icon is drawn as you set up. Each step adds an arc, the pearl rides
-/// its tip, and on the last step the pearl settles into the gap and the ring is the logo. The left column talks; the
-/// glass stage on the right shows. Keyboard driven; Return acts, arrows move, Escape closes.
+/// The first-run guide. One idea: the ring of the app icon closes as you set up, around the pearl that waits in its gap,
+/// until it is the logo. The left column talks; the glass stage on the right (`Stage`) shows Apropos working on this
+/// Mac. Keyboard driven; Return acts, arrows move, Escape closes.
 struct OnboardingView: View {
     static let size = CGSize(width: 900, height: 580)
 
     let model: OnboardingModel
     var reduceMotionSetting = false
+    /// Draws the ring in when the window opens. Previews leave it off and show each step as it rests.
+    var drawsIn = false
 
     @FocusState private var focused: Bool
 
@@ -28,7 +30,7 @@ struct OnboardingView: View {
         HStack(spacing: 0) {
             CopyColumn(model: model)
                 .frame(width: 430)
-            Stage(model: model)
+            Stage(model: model, drawsIn: drawsIn)
                 .brandGlass(in: RoundedRectangle(cornerRadius: 26, style: .continuous))
                 .padding(.vertical, 10)
                 .padding(.trailing, 10)
@@ -138,7 +140,9 @@ private struct StepDots: View {
                 .frame(width: 10, height: 10)
             }
         }
-        .animation(reduceMotion ? .easeOut(duration: 0.1) : .spring(response: 0.42, dampingFraction: 0.66), value: current)
+        .animation(
+            reduceMotion ? .easeOut(duration: 0.1) : .spring(response: 0.42, dampingFraction: 0.66), value: current
+        )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Step \(current + 1) of \(count)")
     }
@@ -327,363 +331,6 @@ private struct DoneCopy: View {
     }
 }
 
-// MARK: Stage
-
-/// The right-hand glass panel: the ring, tilting a little toward the pointer like an object held up to the light, with
-/// what the step is about shown inside it.
-private struct Stage: View {
-    let model: OnboardingModel
-
-    @State private var pointer: CGSize = .zero
-    @Environment(\.aproposReduceMotion) private var reduceMotion
-
-    static let ringSize: CGFloat = 300
-    static let lineWidth: CGFloat = 20
-
-    /// How much of the ring is drawn, as a fraction of the full circle. The finished logo is a ring of 304 degrees.
-    private var progress: Double {
-        switch model.step {
-        case .welcome: 0.22
-        case .permission: model.permission.isTrusted ? 0.50 : 0.36
-        case .tryIt: model.panelOpened ? 0.74 : 0.62
-        case .done: 304.0 / 360.0
-        }
-    }
-
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                RingView(
-                    progress: progress, settled: model.step == .done,
-                    waiting: (model.step == .permission && !model.permission.isTrusted)
-                        || (model.step == .tryIt && !model.panelOpened),
-                    pointer: pointer)
-                interior
-                    .id(model.step)
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                    .offset(x: pointer.width * 7, y: pointer.height * 7)
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)
-            .rotation3DEffect(
-                .degrees(reduceMotion ? 0 : -pointer.height * 7), axis: (x: 1, y: 0, z: 0), perspective: 0.6
-            )
-            .rotation3DEffect(
-                .degrees(reduceMotion ? 0 : pointer.width * 7), axis: (x: 0, y: 1, z: 0), perspective: 0.6
-            )
-            .contentShape(Rectangle())
-            .onContinuousHover { phase in
-                switch phase {
-                case .active(let location):
-                    pointer = CGSize(
-                        width: min(max((location.x / geometry.size.width - 0.5) * 2, -1), 1),
-                        height: min(max((location.y / geometry.size.height - 0.5) * 2, -1), 1))
-                case .ended:
-                    pointer = .zero
-                }
-            }
-        }
-        .animation(.smooth(duration: 0.4), value: pointer)
-        .animation(reduceMotion ? .easeOut(duration: 0.1) : .easeOut(duration: 0.3), value: model.step)
-        .onChange(of: model.permission.isTrusted) { _, allowed in
-            if allowed && !AgentMode.isOn { NSSound(named: "Glass")?.play() }
-        }
-        .accessibilityHidden(true)
-    }
-
-    @ViewBuilder
-    private var interior: some View {
-        switch model.step {
-        case .welcome: CompactDemo()
-        case .permission: PermissionInterior(allowed: model.permission.isTrusted)
-        case .tryIt: TryItInterior(model: model)
-        case .done: DoneInterior(combo: model.hotKey)
-        }
-    }
-}
-
-/// The ring and its pearl. The arc is mint with a soft glow and a slow specular sheen that follows the pointer; the pearl
-/// rides the tip of the arc and, when the ring is finished, settles into the gap like the logo.
-private struct RingView: View {
-    let progress: Double
-    let settled: Bool
-    let waiting: Bool
-    let pointer: CGSize
-
-    @Environment(\.aproposReduceMotion) private var reduceMotion
-
-    private var size: CGFloat { Stage.ringSize }
-    private var radius: CGFloat { (Stage.ringSize - Stage.lineWidth) / 2 }
-    private var startAngle: Double { -12 }
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
-            let t = reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate
-            let sheen = Angle.degrees(t * 22 + pointer.width * 50 - pointer.height * 50)
-            let bob = reduceMotion ? 0 : CGFloat(sin(t * 2.2)) * 2.5
-            ZStack {
-                Circle()
-                    .stroke(Brand.line, lineWidth: Stage.lineWidth)
-                arc(Brand.mint)
-                    .blur(radius: 16)
-                    .opacity(settled ? 0.55 : 0.4)
-                arc(Brand.mint)
-                .shadow(color: .black.opacity(0.35), radius: 9, y: 7)
-                arc(LinearGradient(colors: [.white.opacity(0.16), .clear], startPoint: .top, endPoint: .center))
-                arc(
-                    AngularGradient(
-                        stops: [
-                            .init(color: .clear, location: 0), .init(color: .clear, location: 0.38),
-                            .init(color: .white.opacity(0.42), location: 0.5), .init(color: .clear, location: 0.62),
-                            .init(color: .clear, location: 1),
-                        ], center: .center, angle: sheen)
-                )
-                .blendMode(.plusLighter)
-                pearl(bob: bob)
-            }
-            .frame(width: size, height: size)
-        }
-    }
-
-    private func arc<S: ShapeStyle>(_ style: S) -> some View {
-        Circle()
-            .trim(from: 0, to: progress)
-            .stroke(style, style: StrokeStyle(lineWidth: Stage.lineWidth, lineCap: .round))
-            .rotationEffect(.degrees(startAngle))
-            .animation(.spring(response: 1.0, dampingFraction: 0.82), value: progress)
-    }
-
-    private func pearl(bob: CGFloat) -> some View {
-        let angle = settled ? 320.0 : startAngle + progress * 360
-        return ZStack {
-            PearlView(size: 26, pulsing: waiting)
-                .offset(x: radius + bob)
-        }
-        .frame(width: size, height: size)
-        .rotationEffect(.degrees(angle))
-        .animation(.spring(response: 1.0, dampingFraction: 0.78), value: angle)
-    }
-}
-
-// MARK: Interiors
-
-/// A live picture of the idea inside the ring: the same panel offers different things in different apps.
-private struct CompactDemo: View {
-    private struct Scene {
-        let caption: String
-        let rows: [(symbol: String, title: String)]
-    }
-
-    private let scenes: [Scene] = [
-        Scene(
-            caption: "In Finder, 3 selected",
-            rows: [("folder.badge.plus", "New folder"), ("doc.on.doc", "Copy path"), ("doc.zipper", "Compress 3 items")]),
-        Scene(
-            caption: "In Safari, on linear.app",
-            rows: [("link", "Copy as Markdown link"), ("paperplane", "Send page to Notes"), ("xmark", "Close other tabs")]),
-        Scene(
-            caption: "In Xcode, on feat/panel",
-            rows: [("play", "Build and run"), ("testtube.2", "Run tests"), ("arrow.triangle.branch", "Copy branch name")]),
-    ]
-
-    @State private var index = 0
-    @Environment(\.aproposReduceMotion) private var reduceMotion
-
-    var body: some View {
-        let scene = scenes[index]
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 6) {
-                Image(systemName: "scope").font(.system(size: 10, weight: .medium))
-                Text(scene.caption).font(.system(size: 11.5))
-            }
-            .foregroundStyle(Brand.text3)
-            .padding(.horizontal, 12)
-            .padding(.bottom, 7)
-            ForEach(Array(scene.rows.enumerated()), id: \.offset) { offset, row in
-                HStack(spacing: 9) {
-                    Image(systemName: row.symbol)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Brand.text2)
-                        .frame(width: 16)
-                    Text(row.title).font(.system(size: 12.5)).foregroundStyle(Brand.text)
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 12)
-                .frame(height: 30)
-                .background(Capsule().fill(offset == 0 ? Brand.raised : .clear))
-            }
-        }
-        .frame(width: 214)
-        .id(index)
-        .transition(.opacity)
-        .task {
-            guard !reduceMotion else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(3.2))
-                withAnimation(.easeOut(duration: 0.24)) { index = (index + 1) % scenes.count }
-            }
-        }
-    }
-}
-
-/// The Accessibility row of System Settings, with its switch. It turns on by itself the moment access is granted.
-private struct PermissionInterior: View {
-    let allowed: Bool
-
-    var body: some View {
-        VStack(spacing: 14) {
-            Text("Privacy and Security, Accessibility")
-                .font(.system(size: 11.5))
-                .foregroundStyle(Brand.text3)
-            HStack(spacing: 10) {
-                icon
-                Text("Apropos").font(.system(size: 14, weight: .medium)).foregroundStyle(Brand.text)
-                Spacer(minLength: 8)
-                Capsule()
-                    .fill(allowed ? Brand.mint : Brand.text3.opacity(0.4))
-                    .frame(width: 38, height: 22)
-                    .overlay(alignment: allowed ? .trailing : .leading) {
-                        Circle().fill(allowed ? Brand.mintInk : Brand.text).frame(width: 18, height: 18).padding(2)
-                    }
-                    .animation(.spring(response: 0.4, dampingFraction: 0.7), value: allowed)
-            }
-            .padding(.horizontal, 14)
-            .frame(width: 220, height: 50)
-            .background(Capsule().fill(Brand.raised))
-        }
-    }
-
-    @ViewBuilder
-    private var icon: some View {
-        if let image = Brand.image("BrandIcon", file: "app-icon.png") {
-            Image(nsImage: image).resizable().interpolation(.high).frame(width: 28, height: 28)
-        } else {
-            RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Brand.pearl).frame(width: 28, height: 28)
-        }
-    }
-}
-
-/// The app in front, live, and the keys to press. It follows whichever app you switch to.
-private struct TryItInterior: View {
-    let model: OnboardingModel
-
-    @State private var front = FrontApp()
-
-    var body: some View {
-        VStack(spacing: 18) {
-            VStack(spacing: 8) {
-                if front.icon != nil {
-                    AppIconImage(icon: front.icon, size: 52)
-                } else {
-                    Image(systemName: "macwindow")
-                        .font(.system(size: 34, weight: .light))
-                        .foregroundStyle(Brand.text3)
-                        .frame(width: 52, height: 52)
-                }
-                Text(front.name ?? "Switch to any app")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(front.name == nil ? Brand.text3 : Brand.text)
-            }
-            if model.panelOpened {
-                Label("Opened", systemImage: "checkmark.circle.fill")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Brand.mint)
-                    .frame(height: 44)
-            } else {
-                PressingCaps(combo: model.hotKey)
-            }
-        }
-        .animation(.easeOut(duration: 0.2), value: front.name)
-        .animation(.easeOut(duration: 0.2), value: model.panelOpened)
-    }
-}
-
-/// The shortcut as keys that press down in turn, to show what to do.
-private struct PressingCaps: View {
-    let combo: HotKeyCombo
-
-    @Environment(\.aproposReduceMotion) private var reduceMotion
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
-            let t = reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2.2)
-            HStack(spacing: 7) {
-                ForEach(Array(combo.caps.enumerated()), id: \.offset) { index, cap in
-                    let pressed = t > 0.2 && t < 0.2 + 0.7 && (index == 0 || t > 0.2 + 0.18 * Double(index))
-                    Text(cap)
-                        .font(.system(size: 16, weight: .medium, design: .monospaced))
-                        .foregroundStyle(Brand.text)
-                        .frame(minWidth: 46, minHeight: 46)
-                        .padding(.horizontal, cap.count > 1 ? 12 : 0)
-                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Brand.raised))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Brand.line, lineWidth: 1)
-                        )
-                        .offset(y: pressed ? 3 : 0)
-                        .shadow(color: .black.opacity(pressed ? 0.05 : 0.22), radius: 0, y: pressed ? 0 : 3)
-                }
-            }
-        }
-    }
-}
-
-/// The finished ring holds the one thing to remember: the shortcut.
-private struct DoneInterior: View {
-    let combo: HotKeyCombo
-
-    var body: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 7) {
-                ForEach(Array(combo.caps.enumerated()), id: \.offset) { _, cap in
-                    Text(cap)
-                        .font(.system(size: 18, weight: .medium, design: .monospaced))
-                        .foregroundStyle(Brand.text)
-                        .frame(minWidth: 52, minHeight: 52)
-                        .padding(.horizontal, cap.count > 1 ? 14 : 0)
-                        .background(RoundedRectangle(cornerRadius: 13, style: .continuous).fill(Brand.raised))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Brand.line, lineWidth: 1)
-                        )
-                        .shadow(color: .black.opacity(0.22), radius: 0, y: 3)
-                }
-            }
-            Text("From any app")
-                .font(.system(size: 12.5))
-                .foregroundStyle(Brand.text3)
-        }
-    }
-}
-
-/// Tracks the app in front, ignoring Apropos itself, so the Try it step can show the app the person switched to.
-@MainActor
-@Observable
-private final class FrontApp {
-    private(set) var name: String?
-    private(set) var icon: NSImage?
-
-    @ObservationIgnored nonisolated(unsafe) private var observer: NSObjectProtocol?
-
-    init() {
-        observer = NSWorkspace.shared.notificationCenter.addObserver(
-            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
-        ) { [weak self] note in
-            let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-            MainActor.assumeIsolated { self?.adopt(app) }
-        }
-    }
-
-    deinit {
-        if let observer { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
-    }
-
-    private func adopt(_ app: NSRunningApplication?) {
-        guard let app, app.bundleIdentifier != Bundle.main.bundleIdentifier, app.activationPolicy == .regular else {
-            return
-        }
-        name = app.localizedName
-        icon = app.icon
-    }
-}
-
 // MARK: Pieces
 
 private struct HotKeyCaps: View {
@@ -698,7 +345,8 @@ private struct HotKeyCaps: View {
                     .frame(minWidth: 22, minHeight: 22)
                     .padding(.horizontal, cap.count > 1 ? 6 : 0)
                     .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Brand.raised))
-                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(Brand.line, lineWidth: 1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(Brand.line, lineWidth: 1))
             }
         }
     }
