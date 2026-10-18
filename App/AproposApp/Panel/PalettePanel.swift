@@ -4,6 +4,8 @@ import AppKit
 enum PaletteKey {
     case close
     case run
+    /// Command-Return: run the first Usually next row, whatever is highlighted.
+    case runPrediction
     case move(Int)
     case first
     case last
@@ -54,6 +56,7 @@ final class PalettePanel: NSPanel {
         let onlyControl = flags == .control
         switch event.keyCode {
         case 53 where flags.isEmpty: return .close
+        case 36 where flags == .command, 76 where flags == .command: return .runPrediction
         case 36,
             76 where flags.isEmpty:
             return .run

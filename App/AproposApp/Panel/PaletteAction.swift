@@ -5,6 +5,7 @@ import Apropos
 struct PaletteAction: Identifiable {
     enum Kind: Equatable {
         case run
+        case notNow
         case runAlternate(Int)
         case pin(Bool)
         case hide
@@ -20,9 +21,14 @@ struct PaletteAction: Identifiable {
     var id: String { "\(kind)-\(title)" }
 
     /// The actions available for a command, in display order.
-    static func available(for command: Command?, appName: String?, isPinned: Bool) -> [PaletteAction] {
+    static func available(
+        for command: Command?, appName: String?, isPinned: Bool, isPredicted: Bool = false
+    ) -> [PaletteAction] {
         guard let command else { return [] }
         var list = [PaletteAction(kind: .run, title: "Run", symbol: "play", keys: ["↩"])]
+        if isPredicted {
+            list.append(PaletteAction(kind: .notNow, title: "Not now", symbol: "moon.zzz", keys: []))
+        }
         for (index, alternate) in command.alternates.enumerated() {
             list.append(
                 PaletteAction(

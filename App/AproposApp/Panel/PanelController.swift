@@ -31,6 +31,8 @@ final class PanelController: NSObject {
         self.context = context
         self.openSettings = openSettings
         super.init()
+        usage.contextKinds = { [weak context] in context?.senseKinds ?? [] }
+        context.onKindsChange = { [weak model] in model?.refreshPredictions() }
 
         let root = PaletteView(
             model: model, state: state, context: context, usage: usage, permission: permission,
@@ -135,6 +137,9 @@ final class PanelController: NSObject {
         switch key {
         case .close: hide()
         case .run: runSelected()
+        case .runPrediction:
+            guard let command = model.topPrediction else { return false }
+            run(command)
         case .actions: toggleActions()
         case .settings: actionsOpenSettings()
         case .move(let delta): model.moveSelection(by: delta)
@@ -157,6 +162,7 @@ final class PanelController: NSObject {
         case .last: state.actionIndex = max(items.count - 1, 0)
         case .run:
             if items.indices.contains(state.actionIndex) { perform(items[state.actionIndex]) }
+        case .runPrediction: break
         }
         return true
     }
@@ -164,7 +170,8 @@ final class PanelController: NSObject {
     private var availableActions: [PaletteAction] {
         PaletteAction.available(
             for: model.selected?.command, appName: model.targetApp?.name,
-            isPinned: model.selected.map { usage.isPinned($0.command) } ?? false)
+            isPinned: model.selected.map { usage.isPinned($0.command) } ?? false,
+            isPredicted: model.selected.map { model.isPredicted(rowID: $0.id) } ?? false)
     }
 
     private func actionsOpenSettings() {
@@ -203,6 +210,9 @@ final class PanelController: NSObject {
                     id: command.id, title: alternate.title, path: command.path, shortcut: alternate.shortcut,
                     isEnabled: alternate.isEnabled, isChecked: false, source: command.source, target: alternate.target,
                     stableID: alternate.stableID))
+        case .notNow:
+            usage.dismissPrediction(command)
+            closeActions(animated: true)
         case .pin(let pinned):
             usage.setPinned(pinned, for: command)
             hide()
