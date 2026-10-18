@@ -53,7 +53,8 @@ final class PanelController: NSObject {
                 openGuide: { [weak self] in
                     self?.hide(immediately: true)
                     openGuide()
-                }))
+                },
+                back: { [weak self] in _ = self?.model.goBack() }))
         let hosting = NSHostingView(rootView: root)
         hosting.sizingOptions = []
         hosting.frame = NSRect(origin: .zero, size: PanelPlacement.size)
@@ -121,6 +122,7 @@ final class PanelController: NSObject {
             if let query = env["APROPOS_PREVIEW_QUERY"] { model.query = query }
             if let move = env["APROPOS_PREVIEW_MOVE"].flatMap(Int.init) { model.moveSelection(by: move) }
             if env["APROPOS_PREVIEW_ACTIONS"] != nil { toggleActions() }
+            if let scene = env["APROPOS_PREVIEW_SEND"] { DebugFixtures.applySend(scene, model: model) }
         }
     #endif
 

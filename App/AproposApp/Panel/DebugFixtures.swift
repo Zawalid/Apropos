@@ -14,7 +14,8 @@
             case "xcode": (bundle, title) = ("com.apple.dt.Xcode", "Xcode")
             default: (bundle, title) = ("com.apple.finder", "Finder")
             }
-            let pid = NSRunningApplication.runningApplications(withBundleIdentifier: bundle).first?.processIdentifier ?? 0
+            let pid =
+                NSRunningApplication.runningApplications(withBundleIdentifier: bundle).first?.processIdentifier ?? 0
             return TargetApp(pid: pid, bundleID: bundle, name: title)
         }
 
@@ -87,6 +88,69 @@
             }
         }
 
+        // MARK: Send to
+
+        /// Context for the send-to scenes: a browser with a selection and a page, or Finder with some files.
+        static func sendValues(bundleID: String?) -> ContextValues {
+            if bundleID == "com.apple.finder" {
+                return ContextValues(
+                    selectedFiles: [
+                        URL(fileURLWithPath: "/Users/me/Documents/Taxes 2025.pdf"),
+                        URL(fileURLWithPath: "/Users/me/Documents/Receipts.zip"),
+                    ], folderURL: URL(fileURLWithPath: "/Users/me/Documents"))
+            }
+            return ContextValues(
+                selectedText: "Quarterly numbers look good, but the margin on the hardware line dropped two points. "
+                    + "Worth a look before Friday.",
+                pageURL: URL(string: "https://developer.apple.com/documentation/swiftui"),
+                pageTitle: "SwiftUI | Apple Developer Documentation")
+        }
+
+        /// Teaches the usage store two habits for text, so direct "Send selection to Notes" rows show.
+        @MainActor
+        static func seedSendUsage(_ store: UsageStore) {
+            for _ in 0..<6 { store.recordRun(id: CommandID(rawValue: "send:text>dest:notes")) }
+            for _ in 0..<3 { store.recordRun(id: CommandID(rawValue: "send:text>dest:mail")) }
+        }
+
+        /// What an agent screenshot of the send-to flow needs from the running app.
+        @MainActor
+        struct SendHooks {
+            let send: SendToCenter
+            let actions: ContextActionCenter
+            let usage: UsageController
+        }
+
+        @MainActor static var sendHooks: SendHooks?
+
+        /// Puts the palette into one state of the send-to flow: `rows` (generic and recent rows in the list), `list` (the
+        /// destination list), `confirm` (the Mail preview waiting for Return) or `error` (a failed send).
+        @MainActor
+        static func applySend(_ scene: String, model: PaletteModel) {
+            guard let hooks = sendHooks, let app = model.targetApp else { return }
+            // Dated ahead, so a real snapshot that lands later (empty, since nothing is sensed here) cannot replace it.
+            let snapshot = ContextSnapshot(
+                appName: app.name, bundleID: app.bundleID, pid: app.pid, capturedAt: Date().addingTimeInterval(3600),
+                values: sendValues(bundleID: app.bundleID))
+            hooks.actions.update(with: snapshot)
+            hooks.send.update(with: snapshot)
+            seedSendUsage(hooks.usage.store)
+            hooks.send.refresh()
+            guard scene != "rows" else { return }
+            Task {
+                guard
+                    let generic = model.results.first(where: {
+                        $0.command.id.hasPrefix("send:") && $0.command.title.hasSuffix("to...")
+                    })
+                else { return }
+                _ = await model.run(generic.command)
+                let wanted = scene == "confirm" ? "Mail draft" : (scene == "error" ? "Notes" : nil)
+                if let wanted, let row = model.results.first(where: { $0.command.title == wanted }) {
+                    _ = await model.run(row.command)
+                }
+            }
+        }
+
         /// Makes the first few fixture commands habits (and pins the fourth) so Suggested and Pinned have something to show.
         @MainActor
         static func seedUsage(_ usage: UsageController, commands: [Command]) {
@@ -110,7 +174,8 @@
             for index in 0..<20 {
                 let at = now.addingTimeInterval(-Double(index + 1) * 5_400)
                 usage.prediction.recordRun(first, title: enabled[5].displayTitle, app: app, at: at)
-                usage.prediction.recordRun(second, title: enabled[6].displayTitle, app: app, at: at.addingTimeInterval(20))
+                usage.prediction.recordRun(
+                    second, title: enabled[6].displayTitle, app: app, at: at.addingTimeInterval(20))
             }
             usage.prediction.recordRun(first, title: enabled[5].displayTitle, app: app, at: now.addingTimeInterval(-6))
             usage.refreshRanker()

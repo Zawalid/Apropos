@@ -80,9 +80,18 @@
         static let paletteActions = palette("palette-actions", PaletteOptions(actionsOpen: true))
         static let paletteChips = palette("palette-chips", PaletteOptions(chips: true))
         static let paletteUsuallyNext = palette("palette-usually-next", PaletteOptions(predicted: 2))
-        static let paletteUsuallyNextOne = palette("palette-usually-next-one", PaletteOptions(app: "safari", predicted: 1))
+        static let paletteUsuallyNextOne = palette(
+            "palette-usually-next-one", PaletteOptions(app: "safari", predicted: 1))
         static let paletteUsuallyNextFresh = palette(
             "palette-usually-next-fresh", PaletteOptions(learned: false, predicted: 2))
+
+        // Send to
+
+        static let paletteSendRows = palette("palette-send-rows", PaletteOptions(app: "safari", send: .rows))
+        static let paletteSendList = palette("palette-send-list", PaletteOptions(app: "safari", send: .list))
+        static let paletteSendConfirm = palette("palette-send-confirm", PaletteOptions(app: "safari", send: .confirm))
+        static let paletteSendFailed = palette("palette-send-failed", PaletteOptions(app: "safari", send: .failure))
+        static let paletteSendFiles = palette("palette-send-files", PaletteOptions(app: "finder", send: .list))
 
         // Palette appearance settings
 
@@ -127,8 +136,10 @@
         /// Every scene, in the order the renderer writes them.
         static let all: [PreviewScene] = [
             paletteFinder, paletteSafari, paletteXcode, paletteFresh, paletteMatches, paletteNoResults, paletteLoading,
-            palettePermission, paletteReadFailed, paletteRunFailed, paletteActions, paletteChips, paletteUsuallyNext, paletteUsuallyNextOne,
-            paletteUsuallyNextFresh, paletteCompact,
+            palettePermission, paletteReadFailed, paletteRunFailed, paletteActions, paletteChips, paletteUsuallyNext,
+            paletteUsuallyNextOne,
+            paletteUsuallyNextFresh, paletteSendRows, paletteSendList, paletteSendConfirm, paletteSendFailed,
+            paletteSendFiles, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,
             settingsGeneral, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
             settingsUpdates, settingsAbout, settingsSearch, onboardingWelcome, onboardingPermission,
@@ -176,6 +187,14 @@
     #Preview("Palette, Usually next") { PairedPreview(PreviewCatalog.paletteUsuallyNext) }
     #Preview("Palette, Usually next, one row") { PairedPreview(PreviewCatalog.paletteUsuallyNextOne) }
     #Preview("Palette, Usually next, no history") { PairedPreview(PreviewCatalog.paletteUsuallyNextFresh) }
+
+    // MARK: Send to
+
+    #Preview("Palette, send to rows") { PairedPreview(PreviewCatalog.paletteSendRows) }
+    #Preview("Palette, send to list") { PairedPreview(PreviewCatalog.paletteSendList) }
+    #Preview("Palette, send to, confirm") { PairedPreview(PreviewCatalog.paletteSendConfirm) }
+    #Preview("Palette, send to, failed") { PairedPreview(PreviewCatalog.paletteSendFailed) }
+    #Preview("Palette, send files") { PairedPreview(PreviewCatalog.paletteSendFiles) }
 
     // MARK: Interface size and row icons
 

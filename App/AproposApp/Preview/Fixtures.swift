@@ -68,6 +68,18 @@
         case failed(String)
     }
 
+    /// Which state of the send-to flow a palette scene shows.
+    enum SendScene {
+        /// The list with the generic row and the most used destinations beside the context actions.
+        case rows
+        /// The destination list.
+        case list
+        /// The Mail draft preview waiting for its Return.
+        case confirm
+        /// A send that failed.
+        case failure
+    }
+
     /// One palette scene. Every field has the value of an ordinary first look at Finder.
     struct PaletteOptions {
         var app = "finder"
@@ -83,6 +95,8 @@
         var predicted = 0
         /// Runs the selected command against a runner that fails, so the footer shows the failure note.
         var failedRun = false
+        /// Shows a state of the send-to flow, over a browser (or Finder, for files) with a selection.
+        var send: SendScene?
     }
 
     /// The models behind one palette preview, wired the way `PanelController` wires them but over scratch stores.
@@ -95,6 +109,8 @@
         let permission = AccessibilityPermission(probe: { false })
         let settings: SettingsModel
         let options: PaletteOptions
+        let send: SendToCenter
+        let contextActions: ContextActionCenter
 
         init(_ options: PaletteOptions) {
             self.options = options
@@ -136,6 +152,25 @@
                 }
                 model.setPredictor { _ in rows }
             }
+            // Send to: fake services, so nothing is ever created in a real app, and a snapshot of sample context.
+            send = SendToCenter(
+                library: .bundled(), services: AppSendServices.fake(failing: options.send == .failure),
+                folders: SendFolderStore(
+                    url: FileManager.default.temporaryDirectory.appendingPathComponent(
+                        "apropos-preview-folders-\(UUID().uuidString).json")))
+            let store = usage.store
+            send.frecency = { store.frecency($0) }
+            model.attachSend(send)
+            contextActions = ContextActionCenter()
+            contextActions.attach(to: model)
+            if options.send != nil {
+                DebugFixtures.seedSendUsage(store)
+                let snapshot = ContextSnapshot(
+                    appName: target.name, bundleID: target.bundleID, pid: target.pid, capturedAt: Date(),
+                    values: DebugFixtures.sendValues(bundleID: target.bundleID))
+                contextActions.update(with: snapshot)
+                send.update(with: snapshot)
+            }
             model.query = options.query
             state.actionsOpen = options.actionsOpen
             if options.failedRun {
@@ -145,13 +180,24 @@
 
         /// Work that needs the run loop: the failed run that fills the footer's note.
         func settle() async {
+            if let scene = options.send, scene != .rows {
+                let generic = model.results.first {
+                    $0.command.id.hasPrefix("send:") && $0.command.title.hasSuffix("to...")
+                }
+                if let generic { _ = await model.run(generic.command) }
+                let wanted = scene == .confirm ? "Mail draft" : (scene == .failure ? "Notes" : nil)
+                if let wanted, let row = model.results.first(where: { $0.command.title == wanted }) {
+                    _ = await model.run(row.command)
+                }
+            }
             guard options.failedRun, let command = model.selected?.command else { return }
             _ = await model.run(command)
         }
 
         var actions: PaletteActions {
             PaletteActions(
-                run: {}, runCommand: { _ in }, perform: { _ in }, toggleActions: {}, openSettings: {}, retry: {})
+                run: {}, runCommand: { _ in }, perform: { _ in }, toggleActions: {}, openSettings: {}, retry: {},
+                back: { [model] in _ = model.goBack() })
         }
 
         static func chipItems(for app: String) -> [ContextItem] {

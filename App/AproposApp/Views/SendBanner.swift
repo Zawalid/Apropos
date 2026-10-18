@@ -34,8 +34,8 @@ struct SendBanner: View {
     var body: some View {
         if let pending = model.sendPending {
             Banner(
-                symbol: "paperplane", tint: Theme.text2, title: "Send to \(pending.destinationTitle)?",
-                detail: pending.line, keys: [("\u{21A9}", "Send"), ("esc", "Cancel")])
+                symbol: "paperplane", tint: Theme.text2, title: pending.heading, detail: pending.detail,
+                keys: [("\u{21A9}", "Send"), ("esc", "Cancel")])
         } else if let failure = model.sendFailure {
             Banner(
                 symbol: "exclamationmark.triangle.fill", tint: Theme.cautionText, title: failure,

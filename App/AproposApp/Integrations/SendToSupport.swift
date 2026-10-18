@@ -70,17 +70,21 @@ enum AppSendServices {
     }
 
     #if DEBUG
-        /// Agent mode must never create a note, open a draft or copy a file in the person's apps. Every app counts as
-        /// installed, nothing runs, links are not opened, and APROPOS_FIXTURE_SEND_FAIL=1 makes sending fail so the
-        /// error state can be looked at.
-        static func agent() -> SendServices {
-            let fail = ProcessInfo.processInfo.environment["APROPOS_FIXTURE_SEND_FAIL"] != nil
+        /// Services that touch nothing: every app counts as installed, no process runs, no link opens and the Share
+        /// menu is not shown. With `failing` they report failure so the error state can be looked at. Used by previews
+        /// and agent mode, which must never create a note, open a draft or copy a file in the person's apps.
+        static func fake(failing: Bool = false) -> SendServices {
             var actions = ActionServices.live
             actions.process = { _ in
-                ProcessOutput(status: fail ? 1 : 0, standardOutput: Data(), standardErrorByteCount: 0)
+                ProcessOutput(status: failing ? 1 : 0, standardOutput: Data(), standardErrorByteCount: 0)
             }
-            actions.openURL = { _ in !fail }
+            actions.openURL = { _ in !failing }
             return SendServices(isInstalled: { _ in true }, share: { _ in .shared }, actions: actions)
+        }
+
+        /// Agent mode: APROPOS_FIXTURE_SEND_FAIL=1 makes sending fail.
+        static func agent() -> SendServices {
+            fake(failing: ProcessInfo.processInfo.environment["APROPOS_FIXTURE_SEND_FAIL"] != nil)
         }
     #endif
 }

@@ -116,6 +116,11 @@ final class AppController {
         }
         self.actions = actions
         self.context = ContextModel(settings: settings, service: service)
+        #if DEBUG
+            if AgentMode.isOn {
+                DebugFixtures.sendHooks = DebugFixtures.SendHooks(send: send, actions: actions, usage: usage)
+            }
+        #endif
     }
 
     func start() {
