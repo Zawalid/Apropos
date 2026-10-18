@@ -1,4 +1,5 @@
 import AppKit
+import Apropos
 import SwiftUI
 
 /// The brand system for the surfaces around the palette: onboarding, Settings, the menu bar and empty states. It follows
@@ -21,18 +22,19 @@ enum Brand {
     }
 
     // MARK: Surfaces
+    // Neutral, like the system's own windows. The brand colour lives in the accent and the app icon, not in the grays.
 
-    static let window = adaptive(light: rgb(0xF2F5F4), dark: rgb(0x0B1418))
-    static let rail = adaptive(light: rgb(0xE8EEEC), dark: rgb(0x111D22))
-    static let raised = adaptive(light: rgb(0xDDE6E3), dark: rgb(0x182A31))
-    static let section = adaptive(light: rgb(0xFFFFFF, 0.72), dark: rgb(0x111D22))
-    static let line = adaptive(light: rgb(0x0A181C, 0.10), dark: rgb(0xFFFFFF, 0.08))
+    static let window = adaptive(light: rgb(0xF2F2F5), dark: rgb(0x1C1C1E))
+    static let rail = adaptive(light: rgb(0xFFFFFF, 0.55), dark: rgb(0xFFFFFF, 0.05))
+    static let raised = adaptive(light: rgb(0x000000, 0.06), dark: rgb(0xFFFFFF, 0.09))
+    static let section = adaptive(light: rgb(0xFFFFFF, 0.62), dark: rgb(0xFFFFFF, 0.065))
+    static let line = adaptive(light: rgb(0x000000, 0.08), dark: rgb(0xFFFFFF, 0.075))
 
     // MARK: Text
 
-    static let text = adaptive(light: rgb(0x0E1A1D), dark: rgb(0xEAF3F1))
-    static let text2 = adaptive(light: rgb(0x0E1A1D, 0.66), dark: rgb(0xEAF3F1, 0.64))
-    static let text3 = adaptive(light: rgb(0x0E1A1D, 0.52), dark: rgb(0xEAF3F1, 0.46))
+    static let text = adaptive(light: rgb(0x1D1D1F), dark: rgb(0xF5F5F7))
+    static let text2 = adaptive(light: rgb(0x1D1D1F, 0.64), dark: rgb(0xF5F5F7, 0.62))
+    static let text3 = adaptive(light: rgb(0x1D1D1F, 0.48), dark: rgb(0xF5F5F7, 0.42))
 
     // MARK: Accent
 
@@ -46,9 +48,10 @@ enum Brand {
 
     // MARK: Shape
 
-    static let controlRadius: CGFloat = 8
-    static let sectionRadius: CGFloat = 12
-    static let windowRadius: CGFloat = 14
+    static let controlRadius: CGFloat = 12
+    static let sectionRadius: CGFloat = 18
+    static let panelRadius: CGFloat = 26
+    static let windowRadius: CGFloat = 26
 
     // MARK: Images
 
@@ -198,5 +201,47 @@ struct BrandGlyph: View {
         }
         .aspectRatio(1, contentMode: .fit)
         .accessibilityHidden(true)
+    }
+}
+
+// MARK: Materials
+
+/// A frosted backdrop for a whole window: the desktop shows through, softened. The renderer, which has no desktop, shows
+/// the tint alone.
+struct WindowBackdrop: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .hudWindow
+        view.blendingMode = .behindWindow
+        view.state = .active
+        return view
+    }
+
+    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
+}
+
+extension View {
+    /// A floating glass panel in `shape`: Liquid Glass where the system has it, a blurred material before that.
+    @ViewBuilder
+    func brandGlass<S: InsettableShape>(in shape: S) -> some View {
+        if #available(macOS 26, *) {
+            self.glassEffect(.regular, in: shape)
+        } else {
+            self.background(.regularMaterial, in: shape)
+        }
+    }
+}
+
+/// The colour of a page's tile in the sidebar, in the manner of System Settings: a flat squircle with a white symbol.
+enum TileColor {
+    static func color(for page: SettingPage) -> Color {
+        switch page {
+        case .general: Color(red: 0.55, green: 0.56, blue: 0.60)
+        case .appearance: Color(red: 0.20, green: 0.52, blue: 0.98)
+        case .context: Color(red: 0.12, green: 0.72, blue: 0.62)
+        case .privacyAndData: Color(red: 0.36, green: 0.42, blue: 0.95)
+        case .updates: Color(red: 0.97, green: 0.55, blue: 0.20)
+        case .about: Color(red: 0.55, green: 0.56, blue: 0.60)
+        }
     }
 }

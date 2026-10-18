@@ -168,14 +168,14 @@ struct SettingsRow<Trailing: View>: View {
             }
             trailing
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .frame(minHeight: 44)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 9)
+        .frame(minHeight: 48)
         .overlay(alignment: .leading) {
             if modified { Circle().fill(Brand.mint).frame(width: 4, height: 4).padding(.leading, 5) }
         }
         .overlay(alignment: .bottom) {
-            Rectangle().fill(Brand.line).frame(height: 1)
+            Rectangle().fill(Brand.line).frame(height: 1).padding(.leading, 16)
         }
         .onHover { hovering = $0 }
         .accessibilityElement(children: .combine)
@@ -200,35 +200,17 @@ struct SettingToggleRow: View {
     }
 }
 
-/// A switch that reads the same whether or not its window is key: accent track when on, quiet track when off.
+/// The system switch, tinted with the accent. Native, so it behaves and looks like every other Mac switch.
 struct AproposToggle: View {
     let title: String
     @Binding var isOn: Bool
 
-    @Environment(\.aproposReduceMotion) private var reduceMotion
-
     var body: some View {
-        Button {
-            withAnimation(reduceMotion ? nil : Motion.selection) { isOn.toggle() }
-        } label: {
-            Capsule()
-                .fill(isOn ? Brand.mint : Brand.text3.opacity(0.4))
-                .frame(width: 38, height: 22)
-                .overlay(alignment: isOn ? .trailing : .leading) {
-                    Circle()
-                        .fill(isOn ? Brand.mintInk : Color.white)
-                        .frame(width: 18, height: 18)
-                        .shadow(color: .black.opacity(0.3), radius: 1.5, y: 1)
-                        .padding(2)
-                }
-                .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .focusable()
-        .aproposFocusRing(Capsule())
-        .accessibilityLabel(title)
-        .accessibilityValue(isOn ? "On" : "Off")
-        .accessibilityAddTraits(.isToggle)
+        Toggle(title, isOn: $isOn)
+            .toggleStyle(.switch)
+            .labelsHidden()
+            .tint(Brand.mint)
+            .accessibilityLabel(title)
     }
 }
 
@@ -265,8 +247,7 @@ struct ValueMenu<Value: Hashable>: View {
             .padding(.trailing, 8)
             .frame(height: 28)
             .background(
-                RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous)
-                    .fill(hovering ? Brand.raised : Brand.raised.opacity(0.7))
+                Capsule().fill(hovering ? Brand.raised : Brand.raised.opacity(0.8))
             )
             .contentShape(Rectangle())
         }
@@ -291,12 +272,11 @@ struct SecondaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 13)
             .frame(height: 28)
             .background(
-                RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous)
-                    .fill(hovering || configuration.isPressed ? Brand.raised : Brand.raised.opacity(0.7))
+                Capsule().fill(hovering || configuration.isPressed ? Brand.raised : Brand.raised.opacity(0.8))
             )
             .contentShape(Rectangle())
             .onHover { hovering = $0 }
-            .aproposFocusRing(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .aproposFocusRing(Capsule())
     }
 }
 
@@ -337,17 +317,17 @@ struct FlowLayout: Layout {
     }
 }
 
-/// The glyph of a page: a plain, monochrome SF Symbol. No tile, no colour.
+/// The glyph of a page: a plain symbol in the text colour, brand mint when its page is current. No tile, no colour coding.
 struct PageTile: View {
     let page: SettingPage
-    var size: CGFloat = 20
+    var size: CGFloat = 22
     var active = false
 
     var body: some View {
         Image(systemName: page.symbol)
-            .font(.system(size: 14, weight: .regular))
-            .symbolRenderingMode(.hierarchical)
-            .foregroundStyle(active ? Brand.text : Brand.text2)
+            .font(.system(size: 14.5, weight: .regular))
+            .symbolRenderingMode(.monochrome)
+            .foregroundStyle(active ? Brand.mint : Brand.text2)
             .frame(width: size, height: size)
             .accessibilityHidden(true)
     }

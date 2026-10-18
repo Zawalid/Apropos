@@ -19,6 +19,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller.start()
     }
 
+    func applicationDidBecomeActive(_ notification: Notification) {
+        routeSettingsShortcut()
+    }
+
+    @objc private func openSettings() { controller.showSettings() }
+
+    /// The empty Settings scene puts its own Settings item, with Command-comma, in the app menu. Point that item at the
+    /// window the controller owns. SwiftUI rebuilds the menu, so this runs whenever the app becomes active.
+    private func routeSettingsShortcut() {
+        guard let appMenu = NSApp.mainMenu?.items.first?.submenu else { return }
+        for item in appMenu.items where item.keyEquivalent == "," {
+            item.target = self
+            item.action = #selector(openSettings)
+        }
+    }
+
     func application(_ application: NSApplication, open urls: [URL]) {
         controller.handleExternal(urls)
     }

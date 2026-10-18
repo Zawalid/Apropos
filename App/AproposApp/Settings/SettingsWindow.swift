@@ -106,7 +106,7 @@ final class SettingsWindowController {
     }
 
     private func makeWindow() -> NSWindow {
-        let window = NSWindow(
+        let window = SettingsWindow(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 560),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered,
             defer: false)
@@ -114,11 +114,28 @@ final class SettingsWindowController {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
+        window.isOpaque = false
+        window.backgroundColor = .clear
         window.minSize = NSSize(width: 720, height: 480)
         window.contentView = NSHostingView(
             rootView: SettingsRoot(controller: controller, settings: controller.settings, navigation: navigation))
         window.center()
         return window
+    }
+}
+
+/// The Settings window. Its traffic lights are moved in and down so they sit inside the floating sidebar panel.
+final class SettingsWindow: NSWindow {
+    private var restingOrigins: [NSWindow.ButtonType: NSPoint] = [:]
+
+    override func layoutIfNeeded() {
+        super.layoutIfNeeded()
+        for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+            guard let button = standardWindowButton(type) else { continue }
+            let origin = restingOrigins[type] ?? button.frame.origin
+            restingOrigins[type] = origin
+            button.setFrameOrigin(NSPoint(x: origin.x + 11, y: origin.y - 13))
+        }
     }
 }
 
@@ -144,14 +161,15 @@ struct SettingsRoot: View {
     var body: some View {
         HStack(spacing: 0) {
             sidebar
-                .frame(width: 220)
+                .frame(width: 224)
                 .frame(maxHeight: .infinity)
-                .background(Brand.rail)
-                .overlay(alignment: .trailing) { Rectangle().fill(Brand.line).frame(width: 1) }
+                .brandGlass(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .padding(.leading, 10)
+                .padding(.vertical, 10)
             detail
         }
         .frame(minWidth: 720, minHeight: 480)
-        .background(Brand.window)
+        .background(WindowBackdrop().ignoresSafeArea())
         .tint(Brand.mint)
         .environment(navigation)
         .environment(settings)
@@ -167,8 +185,8 @@ struct SettingsRoot: View {
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
             searchField
-                .padding(.top, 46)
-                .padding(.bottom, 14)
+                .padding(.top, 50)
+                .padding(.bottom, 12)
             if trimmedQuery.isEmpty {
                 pageList
             } else {
@@ -177,7 +195,7 @@ struct SettingsRoot: View {
             Spacer(minLength: 0)
             sidebarFooter
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 10)
         .padding(.bottom, 14)
     }
 
@@ -204,11 +222,8 @@ struct SettingsRoot: View {
         }
         .padding(.horizontal, 10)
         .frame(height: 30)
-        .background(RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous).fill(Brand.raised))
-        .overlay(
-            RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous)
-                .strokeBorder(searchFocused ? Brand.mint.opacity(0.7) : .clear, lineWidth: 1.5)
-        )
+        .background(Capsule().fill(Brand.raised))
+        .overlay(Capsule().strokeBorder(searchFocused ? Brand.mint.opacity(0.7) : .clear, lineWidth: 1.5))
     }
 
     /// The pages in three groups, like the prototype: how it behaves, what it knows, and the rest.
@@ -230,19 +245,29 @@ struct SettingsRoot: View {
         }
     }
 
-    /// Access and the shortcut, always in view: the two things that decide whether Apropos works.
+    /// Access and the version, always in view: whether Apropos works, then which one this is.
     private var sidebarFooter: some View {
-        HStack(spacing: 8) {
-            Image(systemName: controller.permission.isTrusted ? "checkmark.circle" : "exclamationmark.circle")
-                .font(.system(size: 14))
-                .foregroundStyle(controller.permission.isTrusted ? Brand.mint : Brand.danger)
-            Text(controller.permission.isTrusted ? "Accessibility allowed" : "Needs Accessibility")
-                .font(.system(size: 12))
-                .foregroundStyle(Brand.text3)
-                .lineLimit(1)
-            Spacer(minLength: 0)
+        let trusted = controller.permission.isTrusted
+        return VStack(spacing: 10) {
+            Rectangle().fill(Brand.line).frame(height: 1)
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(trusted ? Brand.mint : Brand.danger)
+                    .frame(width: 7, height: 7)
+                Text(trusted ? "Accessibility on" : "Needs Accessibility")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(trusted ? Brand.text2 : Brand.text)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
+                    Text(version)
+                        .font(.system(size: 11.5).monospacedDigit())
+                        .foregroundStyle(Brand.text3)
+                }
+            }
+            .padding(.horizontal, 6)
         }
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 4)
     }
 
     private var hits: [SettingsHit] { SettingsCatalog.search(trimmedQuery) }
@@ -281,8 +306,7 @@ struct SettingsRoot: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
                         .background(
-                            RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous)
-                                .fill(index == highlightedHit ? Brand.raised : .clear)
+                            Capsule().fill(index == highlightedHit ? Brand.raised : .clear)
                         )
                         .contentShape(Rectangle())
                     }
@@ -368,7 +392,7 @@ struct SettingsRoot: View {
                     navigation.goForward()
                 }
             }
-            .background(Capsule().fill(Brand.raised.opacity(0.7)))
+            .background(Capsule().fill(Brand.raised))
             Spacer()
         }
         .padding(.horizontal, 30)
@@ -422,24 +446,15 @@ private struct SidebarRow: View {
                     .foregroundStyle(isSelected ? Brand.text : Brand.text2)
                 Spacer(minLength: 0)
             }
-            .padding(.leading, 22)
+            .padding(.leading, 10)
             .padding(.trailing, 10)
-            .frame(height: 34)
+            .frame(height: 36)
             .background {
                 if isSelected {
-                    RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous)
-                        .fill(Brand.raised)
+                    Capsule().fill(Brand.raised)
                         .matchedGeometryEffect(id: "selection", in: namespace)
                 } else if hovering {
-                    RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous)
-                        .fill(Brand.raised.opacity(0.5))
-                }
-            }
-            .overlay(alignment: .leading) {
-                if isSelected {
-                    PearlView(size: 6)
-                        .padding(.leading, 9)
-                        .matchedGeometryEffect(id: "pearl", in: namespace)
+                    Capsule().fill(Brand.raised.opacity(0.5))
                 }
             }
             .contentShape(Rectangle())
