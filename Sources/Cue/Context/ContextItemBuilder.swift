@@ -33,7 +33,10 @@ public enum ContextItemBuilder {
     }
 
     private static func documentLabel(_ fields: ContextFields) -> String? {
-        if let path = fields.documentPath { return (path as NSString).lastPathComponent }
+        if let path = fields.documentPath {
+            // A folder shown as the document is the folder chip, not a document.
+            return path == fields.folderPath ? nil : (path as NSString).lastPathComponent
+        }
         if fields.url != nil { return fields.tabTitle }
         // A window title that only repeats the folder name adds nothing.
         guard let title = fields.windowTitle else { return nil }
