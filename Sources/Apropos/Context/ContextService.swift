@@ -55,19 +55,35 @@ public struct ContextService: Sendable {
         if genericResult == nil || (specific != nil && specificResult == nil) { snapshot.gaps.append(.timedOut) }
 
         var fields = (specificResult ?? ContextFields()).merging(fallback: genericResult ?? ContextFields())
-        if privacy.blocksSelection(app.bundleID) { fields.selectedText = nil }
+        if privacy.blocksSelection(app.bundleID) {
+            fields.selectedText = nil
+            fields.fullSelection = nil
+        }
         fields.selectedText = ContextText.truncatedSelection(fields.selectedText)
 
-        if let path = fields.folderPath ?? fields.documentPath {
-            let lookup = git
-            let timeout = gitTimeout
-            let branch = await TimedWork.run(timeout: timeout + 0.03) {
-                lookup.branch(forFolder: path, timeout: timeout)
-            }
-            fields.gitBranch = branch ?? nil
+        // Git and the selected files are read side by side; each has its own deadline.
+        let gitPath = fields.folderPath ?? fields.documentPath
+        let lookup = git
+        let timeout = gitTimeout
+        async let gitResult = TimedWork.run(timeout: timeout * 2 + 0.03) { () -> (String?, String?) in
+            guard let gitPath else { return (nil, nil) }
+            return (
+                lookup.branch(forFolder: gitPath, timeout: timeout),
+                lookup.repoRoot(forFolder: gitPath, timeout: timeout)
+            )
         }
+        let selectedCount = fields.selectedItemCount
+        async let filesResult = TimedWork.run(timeout: specific?.filesTimeout ?? 0) {
+            specific?.readSelectedFiles(target, selectedCount: selectedCount) ?? []
+        }
+        if let (branch, root) = await gitResult {
+            fields.gitBranch = branch
+            fields.repoRoot = root
+        }
+        if let files = await filesResult, !files.isEmpty { fields.selectedFilePaths = files }
 
         snapshot.fields = fields
+        snapshot.values = ContextValues(fields: fields)
         snapshot.items = ContextItemBuilder.items(from: fields)
         snapshot.capturedAt = Date()
         let elapsed = Int(Date().timeIntervalSince(started) * 1000)

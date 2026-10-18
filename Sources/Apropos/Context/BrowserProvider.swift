@@ -24,7 +24,7 @@ public struct BrowserProvider: ContextProvider {
         fields.tabTitle = ContextText.clean(window.string(AXAttr.title))
         fields.windowTitle = fields.tabTitle
         fields.url = pageURL(in: window)
-        fields.selectedText = SelectionReader.selectedText(in: root)
+        fields.readSelection(from: root)
         return fields
     }
 

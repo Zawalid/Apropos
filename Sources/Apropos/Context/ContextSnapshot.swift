@@ -51,11 +51,18 @@ public struct ContextFields: Equatable, Sendable {
     public var selectedText: String?
     public var selectedItemCount: Int?
     public var windowCount: Int?
+    /// The whole selection for actions, up to `ContextLimits.maxValueTextLength`. `selectedText` is the short copy for
+    /// the chip.
+    public var fullSelection: String?
+    /// Absolute paths of the files selected in Finder.
+    public var selectedFilePaths: [String]?
+    public var repoRoot: String?
 
     public init(
         windowTitle: String? = nil, documentPath: String? = nil, url: String? = nil, tabTitle: String? = nil,
         folderPath: String? = nil, workspace: String? = nil, gitBranch: String? = nil, selectedText: String? = nil,
-        selectedItemCount: Int? = nil, windowCount: Int? = nil
+        selectedItemCount: Int? = nil, windowCount: Int? = nil, fullSelection: String? = nil,
+        selectedFilePaths: [String]? = nil, repoRoot: String? = nil
     ) {
         self.windowTitle = windowTitle
         self.documentPath = documentPath
@@ -67,6 +74,9 @@ public struct ContextFields: Equatable, Sendable {
         self.selectedText = selectedText
         self.selectedItemCount = selectedItemCount
         self.windowCount = windowCount
+        self.fullSelection = fullSelection
+        self.selectedFilePaths = selectedFilePaths
+        self.repoRoot = repoRoot
     }
 
     /// Fills the gaps from `other`, keeping values already set.
@@ -81,13 +91,18 @@ public struct ContextFields: Equatable, Sendable {
             gitBranch: gitBranch ?? other.gitBranch,
             selectedText: selectedText ?? other.selectedText,
             selectedItemCount: selectedItemCount ?? other.selectedItemCount,
-            windowCount: windowCount ?? other.windowCount)
+            windowCount: windowCount ?? other.windowCount,
+            fullSelection: fullSelection ?? other.fullSelection,
+            selectedFilePaths: selectedFilePaths ?? other.selectedFilePaths,
+            repoRoot: repoRoot ?? other.repoRoot)
     }
 }
 
 public enum ContextLimits {
     /// Selections longer than this are cut. Actions that need the whole text should read it themselves at run time.
     public static let maxSelectionLength = 2_000
+    /// The most selected text kept for actions. Longer selections are cut, and `ContextValues` carries the cut text.
+    public static let maxValueTextLength = 200_000
     public static let maxLabelLength = 48
 }
 
@@ -106,14 +121,18 @@ public struct ContextSnapshot: Equatable, Sendable {
     /// Ordered for display: document, url, folder, branch, selection, selection count.
     public var items: [ContextItem]
     public var fields: ContextFields
+    /// Typed raw values for actions. In memory only; prints as counts.
+    public var values: ContextValues
     /// Set when the snapshot is partial. Empty items with a gap is normal.
     public var gaps: [ContextGap]
     public var capturedAt: Date
 
     public init(
         appName: String, bundleID: String?, pid: pid_t = 0, items: [ContextItem] = [],
-        fields: ContextFields = ContextFields(), gaps: [ContextGap] = [], capturedAt: Date = Date()
+        fields: ContextFields = ContextFields(), gaps: [ContextGap] = [], capturedAt: Date = Date(),
+        values: ContextValues = ContextValues()
     ) {
+        self.values = values
         self.appName = appName
         self.bundleID = bundleID
         self.pid = pid

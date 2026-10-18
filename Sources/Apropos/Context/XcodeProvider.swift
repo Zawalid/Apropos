@@ -20,7 +20,7 @@ public struct XcodeProvider: ContextProvider {
             // No path available: keep just the file name so the chip still shows it.
             fields.documentPath = file
         }
-        fields.selectedText = SelectionReader.selectedText(in: root)
+        fields.readSelection(from: root)
         return fields
     }
 

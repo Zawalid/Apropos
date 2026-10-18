@@ -23,6 +23,16 @@ public protocol ContextProvider: Sendable {
     /// Longest the service waits for this provider.
     var timeout: TimeInterval { get }
     func read(_ target: ContextTarget) -> ContextFields
+    /// Longest the service waits for `readSelectedFiles`.
+    var filesTimeout: TimeInterval { get }
+    /// Absolute paths of the files selected in the app, read only when `selectedCount` says there are some. Runs
+    /// after `read`, in parallel with the git lookup, so a slow answer never delays the chips.
+    func readSelectedFiles(_ target: ContextTarget, selectedCount: Int?) -> [String]
+}
+
+extension ContextProvider {
+    public var filesTimeout: TimeInterval { 0 }
+    public func readSelectedFiles(_ target: ContextTarget, selectedCount: Int?) -> [String] { [] }
 }
 
 /// Picks a provider by bundle id.
