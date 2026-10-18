@@ -139,6 +139,19 @@ struct StepPackTests {
         #expect(throws: UserCommandError.invalid(.invalidSteps(.appleMenu(step: 1)))) { try store.create(draft) }
     }
 
+    @Test func anImportedStepCommandWaitsForApprovalAndIsDescribedFromItsLocators() throws {
+        let original = UserCommand(
+            title: "Export", apps: AppFilter(include: [StepFixtures.app]),
+            backend: .uiSteps(StepFixtures.backend(StepFixtures.exportPDF)), output: .none, timeout: 20)
+        let data = try CommandExchange.export([original])
+        let review = try CommandExchange.review(data, existing: [])
+        let item = try #require(review.items.first)
+        #expect(item.needsApproval && item.command.review == .pending)
+        #expect(item.risks == [.controlsApps])
+        #expect(item.summary.joined(separator: "\n").contains("File > Export as PDF"))
+        #expect(item.command.backend == original.backend)
+    }
+
     @Test func theSummaryDescribesTheStepsAndTheirReliability() {
         let command = UserCommand(
             title: "Export", apps: AppFilter(include: [StepFixtures.app]),
@@ -146,6 +159,6 @@ struct StepPackTests {
         #expect(CommandSummary.risks(for: command) == [.controlsApps])
         let lines = CommandSummary.lines(for: command).joined(separator: "\n")
         #expect(lines.contains("Runs 1 step") && lines.contains("Reliability: Sturdy"))
-        #expect(!CommandRisk.controlsApps.needsApproval)
+        #expect(CommandRisk.controlsApps.needsApproval)
     }
 }

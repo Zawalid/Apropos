@@ -15,7 +15,7 @@ public enum CommandRisk: String, Sendable, Equatable, CaseIterable {
     case controlsApps
 
     /// Risks that make an imported command wait for approval.
-    public var needsApproval: Bool { self == .runsProgram || self == .runsAppleScript }
+    public var needsApproval: Bool { self == .runsProgram || self == .runsAppleScript || self == .controlsApps }
 
     public var warning: String {
         switch self {
@@ -76,7 +76,7 @@ public enum CommandSummary {
             lines.append(
                 "Runs \(steps.steps.count) step\(steps.steps.count == 1 ? "" : "s") in "
                     + steps.apps.joined(separator: ", ") + ":")
-            lines += steps.steps.prefix(8).map { "    " + clipped($0.description) }
+            lines += steps.steps.prefix(8).map { "    " + clipped($0.derivedSummary) }
             if steps.steps.count > 8 { lines.append("    ...") }
             lines.append("Reliability: \(steps.fragility.title). \(steps.fragility.explanation)")
         }
