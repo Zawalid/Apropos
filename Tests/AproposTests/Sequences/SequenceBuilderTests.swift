@@ -603,3 +603,60 @@ struct SequenceBuilderTests {
         #expect(rig.model.sequenceFailure == "That shortcut is already used by Other.")
     }
 }
+
+@MainActor
+@Suite("Sequence builder: steps from outside and failure policy")
+struct SequenceBuilderExtrasTests {
+    private func center() -> SequenceCenter {
+        let library = ActionPackLibrary.bundled()
+        return SequenceCenter(
+            store: nil, runner: FakeStepRunner(),
+            catalogue: {
+                SequenceCatalogue(
+                    contextActions: library.actions, destinations: DestinationLibrary.bundled().destinations)
+            })
+    }
+
+    private func recorded(app: String = "com.apple.Preview") -> [UIStep] {
+        [UIStep(app: app, locators: [.shortcut(key: "E", modifiers: [.command, .shift])], description: "Export")]
+    }
+
+    @Test func recordedMenuStepsJoinTheDraftAsOneStep() {
+        let center = center()
+        #expect(center.add(uiSteps: recorded()) == .added(steps: 1))
+        #expect(center.steps.count == 1 && center.steps[0].kind.tag == "uiSteps" && center.steps[0].trust == .trusted)
+        #expect(center.plan().trust == .trusted && center.plan().steps.count == 1)
+    }
+
+    @Test func recordedStepsAreCheckedAgainstTheStepEngineRules() {
+        let center = center()
+        let apple = [UIStep(app: "com.apple.Preview", locators: [.menuPath(["Apple", "About"])], description: "x")]
+        guard case .refused = center.add(uiSteps: apple) else {
+            Issue.record("expected a refusal")
+            return
+        }
+        guard case .refused = center.add(uiSteps: recorded(app: "com.1password.1password")) else {
+            Issue.record("expected a refusal for a password manager")
+            return
+        }
+        #expect(center.steps.isEmpty && center.failure != nil)
+    }
+
+    @Test func untrustedRecordedStepsMakeTheDraftUntrustedAndUnrunnable() {
+        let center = center()
+        center.add(uiSteps: recorded(), trusted: false)
+        let plan = center.plan()
+        #expect(plan.trust == .untrusted && plan.refusal == .untrusted)
+    }
+
+    @Test func aStepCanBeToldToKeepGoing() {
+        let center = center()
+        center.add(uiSteps: recorded())
+        let id = center.steps[0].id
+        #expect(!center.continuesOnFailure(stepID: id))
+        center.setContinuesOnFailure(true, stepID: id)
+        #expect(center.steps[0].continueOnFailure && center.continuesOnFailure(stepID: id))
+        center.setContinuesOnFailure(false, stepID: id)
+        #expect(!center.steps[0].continueOnFailure)
+    }
+}

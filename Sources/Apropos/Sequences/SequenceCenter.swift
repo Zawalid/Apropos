@@ -244,6 +244,28 @@ public final class SequenceCenter {
         }
     }
 
+    /// Adds steps that arrive from outside the palette (the recorder) as one menu step. They are checked against the
+    /// step engine's rules and the privacy list. `trusted: false` marks the step untrusted: the draft then cannot run,
+    /// and saving it stores a command that waits for approval.
+    @discardableResult
+    public func add(uiSteps: [UIStep], label: String = "Recorded steps", trusted: Bool = true) -> SequenceAddResult {
+        failure = nil
+        notice = nil
+        guard steps.count < SequenceLimits.maxSteps else {
+            return refuse("A sequence can have at most \(SequenceLimits.maxSteps) steps.")
+        }
+        let backend = UIStepsBackend(steps: uiSteps)
+        if let issue = UIStepsValidator.issues(in: backend, privacy: privacy()).first {
+            return refuse(issue.description)
+        }
+        steps.append(
+            SequenceStep(
+                id: newID(), label: label, kind: .uiSteps(backend), trust: trusted ? .trusted : .untrusted))
+        rechain()
+        rebuild()
+        return .added(steps: steps.count)
+    }
+
     public func delete(stepID: String) {
         guard let index = steps.firstIndex(where: { $0.id == stepID }) else { return }
         steps.remove(at: index)
@@ -274,6 +296,17 @@ public final class SequenceCenter {
             steps[index].inputs.append(SequenceInput(.text))
         }
         afterEdit()
+    }
+
+    /// Goes on with the next step when this one fails, or stops there (the default).
+    public func setContinuesOnFailure(_ continues: Bool, stepID: String) {
+        guard let index = steps.firstIndex(where: { $0.id == stepID }) else { return }
+        steps[index].continueOnFailure = continues
+        afterEdit()
+    }
+
+    public func continuesOnFailure(stepID: String) -> Bool {
+        steps.first { $0.id == stepID }?.continueOnFailure ?? false
     }
 
     /// Reads the selection instead of the previous step's result, or goes back to the chain.
@@ -506,6 +539,7 @@ public final class SequenceCenter {
             }
         }
         if parts.isEmpty, let effect = planned.effects.first { return effect.line }
+        if planned.step.continueOnFailure { parts.append("goes on if it fails") }
         let flow = parts.joined(separator: ", ")
         return flow.prefix(1).uppercased() + flow.dropFirst()
     }
