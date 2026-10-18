@@ -22,7 +22,7 @@ final class AppController {
     @ObservationIgnored private var panel: PanelController?
     @ObservationIgnored private var settingsController: SettingsWindowController?
     @ObservationIgnored private var statusItem: StatusItemController?
-    @ObservationIgnored private var onboardingWindow: NSWindow?
+    @ObservationIgnored private let onboarding = OnboardingWindowController()
 
     convenience init() {
         Self.runLegacyMigration()
@@ -78,7 +78,8 @@ final class AppController {
         if !(AgentMode.isOn && ProcessInfo.processInfo.environment["APROPOS_FIXTURE_COMMANDS"] != nil) { tracker.start() }
         let panel = PanelController(
             model: palette, tracker: tracker, permission: permission, settings: settings, context: context,
-            usage: usage, openSettings: { [weak self] in self?.showSettings() })
+            usage: usage, openSettings: { [weak self] in self?.showSettings() },
+            openGuide: { [weak self] in self?.showOnboarding(step: .permission) })
         if AgentMode.isOn {
             // Automated runs stay invisible: no dock icon, status item, hotkey or welcome window.
             NSApp.setActivationPolicy(.accessory)
@@ -159,32 +160,17 @@ final class AppController {
     /// item instead of reopening a window on every start.
     private func showWelcomeOnce() {
         let key = "hasSeenWelcome"
-        guard !permission.isTrusted, !UserDefaults.standard.bool(forKey: key) else { return }
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
         UserDefaults.standard.set(true, forKey: key)
         showOnboarding()
     }
 
-    func showOnboarding() {
-        let content = PermissionView(permission: permission, style: .full)
-            .frame(width: 520, height: 420)
-        let window = onboardingWindow ?? makeWindow(title: "Welcome to Apropos", content: content)
-        onboardingWindow = window
-        present(window)
-    }
-
-    private func makeWindow<Content: View>(title: String, content: Content) -> NSWindow {
-        let window = NSWindow(
-            contentRect: .zero, styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        window.title = title
-        window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: content)
-        window.center()
-        return window
-    }
-
-    private func present(_ window: NSWindow) {
-        if !AgentMode.isOn { NSApp.activate() }
-        window.makeKeyAndOrderFront(nil)
-        AgentMode.conceal(window)
+    /// Opens the first-run guide. Without a step it starts at the welcome and leaves the permission step out when access
+    /// is already granted.
+    func showOnboarding(step: OnboardingStep? = nil) {
+        let model = OnboardingModel(
+            permission: permission, hotKey: { [weak self] in self?.combo ?? .default }, start: step,
+            finish: { [weak self] in self?.onboarding.close() })
+        onboarding.show(model: model, reduceMotion: settings.reduceMotion)
     }
 }
