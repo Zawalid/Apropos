@@ -96,5 +96,24 @@
             if commands.count > 3 { usage.store.setPinned(true, for: commands[3].stableID) }
             usage.refreshRanker()
         }
+
+        /// Teaches the prediction engine one routine over the fixture commands, so the real Usually next path (log,
+        /// model, threshold, palette group) shows a row: the sixth command is always followed by the seventh, and the
+        /// sixth just ran.
+        @MainActor
+        static func seedPrediction(_ usage: UsageController, commands: [Command], app: String?) {
+            let enabled = commands.filter(\.isEnabled)
+            guard enabled.count > 6 else { return }
+            let first = enabled[5].stableID
+            let second = enabled[6].stableID
+            let now = Date()
+            for index in 0..<20 {
+                let at = now.addingTimeInterval(-Double(index + 1) * 5_400)
+                usage.prediction.recordRun(first, title: enabled[5].displayTitle, app: app, at: at)
+                usage.prediction.recordRun(second, title: enabled[6].displayTitle, app: app, at: at.addingTimeInterval(20))
+            }
+            usage.prediction.recordRun(first, title: enabled[5].displayTitle, app: app, at: now.addingTimeInterval(-6))
+            usage.refreshRanker()
+        }
     }
 #endif

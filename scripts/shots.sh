@@ -83,6 +83,7 @@ STATES=(
   "permission|APROPOS_PREVIEW_STATE=permission"
   "error|APROPOS_PREVIEW_STATE=failed"
   "popover|APROPOS_PREVIEW_ACTIONS=1"
+  "usually-next|APROPOS_FIXTURE_PREDICTION=1"
 )
 
 for mode in dark light; do

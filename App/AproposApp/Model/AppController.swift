@@ -118,6 +118,10 @@ final class AppController {
                 if ProcessInfo.processInfo.environment["APROPOS_FIXTURE_USAGE"] != nil {
                     DebugFixtures.seedUsage(usage, commands: fixtures)
                 }
+                if AgentMode.isOn, ProcessInfo.processInfo.environment["APROPOS_FIXTURE_PREDICTION"] != nil {
+                    DebugFixtures.seedPrediction(
+                        usage, commands: fixtures, app: DebugFixtures.targetApp(named: name).bundleID)
+                }
             }
             if AgentMode.isOn {
                 DebugSnapshot.installRemoteControl(panel: panel, model: palette)
