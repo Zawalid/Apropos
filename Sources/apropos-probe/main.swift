@@ -16,6 +16,11 @@ import Apropos
 //     prints aggregate numbers only: hit rates, coverage, calibration. Never prints a command name. --synthetic uses a
 //     generated log instead, so the numbers in docs/prediction.md can be reproduced.
 //
+//   swift run apropos-probe --steps <file> [--wait 3]   dry-resolve a ui steps file
+//     reads the file (a steps object, a command file or a pack, see docs/ui-steps.md) and prints, for each step, which
+//     locator would match in the app it names. Read-only: nothing is pressed, typed or brought to the front. Titles of
+//     the live menus are never printed. With --wait it first waits so you can switch to the app.
+//
 // Needs Accessibility access for the terminal (or whatever launched it).
 
 let arguments = Array(CommandLine.arguments.dropFirst())
@@ -54,6 +59,59 @@ if arguments.first == "--predict-eval" {
     print("source: \(source), \(events.count) events over \(Int(span / 86_400)) days")
     print(evaluator.run(events).render())
     exit(0)
+}
+
+if arguments.first == "--steps" {
+    guard let path = arguments.dropFirst().first(where: { !$0.hasPrefix("--") && Double($0) == nil }) else {
+        print("usage: apropos-probe --steps <file> [--wait 3]")
+        exit(64)
+    }
+    guard let data = FileManager.default.contents(atPath: path) else {
+        print("could not read \(path)")
+        exit(66)
+    }
+    let backend: UIStepsBackend
+    do {
+        backend = try UIStepsFile.load(data)
+    } catch {
+        print("\(path) has no readable steps (\(error))")
+        exit(65)
+    }
+    let wait = value(after: "--wait").flatMap(Double.init) ?? 0
+    if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
+
+    let privacy = ContextPrivacy.load()
+    print("\(backend.steps.count) steps, format \(backend.version), reliability: \(backend.fragility.title)")
+    for issue in UIStepsValidator.issues(in: backend, privacy: privacy) {
+        print("refused: \(issue)")
+    }
+    let environment = LiveStepEnvironment()
+    guard environment.isTrusted() else {
+        print("This terminal has no Accessibility access, so nothing could be read.")
+        print("Add it in System Settings > Privacy & Security > Accessibility, then run this again.")
+        exit(2)
+    }
+    if let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier {
+        print("frontmost app: \(front)")
+    }
+    let started = Date()
+    let report = StepDryRun(privacy: privacy).run(backend, environment: environment)
+    let ms = Date().timeIntervalSince(started) * 1000
+    for result in report.results {
+        var line = String(format: "%2d  %@  ", result.step, backend.steps[result.step - 1].app)
+        if let failure = result.failure {
+            line += "NOT RESOLVED: \(failure.code)"
+            let tried = result.attempts.compactMap(\.kind).map(\.rawValue)
+            if !tried.isEmpty { line += " (tried \(tried.joined(separator: ", ")))" }
+        } else if let kind = result.matchedKind {
+            line += "would match by \(kind.rawValue)"
+            if result.isDegraded { line += " (fallback: a stronger locator did not match)" }
+            if !result.isEnabled { line += " [item is disabled right now]" }
+        }
+        print(line)
+    }
+    print(String(format: "health: %@ in %.0f ms, nothing was performed", "\(report.health)", ms))
+    exit(report.health == .healthy ? 0 : 1)
 }
 
 if arguments.first == "--context" || arguments.first == "--actions" {
