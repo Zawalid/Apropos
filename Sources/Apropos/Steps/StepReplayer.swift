@@ -35,6 +35,12 @@ public struct StepRunReport: Equatable, Sendable {
     public let milliseconds: Int
 
     public var succeeded: Bool { failure == nil }
+
+    public init(steps: [StepReport], failure: StepFailure?, milliseconds: Int) {
+        self.steps = steps
+        self.failure = failure
+        self.milliseconds = milliseconds
+    }
 }
 
 /// Runs steps with Accessibility actions. It never moves the pointer and never brings an app to the front unless a
