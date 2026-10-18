@@ -4,11 +4,13 @@ import SwiftUI
 
 /// The menu bar item: a native menu with a live context header, recent commands, and the app's own controls.
 @MainActor
-final class StatusItemController: NSObject, NSMenuDelegate {
+final class StatusItemController: NSObject, NSMenuDelegate, NSPopoverDelegate {
     private let controller: AppController
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
     private let header = ContextHeaderModel()
+    private let popover = NSPopover()
+    private var clickMonitor: Any?
     private var observer: NSObjectProtocol?
 
     init(controller: AppController) {
@@ -23,10 +25,15 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             image?.size = NSSize(width: 18, height: 18)
             image?.accessibilityDescription = "Apropos"
             button.image = image
+            button.target = self
+            button.action = #selector(statusItemClicked(_:))
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
         menu.delegate = self
         menu.autoenablesItems = false
-        statusItem.menu = menu
+        popover.behavior = .applicationDefined
+        popover.animates = true
+        popover.delegate = self
         applyVisibility()
         observer = NotificationCenter.default.addObserver(
             forName: .aproposSettingsChanged, object: nil, queue: .main
@@ -37,6 +44,77 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     private func applyVisibility() {
         statusItem.isVisible = controller.settings.showInMenuBar
+    }
+
+    // MARK: Popover and menu
+
+    /// Click opens the popover; right-click or Control-click opens the plain menu.
+    @objc private func statusItemClicked(_ sender: NSStatusBarButton) {
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
+            showMenu()
+        } else if popover.isShown {
+            popover.performClose(nil)
+        } else {
+            showPopover(from: sender)
+        }
+    }
+
+    private func showPopover(from button: NSStatusBarButton) {
+        controller.context.refresh(for: controller.tracker.app)
+        header.app = controller.tracker.app
+        header.chips = controller.context.items.map(\.label)
+        controller.context.onChange = { [weak self] in
+            guard let self else { return }
+            self.header.chips = self.controller.context.items.map(\.label)
+        }
+        let close: (@escaping () -> Void) -> () -> Void = { [weak self] work in
+            {
+                self?.popover.performClose(nil)
+                work()
+            }
+        }
+        let controller = controller
+        let actions = MenuPopoverActions(
+            open: close { controller.togglePanel() },
+            runRecent: { [weak self] recent in
+                self?.popover.performClose(nil)
+                self?.runRecentCommand(recent.stableID)
+            },
+            allowAccess: close { controller.showOnboarding(step: .permission) },
+            reviewCommands: close { CommandManagement.reviewPending(controller.userCommands) },
+            commands: close { controller.showSettings(page: .commands) },
+            settings: close { controller.showSettings() },
+            welcomeGuide: close { controller.showOnboarding() },
+            checkForUpdates: close { controller.settings.checkForUpdatesNow() },
+            quit: close { NSApp.terminate(nil) })
+        let view = MenuPopoverView(
+            header: header, recents: controller.usage.recents, hotKey: controller.combo,
+            hasAccess: controller.permission.isTrusted, pendingCommands: controller.userCommands.pending.count,
+            actions: actions)
+        let host = NSHostingController(rootView: view)
+        host.sizingOptions = [.preferredContentSize]
+        popover.contentViewController = host
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) {
+            [weak self] _ in
+            MainActor.assumeIsolated { self?.popover.performClose(nil) }
+        }
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        controller.context.onChange = nil
+        if let clickMonitor { NSEvent.removeMonitor(clickMonitor) }
+        clickMonitor = nil
+    }
+
+    private func showMenu() {
+        popover.performClose(nil)
+        header.app = controller.tracker.app
+        rebuild(menu)
+        statusItem.menu = menu
+        statusItem.button?.performClick(nil)
+        statusItem.menu = nil
     }
 
     // MARK: NSMenuDelegate
@@ -109,6 +187,10 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     /// Runs a recent command if the app in front still offers it, else opens the panel for that app.
     @objc private func runRecent(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String else { return }
+        runRecentCommand(raw)
+    }
+
+    private func runRecentCommand(_ raw: String) {
         if let command = controller.menus.commands.first(where: { $0.stableID.rawValue == raw }) {
             let appName = controller.tracker.app?.name
             let appBundleID = controller.tracker.app?.bundleID
