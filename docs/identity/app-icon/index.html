@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Apropos icon, 3D scene</title>
+<style>
+html,body{margin:0;height:100%;background:#0d0e10;color:#9aa1a8;font:12px -apple-system,sans-serif}
+#wrap{display:grid;place-items:center;height:100%}
+canvas{display:block;width:768px;height:768px}
+#hud{position:fixed;left:14px;top:12px}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="hud">Apropos icon scene. window.render(size) returns a PNG data URL.</div>
+<div id="wrap"><canvas id="c" width="1024" height="1024"></canvas></div>
+<script type="module">
+import * as THREE from 'three';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,preserveDrawingBuffer:true});
+renderer.setPixelRatio(1);
+renderer.setSize(1024,1024,false);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=0.88;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.VSMShadowMap;
+renderer.setClearColor(0x000000,0);
+
+const scene=new THREE.Scene();
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+scene.environmentIntensity=0.9;
+
+// Icon grid: the body is 824 of 1024 px, so the half frustum is 1 / 0.8047.
+const half=1/0.8047;
+const camera=new THREE.OrthographicCamera(-half,half,half,-half,0.1,20);
+camera.position.set(0,0,8);
+
+// ---- plate: a superellipse slab with a bevel, the squircle of a macOS icon ----
+function squircleShape(n=5,r=1,steps=240){
+  const pts=[];
+  for(let i=0;i<steps;i++){
+    const a=i/steps*Math.PI*2, c=Math.cos(a), s=Math.sin(a);
+    const x=Math.sign(c)*Math.pow(Math.abs(c),2/n)*r, y=Math.sign(s)*Math.pow(Math.abs(s),2/n)*r;
+    pts.push(new THREE.Vector2(x,y));
+  }
+  return new THREE.Shape(pts);
+}
+const plateGeo=new THREE.ExtrudeGeometry(squircleShape(5,0.965),{depth:0.16,bevelEnabled:true,bevelThickness:0.05,bevelSize:0.035,bevelSegments:14,curveSegments:96,steps:1});
+plateGeo.translate(0,0,-0.16);
+// vertical gradient on the plate, light at the top and deep at the bottom, baked into vertex colors
+{
+  const pos=plateGeo.attributes.position, col=new Float32Array(pos.count*3);
+  const top=new THREE.Color('#1b3a42'), bot=new THREE.Color('#050b0e'), c=new THREE.Color();
+  for(let i=0;i<pos.count;i++){const y=pos.getY(i);const t=THREE.MathUtils.clamp((y+1)/2,0,1);c.lerpColors(bot,top,Math.pow(t,1.35));col.set([c.r,c.g,c.b],i*3);}
+  plateGeo.setAttribute('color',new THREE.BufferAttribute(col,3));
+}
+const plateMat=new THREE.MeshPhysicalMaterial({vertexColors:true,metalness:0.55,roughness:0.34,clearcoat:1,clearcoatRoughness:0.12,envMapIntensity:1.0});
+const plate=new THREE.Mesh(plateGeo,plateMat);
+plate.receiveShadow=true;plate.castShadow=true;
+scene.add(plate);
+
+// ---- the aperture ring: an open torus, mint to peach, with a pearl set in its gap ----
+const R=0.52, tube=0.088, gap=0.62, arc=Math.PI*2-gap, gapCenter=0.70;
+const rot0=gapCenter-gap/2-arc+Math.PI*2; // start angle so the opening is centred on gapCenter
+const ringGeo=new THREE.TorusGeometry(R,tube,56,260,arc);
+{
+  const pos=ringGeo.attributes.position, col=new Float32Array(pos.count*3);
+  const a=new THREE.Color('#0aa482'), m=null, b=new THREE.Color('#b4fbe2'), c=new THREE.Color();
+  for(let i=0;i<pos.count;i++){
+    let ang=Math.atan2(pos.getY(i),pos.getX(i)); if(ang<-1e-4) ang+=Math.PI*2;
+    const t=THREE.MathUtils.clamp(ang/arc,0,1);
+    c.lerpColors(a,b,Math.pow(t,0.85));col.set([c.r,c.g,c.b],i*3);
+  }
+  ringGeo.setAttribute('color',new THREE.BufferAttribute(col,3));
+}
+const ringMat=new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:0.22,metalness:0.05,clearcoat:1,clearcoatRoughness:0.06,emissive:new THREE.Color('#1a8f6c'),emissiveIntensity:0.1,envMapIntensity:0.85});
+const ring=new THREE.Mesh(ringGeo,ringMat);
+ring.rotation.z=rot0;
+ring.position.z=tube+0.0;
+ring.castShadow=true;
+scene.add(ring);
+
+// ---- the moment: a luminous pearl sitting in the gap ----
+const orbR=0.222;
+const orbPos=new THREE.Vector3(Math.cos(gapCenter)*R,Math.sin(gapCenter)*R,tube+0.012);
+const orb=new THREE.Mesh(new THREE.SphereGeometry(orbR,128,96),new THREE.MeshPhysicalMaterial({color:'#ffffff',metalness:0,roughness:0.06,transmission:1,thickness:0.55,ior:1.46,attenuationColor:new THREE.Color('#ff9a6a'),attenuationDistance:0.7,clearcoat:1,clearcoatRoughness:0.02,envMapIntensity:1.7,specularIntensity:1}));
+orb.position.copy(orbPos);
+orb.castShadow=true;
+scene.add(orb);
+const halo=new THREE.Mesh(new THREE.SphereGeometry(orbR*1.03,64,48),new THREE.MeshBasicMaterial({color:'#ffcdb0',side:THREE.BackSide,transparent:true,opacity:0.5}));
+halo.position.copy(orbPos);halo.position.z-=0.004;scene.add(halo);
+const core=new THREE.Mesh(new THREE.SphereGeometry(orbR*0.52,64,48),new THREE.MeshBasicMaterial({color:'#ffc09a'}));
+core.position.copy(orbPos);scene.add(core);
+const core2=new THREE.Mesh(new THREE.SphereGeometry(orbR*0.26,48,32),new THREE.MeshBasicMaterial({color:'#fff3e8'}));
+core2.position.copy(orbPos);scene.add(core2);
+
+// glow behind the core, an additive radial sprite
+function glowTexture(rgb='140,242,204',core='190,255,230'){const s=256,cv=document.createElement('canvas');cv.width=cv.height=s;const g=cv.getContext('2d');const gr=g.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);gr.addColorStop(0,`rgba(${core},0.95)`);gr.addColorStop(0.25,`rgba(${rgb},0.45)`);gr.addColorStop(0.6,`rgba(${rgb},0.12)`);gr.addColorStop(1,`rgba(${rgb},0)`);g.fillStyle=gr;g.fillRect(0,0,s,s);return new THREE.CanvasTexture(cv);}
+const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture('255,170,120','255,225,200'),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,opacity:0.8}));
+glow.scale.set(1.15,1.15,1);glow.position.set(orbPos.x,orbPos.y,0.2);scene.add(glow);
+
+// a soft pool of mint light on the plate under the orb
+const pool=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture(),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,opacity:0.35,color:'#8cf2cc'}));
+pool.scale.set(1.45,1.45,1);pool.position.set(orbPos.x*0.4,orbPos.y*0.4,0.01);scene.add(pool);
+
+// ---- lights ----
+const key=new THREE.DirectionalLight('#ffffff',2.1);
+key.position.set(-2.2,3.2,4.5);
+key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.camera.left=-1.6;key.shadow.camera.right=1.6;key.shadow.camera.top=1.6;key.shadow.camera.bottom=-1.6;key.shadow.radius=14;key.shadow.blurSamples=25;key.shadow.bias=-0.0006;
+scene.add(key);
+const rim=new THREE.DirectionalLight('#9fe8ff',1.4);rim.position.set(3,-2,2.5);scene.add(rim);
+const warm=new THREE.PointLight('#ffb48a',1.7,2.0,2);warm.position.set(orbPos.x,orbPos.y,0.55);scene.add(warm);
+const fill=new THREE.AmbientLight('#2a4a52',0.5);scene.add(fill);
+
+function frame(){renderer.render(scene,camera);}
+frame();
+window.sceneReady=true;
+window.setParam=(name,v)=>{const m={exposure:()=>{renderer.toneMappingExposure=v},keyI:()=>{key.intensity=v},envI:()=>{scene.environmentIntensity=v},glowO:()=>{glow.material.opacity=v}};m[name]&&m[name]();frame();};
+window.exportIcon=(size=1024)=>{
+  renderer.setSize(1024,1024,false);frame();
+  const out=document.createElement('canvas');out.width=out.height=size;const g=out.getContext('2d');
+  const k=size/1024;g.imageSmoothingQuality='high';
+  g.save();g.shadowColor='rgba(0,0,0,0.55)';g.shadowBlur=34*k;g.shadowOffsetY=18*k;g.drawImage(canvas,0,0,size,size);g.restore();
+  g.drawImage(canvas,0,0,size,size);
+  return out.toDataURL('image/png');
+};
+window.render=(size=1024)=>{renderer.setSize(size,size,false);frame();const url=canvas.toDataURL('image/png');renderer.setSize(1024,1024,false);frame();return url;};
+</script>
+</body>
+</html>
