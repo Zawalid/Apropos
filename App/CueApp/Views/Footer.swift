@@ -41,7 +41,7 @@ struct FloatingFooter: View {
         HStack(spacing: 4) {
             Button(action: actions.run) {
                 HStack(spacing: 6) {
-                    Text("Run menu item").foregroundStyle(Theme.text)
+                    Text("Run menu item").foregroundStyle(Theme.text.opacity(0.9))
                     KeyCap(text: "↩", small: true)
                 }
             }
@@ -61,8 +61,9 @@ struct FloatingFooter: View {
         .font(.system(size: 12.5))
         .padding(.horizontal, 6)
         .frame(height: Theme.footerHeight)
-        .cueGlass(in: Capsule())
-        .shadow(color: .black.opacity(0.18), radius: 9, y: 6)
+        .background(Theme.floatFill, in: Capsule())
+        .cueGlass(in: Capsule(), tinted: false)
+        .shadow(color: .black.opacity(0.10), radius: 8, y: 4)
     }
 }
 

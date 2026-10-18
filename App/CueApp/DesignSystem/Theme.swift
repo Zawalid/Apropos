@@ -59,6 +59,8 @@ enum Theme {
     // MARK: Surfaces
 
     static let glassTint = adaptive(light: rgba(247, 249, 248, 0.66), dark: rgba(26, 29, 28, 0.62))
+    /// A whisper of fill for the small glass controls floating over the list, so they read as glass and not as pills.
+    static let floatFill = adaptive(light: rgba(255, 255, 255, 0.18), dark: rgba(255, 255, 255, 0.04))
     static let glassEdge = adaptive(light: rgba(0, 0, 0, 0.09), dark: rgba(255, 255, 255, 0.13))
     static let glassEdgeTop = adaptive(light: rgba(255, 255, 255, 0.9), dark: rgba(255, 255, 255, 0.22))
     static let highlight = adaptive(light: rgba(0, 0, 0, 0.06), dark: rgba(255, 255, 255, 0.09))

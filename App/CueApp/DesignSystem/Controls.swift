@@ -46,8 +46,9 @@ struct RoundGlassButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(width: Theme.footerHeight, height: Theme.footerHeight)
-            .cueGlass(in: Circle())
-            .shadow(color: .black.opacity(0.18), radius: 9, y: 6)
+            .background(Theme.floatFill, in: Circle())
+            .cueGlass(in: Circle(), tinted: false)
+            .shadow(color: .black.opacity(0.10), radius: 8, y: 4)
             .scaleEffect(configuration.isPressed ? 0.95 : 1)
             .animation(Motion.easeOut(0.12), value: configuration.isPressed)
             .contentShape(Circle())
