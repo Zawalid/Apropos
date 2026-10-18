@@ -26,6 +26,9 @@ public enum DestinationHandler: Sendable, Equatable {
     case engine
     /// The system Share menu. Needs the app to present it, so it goes through `SendServices.share`.
     case shareMenu
+    /// Asks the person for a folder first (copy or move into it), then sends to that folder. `SendToCenter` resolves it
+    /// to a concrete folder destination before anything runs.
+    case chooseFolder(move: Bool)
 }
 
 /// One way a destination handles a kind of payload: an engine backend, checked by the same validator as every context
@@ -50,7 +53,7 @@ public struct DestinationVariant: Sendable, Equatable {
         case .appleScript(let script): script.arguments.flatMap(\.variables)
         case .shortcut(let shortcut): [shortcut.input].compactMap { $0 }
         case .urlScheme(let template): template.variables
-        case .function, .keyPress: []
+        default: []
         }
     }
 
@@ -64,7 +67,7 @@ public struct DestinationVariant: Sendable, Equatable {
     var runsCode: Bool {
         switch action.backend {
         case .shell, .appleScript, .shortcut: true
-        case .urlScheme, .function, .keyPress: false
+        default: false
         }
     }
 

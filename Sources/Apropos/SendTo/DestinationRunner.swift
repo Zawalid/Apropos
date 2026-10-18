@@ -120,6 +120,9 @@ public struct DestinationRunner: Sendable {
             case .unavailable:
                 return .failure(.failed(destination: destination.title, hint: destination.failureHint))
             }
+        case .chooseFolder:
+            // Resolved to a concrete folder before it gets here; nothing to run without one.
+            return .failure(.notApplicable(destination: destination.title))
         case .engine:
             guard let variant = destination.variant(for: payload) else {
                 return .failure(.notApplicable(destination: destination.title))

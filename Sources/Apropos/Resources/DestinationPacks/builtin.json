@@ -1,0 +1,587 @@
+{
+  "schemaVersion": 1,
+  "name": "Apropos destinations",
+  "destinations": [
+    {
+      "id": "dest:notes",
+      "title": "Notes",
+      "subtitle": "New note",
+      "symbol": "note.text",
+      "app": "com.apple.Notes",
+      "accepts": [
+        "text",
+        "page"
+      ],
+      "keywords": [
+        "note",
+        "apple notes"
+      ],
+      "timeout": 20,
+      "failureHint": "If macOS asked to let Apropos control Notes, allow it in Privacy & Security, Automation.",
+      "variants": [
+        {
+          "kinds": [
+            "page"
+          ],
+          "backend": {
+            "type": "appleScript",
+            "sourceLines": [
+              "on run argv",
+              "  set noteTitle to item 1 of argv",
+              "  set noteBody to item 2 of argv",
+              "  set noteLink to item 3 of argv",
+              "  if noteBody is \"\" then",
+              "    set html to \"<div><h1>\" & my escape(noteTitle) & \"</h1></div>\"",
+              "  else",
+              "    set html to \"<div>\" & my escape(noteBody) & \"</div>\"",
+              "  end if",
+              "  if noteLink is not \"\" then",
+              "    set html to html & \"<div><br></div><div><a href=\\\"\" & my escape(noteLink) & \"\\\">\" & my escape(noteLink) & \"</a></div>\"",
+              "  end if",
+              "  tell application \"Notes\" to make new note with properties {body:html}",
+              "end run",
+              "on escape(t)",
+              "  set t to my replace(t, \"&\", \"&amp;\")",
+              "  set t to my replace(t, \"<\", \"&lt;\")",
+              "  set t to my replace(t, \">\", \"&gt;\")",
+              "  set t to my replace(t, \"\\\"\", \"&quot;\")",
+              "  set t to my replace(t, return & linefeed, linefeed)",
+              "  set t to my replace(t, return, linefeed)",
+              "  return my replace(t, linefeed, \"<br>\")",
+              "end escape",
+              "on replace(t, find, repl)",
+              "  set saved to AppleScript's text item delimiters",
+              "  set AppleScript's text item delimiters to find",
+              "  set pieces to text items of t",
+              "  set AppleScript's text item delimiters to repl",
+              "  set t to pieces as text",
+              "  set AppleScript's text item delimiters to saved",
+              "  return t",
+              "end replace"
+            ],
+            "arguments": [
+              "--",
+              "{title}",
+              "",
+              "{url}"
+            ]
+          }
+        },
+        {
+          "kinds": [
+            "text"
+          ],
+          "backend": {
+            "type": "appleScript",
+            "sourceLines": [
+              "on run argv",
+              "  set noteTitle to item 1 of argv",
+              "  set noteBody to item 2 of argv",
+              "  set noteLink to item 3 of argv",
+              "  if noteBody is \"\" then",
+              "    set html to \"<div><h1>\" & my escape(noteTitle) & \"</h1></div>\"",
+              "  else",
+              "    set html to \"<div>\" & my escape(noteBody) & \"</div>\"",
+              "  end if",
+              "  if noteLink is not \"\" then",
+              "    set html to html & \"<div><br></div><div><a href=\\\"\" & my escape(noteLink) & \"\\\">\" & my escape(noteLink) & \"</a></div>\"",
+              "  end if",
+              "  tell application \"Notes\" to make new note with properties {body:html}",
+              "end run",
+              "on escape(t)",
+              "  set t to my replace(t, \"&\", \"&amp;\")",
+              "  set t to my replace(t, \"<\", \"&lt;\")",
+              "  set t to my replace(t, \">\", \"&gt;\")",
+              "  set t to my replace(t, \"\\\"\", \"&quot;\")",
+              "  set t to my replace(t, return & linefeed, linefeed)",
+              "  set t to my replace(t, return, linefeed)",
+              "  return my replace(t, linefeed, \"<br>\")",
+              "end escape",
+              "on replace(t, find, repl)",
+              "  set saved to AppleScript's text item delimiters",
+              "  set AppleScript's text item delimiters to find",
+              "  set pieces to text items of t",
+              "  set AppleScript's text item delimiters to repl",
+              "  set t to pieces as text",
+              "  set AppleScript's text item delimiters to saved",
+              "  return t",
+              "end replace"
+            ],
+            "arguments": [
+              "--",
+              "{title}",
+              "{text}",
+              "{url}"
+            ]
+          }
+        },
+        {
+          "kinds": [
+            "text"
+          ],
+          "backend": {
+            "type": "appleScript",
+            "sourceLines": [
+              "on run argv",
+              "  set noteTitle to item 1 of argv",
+              "  set noteBody to item 2 of argv",
+              "  set noteLink to item 3 of argv",
+              "  if noteBody is \"\" then",
+              "    set html to \"<div><h1>\" & my escape(noteTitle) & \"</h1></div>\"",
+              "  else",
+              "    set html to \"<div>\" & my escape(noteBody) & \"</div>\"",
+              "  end if",
+              "  if noteLink is not \"\" then",
+              "    set html to html & \"<div><br></div><div><a href=\\\"\" & my escape(noteLink) & \"\\\">\" & my escape(noteLink) & \"</a></div>\"",
+              "  end if",
+              "  tell application \"Notes\" to make new note with properties {body:html}",
+              "end run",
+              "on escape(t)",
+              "  set t to my replace(t, \"&\", \"&amp;\")",
+              "  set t to my replace(t, \"<\", \"&lt;\")",
+              "  set t to my replace(t, \">\", \"&gt;\")",
+              "  set t to my replace(t, \"\\\"\", \"&quot;\")",
+              "  set t to my replace(t, return & linefeed, linefeed)",
+              "  set t to my replace(t, return, linefeed)",
+              "  return my replace(t, linefeed, \"<br>\")",
+              "end escape",
+              "on replace(t, find, repl)",
+              "  set saved to AppleScript's text item delimiters",
+              "  set AppleScript's text item delimiters to find",
+              "  set pieces to text items of t",
+              "  set AppleScript's text item delimiters to repl",
+              "  set t to pieces as text",
+              "  set AppleScript's text item delimiters to saved",
+              "  return t",
+              "end replace"
+            ],
+            "arguments": [
+              "--",
+              "{title}",
+              "{text}",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dest:reminders",
+      "title": "Reminders",
+      "subtitle": "New reminder",
+      "symbol": "checklist",
+      "app": "com.apple.reminders",
+      "accepts": [
+        "text",
+        "page"
+      ],
+      "keywords": [
+        "reminder",
+        "todo",
+        "task"
+      ],
+      "timeout": 20,
+      "failureHint": "If macOS asked to let Apropos control Reminders, allow it in Privacy & Security, Automation.",
+      "variants": [
+        {
+          "kinds": [
+            "page"
+          ],
+          "backend": {
+            "type": "appleScript",
+            "sourceLines": [
+              "on run argv",
+              "  set reminderName to item 1 of argv",
+              "  set reminderBody to item 2 of argv",
+              "  set reminderLink to item 3 of argv",
+              "  if reminderBody is reminderName then set reminderBody to \"\"",
+              "  if reminderLink is not \"\" then",
+              "    if reminderBody is not \"\" then set reminderBody to reminderBody & linefeed & linefeed",
+              "    set reminderBody to reminderBody & reminderLink",
+              "  end if",
+              "  tell application \"Reminders\" to make new reminder with properties {name:reminderName, body:reminderBody}",
+              "end run"
+            ],
+            "arguments": [
+              "--",
+              "{title}",
+              "",
+              "{url}"
+            ]
+          }
+        },
+        {
+          "kinds": [
+            "text"
+          ],
+          "backend": {
+            "type": "appleScript",
+            "sourceLines": [
+              "on run argv",
+              "  set reminderName to item 1 of argv",
+              "  set reminderBody to item 2 of argv",
+              "  set reminderLink to item 3 of argv",
+              "  if reminderBody is reminderName then set reminderBody to \"\"",
+              "  if reminderLink is not \"\" then",
+              "    if reminderBody is not \"\" then set reminderBody to reminderBody & linefeed & linefeed",
+              "    set reminderBody to reminderBody & reminderLink",
+              "  end if",
+              "  tell application \"Reminders\" to make new reminder with properties {name:reminderName, body:reminderBody}",
+              "end run"
+            ],
+            "arguments": [
+              "--",
+              "{title}",
+              "{text}",
+              "{url}"
+            ]
+          }
+        },
+        {
+          "kinds": [
+            "text"
+          ],
+          "backend": {
+            "type": "appleScript",
+            "sourceLines": [
+              "on run argv",
+              "  set reminderName to item 1 of argv",
+              "  set reminderBody to item 2 of argv",
+              "  set reminderLink to item 3 of argv",
+              "  if reminderBody is reminderName then set reminderBody to \"\"",
+              "  if reminderLink is not \"\" then",
+              "    if reminderBody is not \"\" then set reminderBody to reminderBody & linefeed & linefeed",
+              "    set reminderBody to reminderBody & reminderLink",
+              "  end if",
+              "  tell application \"Reminders\" to make new reminder with properties {name:reminderName, body:reminderBody}",
+              "end run"
+            ],
+            "arguments": [
+              "--",
+              "{title}",
+              "{text}",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dest:things",
+      "title": "Things",
+      "subtitle": "New to-do in the Inbox",
+      "symbol": "checkmark.circle",
+      "app": "com.culturedcode.ThingsMac",
+      "accepts": [
+        "text",
+        "page"
+      ],
+      "keywords": [
+        "todo",
+        "task",
+        "inbox"
+      ],
+      "maxTextCharacters": 8000,
+      "failureHint": "Things could not open the link.",
+      "variants": [
+        {
+          "kinds": [
+            "page"
+          ],
+          "backend": {
+            "type": "urlScheme",
+            "url": "things:///add?title={title}&notes={url}"
+          }
+        },
+        {
+          "kinds": [
+            "text"
+          ],
+          "backend": {
+            "type": "urlScheme",
+            "url": "things:///add?title={title}&notes={text}%0A%0A{url}"
+          }
+        },
+        {
+          "kinds": [
+            "text"
+          ],
+          "backend": {
+            "type": "urlScheme",
+            "url": "things:///add?title={title}&notes={text}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dest:obsidian",
+      "title": "Obsidian",
+      "subtitle": "New note in the last vault",
+      "symbol": "diamond",
+      "app": "md.obsidian",
+      "accepts": [
+        "text",
+        "page"
+      ],
+      "keywords": [
+        "note",
+        "vault",
+        "markdown"
+      ],
+      "maxTextCharacters": 10000,
+      "failureHint": "Obsidian could not open the link. Open a vault in Obsidian once.",
+      "variants": [
+        {
+          "kinds": [
+            "page"
+          ],
+          "backend": {
+            "type": "urlScheme",
+            "url": "obsidian://new?name={title}&content=%5B{title}%5D%28{url}%29&silent=true"
+          }
+        },
+        {
+          "kinds": [
+            "text"
+          ],
+          "backend": {
+            "type": "urlScheme",
+            "url": "obsidian://new?name={title}&content={text}%0A%0ASource%3A%20{url}&silent=true"
+          }
+        },
+        {
+          "kinds": [
+            "text"
+          ],
+          "backend": {
+            "type": "urlScheme",
+            "url": "obsidian://new?name={title}&content={text}&silent=true"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dest:bear",
+      "title": "Bear",
+      "subtitle": "New note",
+      "symbol": "pawprint",
+      "app": "net.shinyfrog.bear",
+      "accepts": [
+        "text",
+        "page"
+      ],
+      "keywords": [
+        "note",
+        "bear"
+      ],
+      "maxTextCharacters": 10000,
+      "failureHint": "Bear could not open the link.",
+      "variants": [
+        {
+          "kinds": [
+            "page"
+          ],
+          "backend": {
+            "type": "urlScheme",
+            "url": "bear://x-callback-url/create?title={title}&text={url}&open_note=no&show_window=no"
+          }
+        },
+        {
+          "kinds": [
+            "text"
+          ],
+          "backend": {
+            "type": "urlScheme",
+            "url": "bear://x-callback-url/create?text={text}%0A%0A{url}&open_note=no&show_window=no"
+          }
+        },
+        {
+          "kinds": [
+            "text"
+          ],
+          "backend": {
+            "type": "urlScheme",
+            "url": "bear://x-callback-url/create?text={text}&open_note=no&show_window=no"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dest:mail",
+      "title": "Mail draft",
+      "subtitle": "Opens a draft, never sends",
+      "symbol": "envelope",
+      "app": "com.apple.mail",
+      "accepts": [
+        "text",
+        "page",
+        "files"
+      ],
+      "keywords": [
+        "email",
+        "compose",
+        "message"
+      ],
+      "confirm": "preview",
+      "preview": "Open a draft in Mail",
+      "timeout": 25,
+      "failureHint": "If macOS asked to let Apropos control Mail, allow it in Privacy & Security, Automation.",
+      "variants": [
+        {
+          "kinds": [
+            "files"
+          ],
+          "backend": {
+            "type": "appleScript",
+            "sourceLines": [
+              "on run argv",
+              "  set draftSubject to item 1 of argv",
+              "  set draftBody to item 2 of argv",
+              "  set draftLink to item 3 of argv",
+              "  if draftLink is not \"\" then",
+              "    if draftBody is not \"\" then set draftBody to draftBody & linefeed & linefeed",
+              "    set draftBody to draftBody & draftLink",
+              "  end if",
+              "  tell application \"Mail\"",
+              "    set draft to make new outgoing message with properties {subject:draftSubject, content:draftBody, visible:true}",
+              "    repeat with i from 4 to count of argv",
+              "      set attachmentPath to item i of argv",
+              "      tell content of draft to make new attachment with properties {file name:(POSIX file attachmentPath as alias)} at after the last paragraph",
+              "    end repeat",
+              "    activate",
+              "  end tell",
+              "end run"
+            ],
+            "arguments": [
+              "--",
+              "{title}",
+              "",
+              "",
+              "{files}"
+            ]
+          }
+        },
+        {
+          "kinds": [
+            "page"
+          ],
+          "backend": {
+            "type": "appleScript",
+            "sourceLines": [
+              "on run argv",
+              "  set draftSubject to item 1 of argv",
+              "  set draftBody to item 2 of argv",
+              "  set draftLink to item 3 of argv",
+              "  if draftLink is not \"\" then",
+              "    if draftBody is not \"\" then set draftBody to draftBody & linefeed & linefeed",
+              "    set draftBody to draftBody & draftLink",
+              "  end if",
+              "  tell application \"Mail\"",
+              "    set draft to make new outgoing message with properties {subject:draftSubject, content:draftBody, visible:true}",
+              "    repeat with i from 4 to count of argv",
+              "      set attachmentPath to item i of argv",
+              "      tell content of draft to make new attachment with properties {file name:(POSIX file attachmentPath as alias)} at after the last paragraph",
+              "    end repeat",
+              "    activate",
+              "  end tell",
+              "end run"
+            ],
+            "arguments": [
+              "--",
+              "{title}",
+              "",
+              "{url}"
+            ]
+          }
+        },
+        {
+          "kinds": [
+            "text"
+          ],
+          "backend": {
+            "type": "appleScript",
+            "sourceLines": [
+              "on run argv",
+              "  set draftSubject to item 1 of argv",
+              "  set draftBody to item 2 of argv",
+              "  set draftLink to item 3 of argv",
+              "  if draftLink is not \"\" then",
+              "    if draftBody is not \"\" then set draftBody to draftBody & linefeed & linefeed",
+              "    set draftBody to draftBody & draftLink",
+              "  end if",
+              "  tell application \"Mail\"",
+              "    set draft to make new outgoing message with properties {subject:draftSubject, content:draftBody, visible:true}",
+              "    repeat with i from 4 to count of argv",
+              "      set attachmentPath to item i of argv",
+              "      tell content of draft to make new attachment with properties {file name:(POSIX file attachmentPath as alias)} at after the last paragraph",
+              "    end repeat",
+              "    activate",
+              "  end tell",
+              "end run"
+            ],
+            "arguments": [
+              "--",
+              "{title}",
+              "{text}",
+              "{url}"
+            ]
+          }
+        },
+        {
+          "kinds": [
+            "text"
+          ],
+          "backend": {
+            "type": "appleScript",
+            "sourceLines": [
+              "on run argv",
+              "  set draftSubject to item 1 of argv",
+              "  set draftBody to item 2 of argv",
+              "  set draftLink to item 3 of argv",
+              "  if draftLink is not \"\" then",
+              "    if draftBody is not \"\" then set draftBody to draftBody & linefeed & linefeed",
+              "    set draftBody to draftBody & draftLink",
+              "  end if",
+              "  tell application \"Mail\"",
+              "    set draft to make new outgoing message with properties {subject:draftSubject, content:draftBody, visible:true}",
+              "    repeat with i from 4 to count of argv",
+              "      set attachmentPath to item i of argv",
+              "      tell content of draft to make new attachment with properties {file name:(POSIX file attachmentPath as alias)} at after the last paragraph",
+              "    end repeat",
+              "    activate",
+              "  end tell",
+              "end run"
+            ],
+            "arguments": [
+              "--",
+              "{title}",
+              "{text}",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dest:share",
+      "title": "Share...",
+      "subtitle": "The system Share menu",
+      "symbol": "square.and.arrow.up",
+      "handler": "shareMenu",
+      "accepts": [
+        "text",
+        "page",
+        "files",
+        "folder"
+      ],
+      "keywords": [
+        "share",
+        "airdrop",
+        "messages"
+      ],
+      "confirm": "preview",
+      "preview": "Open the Share menu with",
+      "failureHint": "The Share menu could not be opened."
+    }
+  ]
+}

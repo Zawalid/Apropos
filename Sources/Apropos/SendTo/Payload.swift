@@ -128,9 +128,12 @@ public struct Payload: Sendable, Equatable, CustomStringConvertible, CustomDebug
     /// Removes control characters other than tab, newline and carriage return. They have no meaning in a note and a NUL
     /// would cut a program argument short.
     static func clean(_ text: String) -> String {
-        String(String.UnicodeScalarView(text.unicodeScalars.filter { scalar in
-            scalar == "\t" || scalar == "\n" || scalar == "\r" || !(scalar.properties.generalCategory == .control)
-        }))
+        String(
+            String.UnicodeScalarView(
+                text.unicodeScalars.filter { scalar in
+                    scalar == "\t" || scalar == "\n" || scalar == "\r"
+                        || !(scalar.properties.generalCategory == .control)
+                }))
     }
 
     /// One line: control characters out, runs of whitespace collapsed.
@@ -140,7 +143,8 @@ public struct Payload: Sendable, Equatable, CustomStringConvertible, CustomDebug
 
     /// The first non-empty line of a selection, at most 80 characters.
     static func derivedTitle(from text: String) -> String {
-        let firstLine = text.split(whereSeparator: \.isNewline).lazy.map { cleanLine(String($0)) }.first { !$0.isEmpty } ?? ""
+        let firstLine =
+            text.split(whereSeparator: \.isNewline).lazy.map { cleanLine(String($0)) }.first { !$0.isEmpty } ?? ""
         guard !firstLine.isEmpty else { return "Note" }
         guard firstLine.count > 80 else { return firstLine }
         return String(firstLine.prefix(79)).trimmingCharacters(in: .whitespaces) + "\u{2026}"

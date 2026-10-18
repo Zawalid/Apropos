@@ -169,7 +169,9 @@ extension Destination {
         let kinds = Set(entry.kinds ?? [])
         for kind in kinds where !accepts.contains(kind) { throw DestinationValidationError.kindNotAccepted(kind) }
         let backend = entry.backend.definition
-        guard allowedBackends.contains(backend.type) else { throw DestinationValidationError.backendNotAllowed(backend.type) }
+        guard allowedBackends.contains(backend.type) else {
+            throw DestinationValidationError.backendNotAllowed(backend.type)
+        }
 
         var action: ContextAction
         do {
@@ -260,16 +262,19 @@ public struct DestinationLibrary: Sendable {
                             reason: "runs code and waits for approval: set \"review\": \"approved\" after reading it"))
                 }
             } catch let error as DestinationValidationError {
-                issues.append(ActionPackIssue(source: source, actionID: definition.id.rawValue, reason: error.description))
+                issues.append(
+                    ActionPackIssue(source: source, actionID: definition.id.rawValue, reason: error.description))
             } catch {
-                issues.append(ActionPackIssue(source: source, actionID: definition.id.rawValue, reason: "invalid definition"))
+                issues.append(
+                    ActionPackIssue(source: source, actionID: definition.id.rawValue, reason: "invalid definition"))
             }
         }
     }
 
     /// `~/Library/Application Support/Apropos/destinations`, where user packs live.
     @MainActor public static var userDirectory: URL {
-        SettingsStore.supportDirectory.appendingPathComponent("\(SettingsStore.folderName)/destinations", isDirectory: true)
+        SettingsStore.supportDirectory.appendingPathComponent(
+            "\(SettingsStore.folderName)/destinations", isDirectory: true)
     }
 
     /// The built-in destinations.

@@ -74,7 +74,8 @@ struct PayloadTests {
 
     @Test func aTextPayloadFromAPageCarriesTheLink() throws {
         let values = ContextValues(selectedText: "quote", pageURL: URL(string: "https://swift.org"), pageTitle: "Swift")
-        let text = try #require(Payload.candidates(from: values, bundleID: "com.apple.Safari").first { $0.kind == .text })
+        let text = try #require(
+            Payload.candidates(from: values, bundleID: "com.apple.Safari").first { $0.kind == .text })
         #expect(text.contextValues.pageURL?.absoluteString == "https://swift.org")
         #expect(text.title == "quote")
     }
@@ -140,10 +141,14 @@ struct DestinationPackTests {
         }
         // An AppleScript argument that could be read as an option.
         #expect(
-            issues(for: entry("{ \"type\": \"appleScript\", \"source\": \"on run argv\\nend run\", \"arguments\": [\"{text}\"] }"))
-                .contains { $0.contains("--") })
+            issues(
+                for: entry(
+                    "{ \"type\": \"appleScript\", \"source\": \"on run argv\\nend run\", \"arguments\": [\"{text}\"] }")
+            )
+            .contains { $0.contains("--") })
         // A shell with a placeholder in the executable.
-        #expect(!issues(for: entry("{ \"type\": \"shell\", \"executable\": \"/bin/{text}\", \"arguments\": [] }")).isEmpty)
+        #expect(
+            !issues(for: entry("{ \"type\": \"shell\", \"executable\": \"/bin/{text}\", \"arguments\": [] }")).isEmpty)
         // A placeholder in the host of a link.
         #expect(!issues(for: entry("{ \"type\": \"urlScheme\", \"url\": \"x://{text}/a\" }")).isEmpty)
         // Backends that act on the keyboard or call built-in functions have no place here.
@@ -151,7 +156,8 @@ struct DestinationPackTests {
         #expect(!issues(for: entry("{ \"type\": \"function\", \"name\": \"text.upper\" }")).isEmpty)
         // A bare text value in an option position.
         #expect(
-            !issues(for: entry("{ \"type\": \"shell\", \"executable\": \"/bin/echo\", \"arguments\": [\"{text}\"] }")).isEmpty)
+            !issues(for: entry("{ \"type\": \"shell\", \"executable\": \"/bin/echo\", \"arguments\": [\"{text}\"] }"))
+                .isEmpty)
     }
 
     @Test func refusesMalformedMetadata() {
@@ -159,17 +165,36 @@ struct DestinationPackTests {
         func entry(_ fields: String) -> String {
             "{ \(fields), \"variants\": [ { \"backend\": \(backend) } ] }"
         }
-        #expect(!issues(for: entry("\"id\": \"Bad ID\", \"title\": \"X\", \"symbol\": \"star\", \"accepts\": [\"text\"]")).isEmpty)
-        #expect(!issues(for: entry("\"id\": \"ctx:x\", \"title\": \"X\", \"symbol\": \"star\", \"accepts\": [\"text\"]")).isEmpty)
-        #expect(!issues(for: entry("\"id\": \"dest:x\", \"title\": \"\", \"symbol\": \"star\", \"accepts\": [\"text\"]")).isEmpty)
-        #expect(!issues(for: entry("\"id\": \"dest:x\", \"title\": \"X\", \"symbol\": \"star\", \"accepts\": []")).isEmpty)
         #expect(
-            !issues(for: entry("\"id\": \"dest:x\", \"title\": \"X\", \"symbol\": \"star\", \"accepts\": [\"text\"], \"app\": \"a b\""))
+            !issues(for: entry("\"id\": \"Bad ID\", \"title\": \"X\", \"symbol\": \"star\", \"accepts\": [\"text\"]"))
                 .isEmpty)
         #expect(
-            !issues(for: entry("\"id\": \"dest:x\", \"title\": \"X\", \"symbol\": \"star\", \"accepts\": [\"text\"], \"maxTextCharacters\": 0"))
+            !issues(for: entry("\"id\": \"ctx:x\", \"title\": \"X\", \"symbol\": \"star\", \"accepts\": [\"text\"]"))
                 .isEmpty)
-        #expect(!issues(for: "{ \"id\": \"dest:x\", \"title\": \"X\", \"symbol\": \"star\", \"accepts\": [\"text\"], \"variants\": [] }").isEmpty)
+        #expect(
+            !issues(for: entry("\"id\": \"dest:x\", \"title\": \"\", \"symbol\": \"star\", \"accepts\": [\"text\"]"))
+                .isEmpty)
+        #expect(
+            !issues(for: entry("\"id\": \"dest:x\", \"title\": \"X\", \"symbol\": \"star\", \"accepts\": []")).isEmpty)
+        #expect(
+            !issues(
+                for: entry(
+                    "\"id\": \"dest:x\", \"title\": \"X\", \"symbol\": \"star\", \"accepts\": [\"text\"], \"app\": \"a b\""
+                )
+            )
+            .isEmpty)
+        #expect(
+            !issues(
+                for: entry(
+                    "\"id\": \"dest:x\", \"title\": \"X\", \"symbol\": \"star\", \"accepts\": [\"text\"], \"maxTextCharacters\": 0"
+                )
+            )
+            .isEmpty)
+        #expect(
+            !issues(
+                for:
+                    "{ \"id\": \"dest:x\", \"title\": \"X\", \"symbol\": \"star\", \"accepts\": [\"text\"], \"variants\": [] }"
+            ).isEmpty)
     }
 
     @Test func aVariantForAKindTheDestinationDoesNotAcceptIsRefused() {
