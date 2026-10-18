@@ -110,6 +110,22 @@ struct UserCommandFile: Codable {
     var review: CommandReview?
     var hotkey: JSONValue?
 
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, command, aliases, allowFromURL, urlConfirmed, review, hotkey
+    }
+
+    /// An entry inside a pack file may leave `schemaVersion` out; the pack carries it.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? UserCommand.currentVersion
+        command = try container.decode(ActionDefinition.self, forKey: .command)
+        aliases = try container.decodeIfPresent([String].self, forKey: .aliases)
+        allowFromURL = try container.decodeIfPresent(Bool.self, forKey: .allowFromURL)
+        urlConfirmed = try container.decodeIfPresent(Bool.self, forKey: .urlConfirmed)
+        review = try container.decodeIfPresent(CommandReview.self, forKey: .review)
+        hotkey = try container.decodeIfPresent(JSONValue.self, forKey: .hotkey)
+    }
+
     init(_ source: UserCommand) {
         var definition = ActionDefinition(source.action)
         definition.group = nil
@@ -186,9 +202,42 @@ enum UserCommandLimits {
     static let maxAliases = 8
     static let maxAliasLength = 32
     static let maxFileBytes = 256 * 1024
+    static let maxSubtitle = 500
+    static let maxKeywords = 20
+    static let maxKeywordLength = 64
+    static let maxScript = 20_000
+    static let maxArguments = 64
+    static let maxArgumentLength = 4_000
+    static let maxNameLength = 200
+    static let maxAppEntries = 50
 }
 
 enum UserCommandValidator {
+    /// Rejects absurdly large fields so a hostile or broken file cannot bloat memory or the palette.
+    static func checkSizes(_ command: UserCommand) throws {
+        let limits = UserCommandLimits.self
+        func fail() -> UserCommandError { .invalid(.tooLarge) }
+        if (command.subtitle?.count ?? 0) > limits.maxSubtitle { throw fail() }
+        if command.keywords.count > limits.maxKeywords || command.keywords.contains(where: { $0.count > limits.maxKeywordLength }) {
+            throw fail()
+        }
+        if command.symbol.count > 100 { throw fail() }
+        if command.apps.include.count > limits.maxAppEntries || command.apps.exclude.count > limits.maxAppEntries { throw fail() }
+        func tooBig(_ templates: [ActionTemplate]) -> Bool {
+            templates.count > limits.maxArguments || templates.contains { $0.source.count > limits.maxArgumentLength }
+        }
+        switch command.backend {
+        case .function(let name): if name.count > limits.maxNameLength { throw fail() }
+        case .shell(let shell):
+            if tooBig(shell.arguments) || shell.executable.count > limits.maxArgumentLength { throw fail() }
+        case .appleScript(let script):
+            if script.source.count > limits.maxScript || tooBig(script.arguments) { throw fail() }
+        case .shortcut(let shortcut): if shortcut.name.count > limits.maxNameLength { throw fail() }
+        case .urlScheme(let template): if template.source.count > limits.maxArgumentLength { throw fail() }
+        case .keyPress: break
+        }
+    }
+
     /// Cleans what can be cleaned (case and whitespace of aliases) and throws for the rest. Hotkey and alias
     /// uniqueness need the other commands, so the store checks those.
     static func normalized(_ command: UserCommand, functions: ActionFunctionRegistry) throws -> UserCommand {
@@ -213,6 +262,7 @@ enum UserCommandValidator {
         command.aliases = aliases
 
         if let hotkey = command.hotkey, !hotkey.isValid { throw UserCommandError.badHotkey }
+        try checkSizes(command)
         do {
             try ActionValidator.validate(command.action, functions: functions, requireContext: false)
         } catch let error as ActionValidationError {

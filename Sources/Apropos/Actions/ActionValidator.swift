@@ -20,6 +20,7 @@ public enum ActionValidationError: Error, Equatable, Sendable, CustomStringConve
     case badURLTemplate
     case emptyScript
     case optionInjection
+    case tooLarge
 
     public var description: String {
         switch self {
@@ -40,6 +41,7 @@ public enum ActionValidationError: Error, Equatable, Sendable, CustomStringConve
         case .urlSchemeNotAllowed(let scheme): "the \(scheme) scheme is not allowed"
         case .badURLTemplate: "url template must start with a scheme"
         case .emptyScript: "script is empty"
+        case .tooLarge: "a field is too large"
         case .optionInjection: "put -- before a value that is a whole argument, or send it on standard input"
         }
     }
