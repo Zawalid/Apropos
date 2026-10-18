@@ -51,7 +51,7 @@ struct GeneralPage: View {
                 systemImage: "exclamationmark.triangle.fill"
             )
             .font(.system(size: 12.5))
-            .foregroundStyle(Theme.cautionText)
+            .foregroundStyle(Brand.danger)
             .padding(.horizontal, 16)
         }
         SettingsSection(title: "Panel") {
@@ -116,7 +116,7 @@ private struct SizePicker: View {
                 } label: {
                     Text("Aa")
                         .font(.system(size: size == .compact ? 11 : size == .standard ? 13 : 16, weight: .medium))
-                        .foregroundStyle(selected ? Theme.text : Theme.text3)
+                        .foregroundStyle(selected ? Brand.text : Brand.text3)
                         .frame(width: 36, height: 28)
                         .background(
                             RoundedRectangle(cornerRadius: 7, style: .continuous).fill(
@@ -213,7 +213,7 @@ struct AppIconImage: View {
         if let icon {
             Image(nsImage: icon).resizable().interpolation(.high).frame(width: size, height: size)
         } else {
-            Image(systemName: "app").font(.system(size: size * 0.7)).foregroundStyle(Theme.text3).frame(
+            Image(systemName: "app").font(.system(size: size * 0.7)).foregroundStyle(Brand.text3).frame(
                 width: size, height: size)
         }
     }
@@ -238,7 +238,7 @@ struct PrivacyPage: View {
                 if controller.permission.isTrusted {
                     Label("Allowed", systemImage: "checkmark.circle.fill")
                         .font(.system(size: 12.5, weight: .medium))
-                        .foregroundStyle(Theme.accentText)
+                        .foregroundStyle(Brand.mint)
                 } else {
                     Button("Allow in System Settings") {
                         controller.permission.requestPrompt()
@@ -361,19 +361,19 @@ struct AboutPage: View {
         VStack(spacing: 6) {
             Image(systemName: "command")
                 .font(.system(size: 30, weight: .medium))
-                .foregroundStyle(Theme.accentInk)
+                .foregroundStyle(Brand.mintInk)
                 .frame(width: 60, height: 60)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.accent))
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Brand.mint))
                 .padding(.bottom, 6)
                 .accessibilityHidden(true)
-            Text("Apropos").font(.system(size: 18, weight: .semibold)).foregroundStyle(Theme.text)
+            Text("Apropos").font(.system(size: 18, weight: .semibold)).foregroundStyle(Brand.text)
             Text("Version \(Self.version)")
                 .font(.system(size: 12.5))
-                .foregroundStyle(Theme.text3)
+                .foregroundStyle(Brand.text3)
                 .settingsAnchor("version")
             Text("What you can do right now, in this app, with this selection.")
                 .font(.system(size: 12))
-                .foregroundStyle(Theme.text3)
+                .foregroundStyle(Brand.text3)
                 .multilineTextAlignment(.center)
                 .padding(.top, 2)
         }
@@ -395,9 +395,9 @@ struct AboutPage: View {
             leading: AnyView(
                 Image(systemName: ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                     .font(.system(size: 14))
-                    .foregroundStyle(ok ? Theme.accentText : Theme.cautionText))
+                    .foregroundStyle(ok ? Brand.mint : Brand.danger))
         ) {
-            Text(ok ? okText : badText).font(.system(size: 12)).foregroundStyle(Theme.text2)
+            Text(ok ? okText : badText).font(.system(size: 12)).foregroundStyle(Brand.text2)
         }
     }
 
@@ -424,16 +424,16 @@ private struct ChipToggle: View {
                 if isOn {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(Theme.accentText)
+                        .foregroundStyle(Brand.mint)
                 }
                 Text(title)
                     .font(.system(size: 13))
-                    .foregroundStyle(isOn ? Theme.text : Theme.text3)
+                    .foregroundStyle(isOn ? Brand.text : Brand.text3)
             }
             .padding(.horizontal, 12)
             .frame(height: 30)
             .background(
-                Capsule().fill(isOn ? Theme.accentSoft : (hovering ? Theme.Settings.chipHover : Theme.Settings.chip))
+                Capsule().fill(isOn ? Brand.mint.opacity(0.14) : (hovering ? Brand.raised : Brand.raised))
             )
             .contentShape(Capsule())
         }

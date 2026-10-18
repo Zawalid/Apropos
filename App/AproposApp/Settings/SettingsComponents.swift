@@ -56,7 +56,7 @@ private struct SettingsAnchorModifier: ViewModifier {
         content
             .id(anchor)
             .background {
-                if navigation.flashing == anchor { Theme.accentSoft.transition(.opacity) }
+                if navigation.flashing == anchor { Brand.mint.opacity(0.14).transition(.opacity) }
             }
     }
 }
@@ -101,24 +101,21 @@ struct SettingsSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 0) {
             if let title {
                 Text(title)
-                    .font(.system(size: 13.5, weight: .medium))
-                    .foregroundStyle(Theme.text2)
-                    .padding(.leading, 14)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Brand.text3)
+                    .padding(.leading, 2)
                     .padding(.bottom, 8)
                     .accessibilityAddTraits(.isHeader)
             }
             VStack(spacing: 0) { content }
                 .padding(.bottom, -1)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.Settings.card))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(Theme.Settings.cardEdge, lineWidth: 1))
+                .background(RoundedRectangle(cornerRadius: Brand.sectionRadius, style: .continuous).fill(Brand.section))
+                .clipShape(RoundedRectangle(cornerRadius: Brand.sectionRadius, style: .continuous))
             if let footer {
                 Text(footer)
                     .font(.system(size: 12))
-                    .foregroundStyle(Theme.text3)
-                    .padding(.horizontal, 14)
+                    .foregroundStyle(Brand.text3)
+                    .padding(.horizontal, 2)
                     .padding(.top, 8)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -144,12 +141,12 @@ struct SettingsRow<Trailing: View>: View {
             if let leading { leading }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13.5))
-                    .foregroundStyle(Theme.text)
+                    .font(.system(size: 13.5, weight: .medium))
+                    .foregroundStyle(Brand.text)
                 if let detail {
                     Text(detail)
                         .font(.system(size: 12))
-                        .foregroundStyle(Theme.text3)
+                        .foregroundStyle(Brand.text2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -160,9 +157,9 @@ struct SettingsRow<Trailing: View>: View {
                 } label: {
                     Image(systemName: "arrow.uturn.backward")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Theme.text3)
+                        .foregroundStyle(Brand.text3)
                         .frame(width: 24, height: 24)
-                        .background(Circle().fill(hovering ? Theme.Settings.chip : .clear))
+                        .background(Circle().fill(hovering ? Brand.raised : .clear))
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -173,12 +170,12 @@ struct SettingsRow<Trailing: View>: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
-        .frame(minHeight: 46)
+        .frame(minHeight: 44)
         .overlay(alignment: .leading) {
-            if modified { Circle().fill(Theme.accent).frame(width: 4, height: 4).padding(.leading, 5) }
+            if modified { Circle().fill(Brand.mint).frame(width: 4, height: 4).padding(.leading, 5) }
         }
         .overlay(alignment: .bottom) {
-            Rectangle().fill(Theme.Settings.rule).frame(height: 1)
+            Rectangle().fill(Brand.line).frame(height: 1)
         }
         .onHover { hovering = $0 }
         .accessibilityElement(children: .combine)
@@ -215,11 +212,11 @@ struct AproposToggle: View {
             withAnimation(reduceMotion ? nil : Motion.selection) { isOn.toggle() }
         } label: {
             Capsule()
-                .fill(isOn ? Theme.accent : Theme.Settings.switchOff)
+                .fill(isOn ? Brand.mint : Brand.text3.opacity(0.4))
                 .frame(width: 38, height: 22)
                 .overlay(alignment: isOn ? .trailing : .leading) {
                     Circle()
-                        .fill(isOn ? Theme.accentInk : Color.white)
+                        .fill(isOn ? Brand.mintInk : Color.white)
                         .frame(width: 18, height: 18)
                         .shadow(color: .black.opacity(0.3), radius: 1.5, y: 1)
                         .padding(2)
@@ -259,16 +256,17 @@ struct ValueMenu<Value: Hashable>: View {
             HStack(spacing: 6) {
                 Text(options.first { $0.value == selection }?.title ?? "")
                     .font(.system(size: 13.5))
-                    .foregroundStyle(hovering ? Theme.text : Theme.text2)
+                    .foregroundStyle(Brand.text)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(Theme.text3)
+                    .foregroundStyle(Brand.text3)
             }
             .padding(.leading, 10)
             .padding(.trailing, 8)
             .frame(height: 28)
             .background(
-                RoundedRectangle(cornerRadius: 9, style: .continuous).fill(hovering ? Theme.Settings.chip : .clear)
+                RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous)
+                    .fill(hovering ? Brand.raised : Brand.raised.opacity(0.7))
             )
             .contentShape(Rectangle())
         }
@@ -276,7 +274,6 @@ struct ValueMenu<Value: Hashable>: View {
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
         .fixedSize()
-        .padding(.trailing, -8)
         .onHover { hovering = $0 }
     }
 }
@@ -290,12 +287,12 @@ struct SecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 13))
-            .foregroundStyle(destructive ? Theme.cautionText : Theme.text)
+            .foregroundStyle(destructive ? Brand.danger : Brand.text)
             .padding(.horizontal, 13)
             .frame(height: 28)
             .background(
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(hovering || configuration.isPressed ? Theme.Settings.chipHover : Theme.Settings.chip)
+                RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous)
+                    .fill(hovering || configuration.isPressed ? Brand.raised : Brand.raised.opacity(0.7))
             )
             .contentShape(Rectangle())
             .onHover { hovering = $0 }
@@ -340,17 +337,18 @@ struct FlowLayout: Layout {
     }
 }
 
-/// The sidebar tile of a page: a flat light square with the page's symbol.
+/// The glyph of a page: a plain, monochrome SF Symbol. No tile, no colour.
 struct PageTile: View {
     let page: SettingPage
     var size: CGFloat = 20
+    var active = false
 
     var body: some View {
         Image(systemName: page.symbol)
-            .font(.system(size: 11.5, weight: .medium))
-            .foregroundStyle(Theme.Settings.tileInk)
+            .font(.system(size: 14, weight: .regular))
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(active ? Brand.text : Brand.text2)
             .frame(width: size, height: size)
-            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.Settings.tile))
             .accessibilityHidden(true)
     }
 }

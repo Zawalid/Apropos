@@ -41,6 +41,9 @@ enum Brand {
     /// The moment. Only for what is current or live.
     static let pearl = adaptive(light: rgb(0xE56F2E), dark: rgb(0xFF8A4C))
 
+    /// Errors and warnings. Never pearl: pearl means now.
+    static let danger = adaptive(light: rgb(0xC73A3A), dark: rgb(0xFF6B6B))
+
     // MARK: Shape
 
     static let controlRadius: CGFloat = 8

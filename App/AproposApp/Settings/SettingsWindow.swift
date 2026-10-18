@@ -144,18 +144,15 @@ struct SettingsRoot: View {
     var body: some View {
         HStack(spacing: 0) {
             sidebar
-                .frame(width: 212)
-                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.Settings.sidebar))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(Theme.Settings.sidebarEdge, lineWidth: 1)
-                )
-                .padding(8)
+                .frame(width: 220)
+                .frame(maxHeight: .infinity)
+                .background(Brand.rail)
+                .overlay(alignment: .trailing) { Rectangle().fill(Brand.line).frame(width: 1) }
             detail
         }
         .frame(minWidth: 720, minHeight: 480)
-        .background(Theme.Settings.window)
-        .tint(Theme.accent)
+        .background(Brand.window)
+        .tint(Brand.mint)
         .environment(navigation)
         .environment(settings)
         .environment(\.interfaceMetrics, settings.metrics)
@@ -170,9 +167,8 @@ struct SettingsRoot: View {
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
             searchField
-                .padding(.top, 44)
-                .padding(.horizontal, 2)
-                .padding(.bottom, 10)
+                .padding(.top, 46)
+                .padding(.bottom, 14)
             if trimmedQuery.isEmpty {
                 pageList
             } else {
@@ -181,19 +177,19 @@ struct SettingsRoot: View {
             Spacer(minLength: 0)
             sidebarFooter
         }
-        .padding(.horizontal, 8)
-        .padding(.bottom, 10)
+        .padding(.horizontal, 12)
+        .padding(.bottom, 14)
     }
 
     private var searchField: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Theme.text3)
+                .foregroundStyle(Brand.text3)
             TextField("Search settings", text: $query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
-                .foregroundStyle(Theme.text)
+                .foregroundStyle(Brand.text)
                 .focused($searchFocused)
                 .onSubmit { openHit(at: highlightedHit) }
                 .onKeyPress(.downArrow) { moveHit(1) }
@@ -208,45 +204,45 @@ struct SettingsRoot: View {
         }
         .padding(.horizontal, 10)
         .frame(height: 30)
-        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Theme.Settings.chip))
+        .background(RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous).fill(Brand.raised))
         .overlay(
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .strokeBorder(searchFocused ? Theme.text3 : .clear, lineWidth: 1)
+            RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous)
+                .strokeBorder(searchFocused ? Brand.mint.opacity(0.7) : .clear, lineWidth: 1.5)
         )
     }
 
+    /// The pages in three groups, like the prototype: how it behaves, what it knows, and the rest.
     private var pageList: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            ForEach([SettingPage.general, .appearance, .context, .privacyAndData], id: \.self) { pageRow($0) }
-            Rectangle().fill(Theme.Settings.rule).frame(height: 1).padding(.vertical, 6).padding(.horizontal, 8)
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach([SettingPage.general, .appearance], id: \.self) { pageRow($0) }
+            Color.clear.frame(height: 14)
+            ForEach([SettingPage.context, .privacyAndData], id: \.self) { pageRow($0) }
+            Color.clear.frame(height: 14)
             ForEach([SettingPage.updates, .about], id: \.self) { pageRow($0) }
         }
     }
 
     private func pageRow(_ page: SettingPage) -> some View {
         SidebarRow(page: page, isSelected: navigation.page == page, namespace: selection) {
-            withAnimation(reduceMotion ? nil : Motion.selection) { navigation.select(page) }
+            withAnimation(reduceMotion ? .easeOut(duration: 0.1) : .spring(response: 0.42, dampingFraction: 0.66)) {
+                navigation.select(page)
+            }
         }
     }
 
+    /// Access and the shortcut, always in view: the two things that decide whether Apropos works.
     private var sidebarFooter: some View {
-        HStack(spacing: 7) {
-            Circle()
-                .fill(controller.permission.isTrusted ? Theme.accent : Theme.cautionText)
-                .frame(width: 6, height: 6)
-            Text(controller.permission.isTrusted ? "Ready" : "Needs access")
+        HStack(spacing: 8) {
+            Image(systemName: controller.permission.isTrusted ? "checkmark.circle" : "exclamationmark.circle")
+                .font(.system(size: 14))
+                .foregroundStyle(controller.permission.isTrusted ? Brand.mint : Brand.danger)
+            Text(controller.permission.isTrusted ? "Accessibility allowed" : "Needs Accessibility")
                 .font(.system(size: 12))
-                .foregroundStyle(Theme.text3)
+                .foregroundStyle(Brand.text3)
                 .lineLimit(1)
-            Spacer(minLength: 4)
-            HStack(spacing: 3) {
-                ForEach(Array(controller.combo.caps.enumerated()), id: \.offset) {
-                    KeyCap(text: $0.element, small: true)
-                }
-            }
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 8)
-        .padding(.top, 8)
+        .padding(.horizontal, 10)
     }
 
     private var hits: [SettingsHit] { SettingsCatalog.search(trimmedQuery) }
@@ -258,7 +254,7 @@ struct SettingsRoot: View {
                 if hits.isEmpty {
                     Text("No settings match")
                         .font(.system(size: 13))
-                        .foregroundStyle(Theme.text3)
+                        .foregroundStyle(Brand.text3)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 10)
                 }
@@ -267,9 +263,9 @@ struct SettingsRoot: View {
                         openHit(at: index)
                     } label: {
                         HStack(spacing: 10) {
-                            PageTile(page: hit.page)
+                            PageTile(page: hit.page, active: index == highlightedHit)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(hit.title).font(.system(size: 13.5)).foregroundStyle(Theme.text)
+                                Text(hit.title).font(.system(size: 13.5)).foregroundStyle(Brand.text)
                                 Text(
                                     hit.isPage
                                         ? "Page"
@@ -277,16 +273,16 @@ struct SettingsRoot: View {
                                             separator: " \u{203A} ")
                                 )
                                 .font(.system(size: 11.5))
-                                .foregroundStyle(Theme.text3)
+                                .foregroundStyle(Brand.text3)
                                 .lineLimit(1)
                             }
                             Spacer(minLength: 0)
                         }
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, 10)
                         .padding(.vertical, 6)
                         .background(
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(index == highlightedHit ? Theme.Settings.highlight : .clear)
+                            RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous)
+                                .fill(index == highlightedHit ? Brand.raised : .clear)
                         )
                         .contentShape(Rectangle())
                     }
@@ -316,25 +312,49 @@ struct SettingsRoot: View {
         ZStack(alignment: .top) {
             SettingsRevealer {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
+                    VStack(alignment: .leading, spacing: 26) {
+                        header
                         page
                     }
                     .frame(maxWidth: 580, alignment: .leading)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 62)
-                    .padding(.bottom, 28)
+                    .padding(.horizontal, 30)
+                    .padding(.top, 50)
+                    .padding(.bottom, 30)
                     .frame(maxWidth: .infinity)
                     .id(navigation.page)
                 }
                 .scrollIndicators(.never)
-                .mask(
-                    LinearGradient(
-                        stops: [
-                            .init(color: .clear, location: 0), .init(color: .black, location: 0.075),
-                            .init(color: .black, location: 0.965), .init(color: .clear, location: 1),
-                        ], startPoint: .top, endPoint: .bottom))
             }
             topBar
+        }
+    }
+
+    /// The page title with a quiet live status on the right, so every page tells you where things stand.
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(navigation.page.title)
+                .font(.system(size: 20, weight: .semibold))
+                .tracking(-0.3)
+                .foregroundStyle(Brand.text)
+                .accessibilityAddTraits(.isHeader)
+            Spacer(minLength: 12)
+            if let status = status(for: navigation.page) {
+                Text(status)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Brand.text3)
+            }
+        }
+    }
+
+    private func status(for page: SettingPage) -> String? {
+        switch page {
+        case .general: "Opens with \(controller.combo.caps.joined(separator: " "))"
+        case .appearance: settings.appearance.title
+        case .context: settings.contextSensing ? "Sensing is on" : "Sensing is off"
+        case .privacyAndData: controller.permission.isTrusted ? "Accessibility allowed" : "Needs Accessibility"
+        case .updates: settings.checkForUpdates ? "Checks automatically" : "Checks when you ask"
+        case .about:
+            (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String).map { "Version \($0)" }
         }
     }
 
@@ -343,17 +363,16 @@ struct SettingsRoot: View {
         HStack(spacing: 0) {
             HStack(spacing: 0) {
                 historyButton("chevron.left", label: "Back", enabled: navigation.canGoBack) { navigation.goBack() }
-                Rectangle().fill(Theme.Settings.rule).frame(width: 1, height: 14)
+                Rectangle().fill(Brand.line).frame(width: 1, height: 14)
                 historyButton("chevron.right", label: "Forward", enabled: navigation.canGoForward) {
                     navigation.goForward()
                 }
             }
-            .background(Capsule().fill(Theme.Settings.chip))
-            .overlay(Capsule().strokeBorder(Theme.Settings.cardEdge, lineWidth: 1))
+            .background(Capsule().fill(Brand.raised.opacity(0.7)))
             Spacer()
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
+        .padding(.horizontal, 30)
+        .padding(.top, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -363,8 +382,8 @@ struct SettingsRoot: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(enabled ? Theme.text : Theme.text3.opacity(0.5))
-                .frame(width: 34, height: 30)
+                .foregroundStyle(enabled ? Brand.text : Brand.text3.opacity(0.5))
+                .frame(width: 34, height: 28)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -385,7 +404,7 @@ struct SettingsRoot: View {
     }
 }
 
-/// One row of the sidebar. The highlight is shared between rows, so it slides from the old page to the new one.
+/// One row of the sidebar. The selection and the pearl are shared between rows, so they glide from the old page to the new.
 private struct SidebarRow: View {
     let page: SettingPage
     let isSelected: Bool
@@ -397,21 +416,30 @@ private struct SidebarRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                PageTile(page: page)
+                PageTile(page: page, active: isSelected)
                 Text(page.title)
-                    .font(.system(size: 13.5))
-                    .foregroundStyle(Theme.text)
+                    .font(.system(size: 13.5, weight: isSelected ? .medium : .regular))
+                    .foregroundStyle(isSelected ? Brand.text : Brand.text2)
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 8)
-            .frame(height: 32)
+            .padding(.leading, 22)
+            .padding(.trailing, 10)
+            .frame(height: 34)
             .background {
                 if isSelected {
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(Theme.Settings.highlight)
+                    RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous)
+                        .fill(Brand.raised)
                         .matchedGeometryEffect(id: "selection", in: namespace)
                 } else if hovering {
-                    RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Theme.Settings.hover)
+                    RoundedRectangle(cornerRadius: Brand.controlRadius, style: .continuous)
+                        .fill(Brand.raised.opacity(0.5))
+                }
+            }
+            .overlay(alignment: .leading) {
+                if isSelected {
+                    PearlView(size: 6)
+                        .padding(.leading, 9)
+                        .matchedGeometryEffect(id: "pearl", in: namespace)
                 }
             }
             .contentShape(Rectangle())
