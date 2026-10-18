@@ -100,7 +100,7 @@ public struct AXMenuReader: Sendable {
     /// CF types cannot be conditionally cast, so the type id is checked before reinterpreting the reference.
     static func element(_ value: AnyObject) -> AXUIElement? {
         guard CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
-        return unsafeBitCast(value, to: AXUIElement.self)
+        return unsafeDowncast(value, to: AXUIElement.self)
     }
 
     private struct Attributes {
