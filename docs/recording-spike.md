@@ -71,11 +71,44 @@ A throwaway fixture app and harness live in [scratch/recording-spike](../scratch
     proxy, not evidence that `AXIdentifier` is missing over IPC. Whether `AXIdentifier` crosses the process boundary
     for each control is **not verified** and is the first thing the blocked run answers.
 
-**Not verified (blocked by permission): everything else in sections 1 to 3 that says "known".** That includes which
-notifications actually arrive, what the event tap sees, how replay behaves when the app is in the background, and how
-the French run of English-title steps fails.
+**Not verified**: Electron and web behaviour, background-app replay (the fixture is an accessory app that is never
+frontmost, so "no focus stolen" below is weak evidence), a human's real clicks and keys through the event tap, and the
+whole prior-art section.
 
-### Running the blocked experiments (Walid)
+### Results of the first run (2026-10-18, Walid's terminal granted Accessibility, Input Monitoring)
+
+Run with `./run-experiments.sh`; output in `scratch/recording-spike/build/results` (not committed: the tree dumps
+contain the person's name and recent items, see below).
+
+**Verified (here), run 1**
+
+| Question | Result |
+|---|---|
+| Does `AXIdentifier` cross the process boundary? | **Yes** for window, text field, secure field, popup, buttons, table, label and menu items (`menu.export`, even AppKit's own selector names such as `showWritingTools:` appear). A button with no identifier set shows `id=""`. |
+| Is a secure field distinguishable? | **Yes**: `AXTextField` with subrole `AXSecureTextField`. The harness withheld its value. |
+| Titles by language | Same element, different title: `Save` / `Enregistrer`, `Export` / `Exporter`, menu `File` / `Fichier`. Identifiers identical in both. |
+| Replay on the French UI with English-title steps | Identifier steps **succeeded** (set value in 38 ms, press Save in 104 ms). Title-only steps (`Export`, `Open sheet`) **failed**, and the menu path by titles (`File > Export as PDF`) **failed**. This is the expected failure mode, now observed. |
+| Does a button press produce an Accessibility notification? | **No.** During `AXPress` on Save and Export no `AXPress`-related or `AXMenuItemSelected` / `AXMenuOpened` notification arrived. Only side effects were seen: `AXValueChanged` (text field, and the status label that Save changed), `AXSelectedTextChanged`, `AXSheetCreated`, `AXFocusedWindowChanged`, `AXFocusedUIElementChanged`, `AXApplicationActivated`, `AXUIElementDestroyed`. **A recorder cannot learn that a button was clicked from AXObserver; it needs the event tap and a hit test.** |
+| Does a programmatic menu press produce menu notifications? | No `AXMenuItemSelected`, `AXMenuOpened` or `AXMenuClosed` arrived. Whether a human's click on a real menu produces them is not tested. |
+| `AXUIElementDestroyed` | Arrived with no readable role: the element is already gone by callback time. Do not rely on reading a destroyed element. |
+| Event tap | Created (Input Monitoring granted). Counts were empty, as expected: nothing human was typing or clicking. |
+| Focus | Frontmost app was Arc before and after both replays. Weak evidence, see above. |
+| Menu bar of a non-frontmost accessory app | `AXMenuBar` is readable and menus are walkable while the app is not active. Menu item frames are meaningless (zero size, off screen), so menu items must be addressed by title, identifier or shortcut, never by position. |
+| `AXMenu` for the fixture's Edit menu | Contains items the app never added (Writing Tools with a 13-item submenu, AutoFill, Start Dictation, Emoji & Symbols), confirming menu index paths drift with the OS. |
+
+**Surprise 1: the whole menu bar tree includes the Apple menu**, which exposed the person's full name (the Log Out
+items) and a Recent Items list of apps, documents and folders. The recorder and any stored locator must skip the Apple
+menu, and **dumps of the tree are personal data**: do not paste them into issues, do not log them, do not commit them.
+
+**Surprise 2: one English replay failed where the identical steps worked elsewhere.** In the English run, steps 0, 1, 2,
+4 and 5 timed out after 3 s although the tree dump taken a moment earlier in the same run contained those elements, and
+only the menu path step succeeded. In the French run (same code) the identifier steps succeeded, and in the observe
+pass (English, same steps) all six succeeded. The cause is not established. Candidates: the first cold launch of a
+freshly built binary, a race between the dump and the replay, or the 600-node breadth-first cap. Treat it as evidence
+that replay needs retries, longer first-use waits and a real failure report. **Rerun `./run-experiments.sh` twice** to see
+whether it recurs.
+
+### Running the experiments (Walid)
 
 The harness needs Accessibility, and the tap part needs Input Monitoring. Only the person can grant them, and this
 session did not try to.
@@ -135,8 +168,9 @@ split is known, not re-checked.)
 | Scrolling, hover, gestures | Visible as events, meaningless as commands. | Do not record. |
 | Anything inside a canvas, game, remote desktop, video | Only pixel events. | Not recordable semantically. |
 
-Nothing in this table was observed live in this spike. The notification list matches the constants in
-`AXNotificationConstants.h`; `harness observe` registers the same list and prints what arrives.
+Rows about notifications were checked only for programmatic actions (see the first-run results): button presses emit
+no notification, and a programmatic menu press emits no menu notification. Rows about human clicks and keys remain
+unverified until someone clicks in a visible fixture.
 
 ### Apps that do not behave
 
