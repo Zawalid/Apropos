@@ -12,6 +12,12 @@ work lands.
   left untouched. macOS treats the renamed app as new, so grant Accessibility again and remove the stale Cue entry.
 
 ### Added
+- UI steps (phase 1 of record-to-command): a command can be a list of menu picks in other apps, run through Accessibility
+  without moving the pointer or taking focus. Steps find their item by identifier, role and title, menu path, shortcut,
+  then position, refuse ambiguous matches, never touch the Apple menu, recent items, password fields or apps on the
+  privacy list, and stop at the first failure with a named reason. Sequences are built from menu commands in code or
+  by hand in JSON, rated Sturdy, Fair or Fragile, and `apropos-probe --steps` checks a file against a running app
+  without performing anything. There is no recorder yet. See docs/ui-steps.md.
 - Next-action prediction: Apropos learns, on this Mac, which command you usually run next and offers it under Usually
   next with a reason such as "After Run Tests you chose Commit 9 of 12 times". Command-Return runs the first one, Not now
   in the Command-K popover dismisses one, and Settings can turn it off. It learns from command names, apps and times
