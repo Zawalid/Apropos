@@ -234,7 +234,7 @@ enum UserCommandValidator {
             if script.source.count > limits.maxScript || tooBig(script.arguments) { throw fail() }
         case .shortcut(let shortcut): if shortcut.name.count > limits.maxNameLength { throw fail() }
         case .urlScheme(let template): if template.source.count > limits.maxArgumentLength { throw fail() }
-        case .keyPress: break
+        case .keyPress, .uiSteps: break
         }
     }
 

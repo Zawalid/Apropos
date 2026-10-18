@@ -19,6 +19,7 @@ import Foundation
 /// - `shortcut`: `name`, `input` (variable name)
 /// - `urlScheme`: `url` (template; values are percent-encoded)
 /// - `keyPress`: `keyCode`, `modifiers` (`command`, `option`, `shift`, `control`)
+/// - `uiSteps`: `version`, `steps` (see docs/ui-steps.md)
 struct ActionDefinition: Codable {
     struct BackendDefinition: Codable {
         var type: String
@@ -32,6 +33,8 @@ struct ActionDefinition: Codable {
         var url: ActionTemplate?
         var keyCode: UInt32?
         var modifiers: [String]?
+        var version: Int?
+        var steps: [UIStep]?
 
         init(type: String) { self.type = type }
     }
@@ -80,6 +83,10 @@ struct ActionDefinition: Codable {
                 }
             }
             built = .keyPress(KeyPressBackend(keyCode: try need(backend.keyCode, "keyCode"), modifiers: modifiers))
+        case "uiSteps":
+            built = .uiSteps(
+                UIStepsBackend(
+                    version: backend.version ?? UIStepsBackend.currentVersion, steps: try need(backend.steps, "steps")))
         default:
             throw ConversionError.unknownBackend(backend.type)
         }
@@ -134,6 +141,10 @@ struct ActionDefinition: Codable {
             if key.modifiers.contains(.shift) { names.append("shift") }
             if key.modifiers.contains(.control) { names.append("control") }
             backend.modifiers = names
+        case .uiSteps(let steps):
+            backend.type = "uiSteps"
+            backend.version = steps.version
+            backend.steps = steps.steps
         }
         self.backend = backend
     }

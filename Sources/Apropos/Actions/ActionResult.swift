@@ -17,6 +17,8 @@ public enum ActionError: Error, Equatable, Sendable {
     case unknownFunction(String)
     /// The thing the action needs is not available: no remote, no Accessibility, no such Shortcut.
     case unavailable(String)
+    /// A `uiSteps` command stopped at a step.
+    case uiStepFailed(StepFailure)
 
     public var message: String {
         switch self {
@@ -31,6 +33,7 @@ public enum ActionError: Error, Equatable, Sendable {
         case .invalidInput: "The selection is not valid for that action."
         case .unknownFunction: "That action is not available in this version."
         case .unavailable(let reason): reason
+        case .uiStepFailed(let failure): failure.message
         }
     }
 }

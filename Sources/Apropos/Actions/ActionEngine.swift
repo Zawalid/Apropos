@@ -44,7 +44,9 @@ public struct ActionEngine: Sendable {
         let input = ActionInput(values: values)
         let produced: String?
         do {
-            produced = try await withTimeout(action.timeout) { try await runBackend(action, input: input) }
+            produced = try await withTimeout(action.timeout) {
+                try await runBackend(action, input: input, target: target)
+            }
         } catch let error as ActionError {
             return .failure(error)
         } catch let error as TextToolError {
@@ -88,7 +90,7 @@ public struct ActionEngine: Sendable {
 
     // MARK: Backends
 
-    private func runBackend(_ action: ContextAction, input: ActionInput) async throws -> String? {
+    private func runBackend(_ action: ContextAction, input: ActionInput, target: TargetApp?) async throws -> String? {
         switch action.backend {
         case .function(let name):
             guard let function = functions[name] else { throw ActionError.unknownFunction(name) }
@@ -125,6 +127,11 @@ public struct ActionEngine: Sendable {
             guard await services.postKey(key) else {
                 throw ActionError.unavailable("Apropos needs Accessibility access to press keys.")
             }
+            return nil
+
+        case .uiSteps(let steps):
+            let report = await services.uiSteps.run(steps, action.id.rawValue, target, action.timeout)
+            if let failure = report.failure { throw ActionError.uiStepFailed(failure) }
             return nil
         }
     }

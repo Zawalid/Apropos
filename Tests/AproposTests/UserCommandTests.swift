@@ -229,6 +229,7 @@ extension ActionBackend {
         case .shortcut: "shortcut"
         case .urlScheme: "urlScheme"
         case .keyPress: "keyPress"
+        case .uiSteps: "uiSteps"
         }
     }
 }

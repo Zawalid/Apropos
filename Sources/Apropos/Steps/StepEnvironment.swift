@@ -31,6 +31,8 @@ public enum StepPressResult: Equatable, Sendable {
     case staleElement
     /// The app did not answer in time. Not an error for a menu item: one that opens a sheet keeps the app busy.
     case timedOut
+    /// The Accessibility grant is gone.
+    case permissionLost
     case failed(code: Int32)
 }
 

@@ -11,6 +11,8 @@ public enum CommandRisk: String, Sendable, Equatable, CaseIterable {
     case pressesKeys
     case opensLink
     case replacesSelection
+    /// Chooses menu items in other apps.
+    case controlsApps
 
     /// Risks that make an imported command wait for approval.
     public var needsApproval: Bool { self == .runsProgram || self == .runsAppleScript }
@@ -23,6 +25,7 @@ public enum CommandRisk: String, Sendable, Equatable, CaseIterable {
         case .pressesKeys: "Presses keys in the app in front."
         case .opensLink: "Opens a link."
         case .replacesSelection: "Replaces the text you have selected."
+        case .controlsApps: "Chooses menu items in other apps."
         }
     }
 }
@@ -37,6 +40,7 @@ public enum CommandSummary {
         case .shortcut: risks.append(.runsShortcut)
         case .keyPress: risks.append(.pressesKeys)
         case .urlScheme: risks.append(.opensLink)
+        case .uiSteps: risks.append(.controlsApps)
         case .function: break
         }
         if command.output == .replaceSelection { risks.append(.replacesSelection) }
@@ -68,6 +72,13 @@ public enum CommandSummary {
             lines.append("Opens \(clipped(template.source))")
         case .keyPress(let key):
             lines.append("Presses \(key.modifiers.symbols)key code \(key.keyCode).")
+        case .uiSteps(let steps):
+            lines.append(
+                "Runs \(steps.steps.count) step\(steps.steps.count == 1 ? "" : "s") in "
+                    + steps.apps.joined(separator: ", ") + ":")
+            lines += steps.steps.prefix(8).map { "    " + clipped($0.description) }
+            if steps.steps.count > 8 { lines.append("    ...") }
+            lines.append("Reliability: \(steps.fragility.title). \(steps.fragility.explanation)")
         }
         if !command.requires.isEmpty {
             lines.append("Needs: " + command.requires.map(\.rawValue).sorted().joined(separator: ", ") + ".")

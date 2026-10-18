@@ -171,6 +171,8 @@ public enum ActionBackend: Sendable, Equatable {
     /// Opens a URL. Every placeholder is percent-encoded and none may appear before the path.
     case urlScheme(ActionTemplate)
     case keyPress(KeyPressBackend)
+    /// Menu picks (and later presses) in other apps through Accessibility. See `UIStepsBackend`.
+    case uiSteps(UIStepsBackend)
 }
 
 /// One thing Apropos can do with the current context.
