@@ -3,44 +3,19 @@ import Cue
 import Observation
 import ServiceManagement
 
-enum AppearanceMode: String, CaseIterable, Codable, Identifiable {
+enum AppearanceMode: String, CaseIterable, Identifiable {
     case system, dark, light
 
     var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .system: "System"
-        case .dark: "Dark"
-        case .light: "Light"
-        }
-    }
+    var title: String { rawValue.capitalized }
 }
 
-/// How long a typed query survives closing the panel.
-enum ResetQueryDelay: String, CaseIterable, Codable, Identifiable {
-    case immediately, fiveSeconds, fifteenSeconds, oneMinute, never
+extension InterfaceSize {
+    /// The value the settings file stores.
+    var stored: String { self == .standard ? "default" : rawValue }
 
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .immediately: "Immediately"
-        case .fiveSeconds: "After 5 seconds"
-        case .fifteenSeconds: "After 15 seconds"
-        case .oneMinute: "After 1 minute"
-        case .never: "Never"
-        }
-    }
-
-    var seconds: TimeInterval {
-        switch self {
-        case .immediately: 0
-        case .fiveSeconds: 5
-        case .fifteenSeconds: 15
-        case .oneMinute: 60
-        case .never: .infinity
-        }
+    init(stored: String) {
+        self = InterfaceSize.allCases.first { $0.stored == stored } ?? .standard
     }
 }
 
@@ -48,82 +23,141 @@ extension Notification.Name {
     static let cueSettingsChanged = Notification.Name("com.zawalid.cue.settings.changed")
 }
 
-/// The adapter every settings view and consumer goes through. For now it keeps a local JSON blob in UserDefaults; when
-/// `SettingsStore` lands in `Sources/Cue/Settings`, only this file changes.
+/// The settings every part of the app reads and writes, backed by `SettingsStore` (one JSON file). The store is the
+/// source of truth; the typed properties below are views of it, so changes reach the UI and the rest of the app at once.
 @MainActor
 @Observable
 final class SettingsModel {
-    struct Stored: Codable, Equatable {
-        var showInMenuBar = true
-        var closeOnFocusLoss = true
-        var resetQuery = ResetQueryDelay.immediately
-        var appearance = AppearanceMode.system
-        var interfaceSize = InterfaceSize.standard
-        var rowIcons = RowIconStyle.glyph
-        var contextEnabled = true
-        var hiddenChips: Set<String> = []
-        var ignoredApps: [String] = []
-        var checkForUpdates = false
-    }
+    let store: SettingsStore
 
-    private static let defaultsKey = "cueSettingsPlaceholder"
-
-    var values: Stored { didSet { if values != oldValue { changed() } } }
-
-    /// Apps where Cue senses nothing beyond the name. Shared with the context layer through `ContextPrivacy`.
-    var contextDisabledApps: Set<String> {
-        didSet { ContextPrivacy(disabledBundleIDs: contextDisabledApps).save() }
-    }
-
-    private(set) var launchAtLogin: Bool
-
-    init() {
-        if let data = UserDefaults.standard.data(forKey: Self.defaultsKey),
-            let stored = try? JSONDecoder().decode(Stored.self, from: data)
-        {
-            values = stored
-        } else {
-            values = Stored()
-        }
-        contextDisabledApps = ContextPrivacy.load().disabledBundleIDs
-        launchAtLogin = SMAppService.mainApp.status == .enabled
+    init(store: SettingsStore = SettingsStore()) {
+        self.store = store
+        migrateLegacyHotKey()
         applyAppearance()
+        syncLoginItem()
     }
 
-    var metrics: InterfaceMetrics { .metrics(for: values.interfaceSize) }
+    // MARK: Typed access
+
+    var showInMenuBar: Bool {
+        get { store.bool(.showInMenuBar) }
+        set { write(.bool(newValue), .showInMenuBar) }
+    }
+
+    var closeOnFocusLoss: Bool {
+        get { store.bool(.closeOnFocusLoss) }
+        set { write(.bool(newValue), .closeOnFocusLoss) }
+    }
+
+    var resetQuerySeconds: Int {
+        get { store.number(.resetQueryAfterSeconds) }
+        set { write(.number(newValue), .resetQueryAfterSeconds) }
+    }
+
+    var showAlternates: Bool {
+        get { store.bool(.showAlternateCommands) }
+        set { write(.bool(newValue), .showAlternateCommands) }
+    }
+
+    var hotKey: HotKeyCombo {
+        get { store.hotkey(.openHotKey) }
+        set { write(.hotkey(newValue), .openHotKey) }
+    }
+
+    var appearance: AppearanceMode {
+        get { AppearanceMode(rawValue: store.string(.theme)) ?? .system }
+        set {
+            write(.string(newValue.rawValue), .theme)
+            applyAppearance()
+        }
+    }
+
+    var interfaceSize: InterfaceSize {
+        get { InterfaceSize(stored: store.string(.interfaceSize)) }
+        set { write(.string(newValue.stored), .interfaceSize) }
+    }
+
+    var rowIcons: RowIconStyle {
+        get { RowIconStyle(rawValue: store.string(.rowIcons)) ?? .glyph }
+        set { write(.string(newValue.rawValue), .rowIcons) }
+    }
+
+    var reduceMotion: Bool {
+        get { store.bool(.reduceMotion) }
+        set { write(.bool(newValue), .reduceMotion) }
+    }
+
+    var contextSensing: Bool {
+        get { store.bool(.contextSensing) }
+        set { write(.bool(newValue), .contextSensing) }
+    }
+
+    var checkForUpdates: Bool {
+        get { store.bool(.checkForUpdates) }
+        set { write(.bool(newValue), .checkForUpdates) }
+    }
+
+    var ignoreList: [String] {
+        get { store.stringList(.contextIgnoreList) }
+        set { write(.stringList(newValue), .contextIgnoreList) }
+    }
+
+    var metrics: InterfaceMetrics { .metrics(for: interfaceSize) }
+
+    var launchAtLogin: Bool { store.bool(.openAtLogin) }
 
     func setLaunchAtLogin(_ enabled: Bool) {
-        do {
-            if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
-        } catch {
-            CueLog.app.error("launch at login failed: \(error.localizedDescription, privacy: .public)")
-        }
-        launchAtLogin = SMAppService.mainApp.status == .enabled
+        write(.bool(enabled), .openAtLogin)
+        syncLoginItem()
     }
 
-    func isSensingEnabled(for bundleID: String) -> Bool { !contextDisabledApps.contains(bundleID) }
+    // MARK: Context
+
+    func isSensingEnabled(for bundleID: String) -> Bool {
+        !store.stringList(.contextDisabledApps).contains(bundleID)
+    }
 
     func setSensing(_ enabled: Bool, for bundleID: String) {
-        if enabled { contextDisabledApps.remove(bundleID) } else { contextDisabledApps.insert(bundleID) }
+        var list = store.stringList(.contextDisabledApps).filter { $0 != bundleID }
+        if !enabled { list.append(bundleID) }
+        write(.stringList(list), .contextDisabledApps)
     }
 
-    func isChipShown(_ kind: ContextKind) -> Bool { !values.hiddenChips.contains(kind.rawValue) }
+    var contextDisabledApps: [String] { store.stringList(.contextDisabledApps) }
+
+    func isChipShown(_ kind: ContextKind) -> Bool { store.stringList(.contextChips).contains(kind.rawValue) }
 
     func setChip(_ kind: ContextKind, shown: Bool) {
-        if shown { values.hiddenChips.remove(kind.rawValue) } else { values.hiddenChips.insert(kind.rawValue) }
+        var chosen = Set(store.stringList(.contextChips))
+        if shown { chosen.insert(kind.rawValue) } else { chosen.remove(kind.rawValue) }
+        write(.stringList(Array(chosen)), .contextChips)
     }
 
-    func isIgnored(_ bundleID: String?) -> Bool {
-        bundleID.map(values.ignoredApps.contains) ?? false
+    var visibleKinds: [ContextKind] { store.visibleContextKinds() }
+    var contextPrivacy: ContextPrivacy { store.contextPrivacy() }
+
+    // MARK: Files
+
+    func exportSettings() {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "cue-settings.json"
+        panel.allowedContentTypes = [.json]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do { try store.exportSettings(to: url) } catch { report("Could not export settings", error) }
     }
 
-    // MARK: Placeholders until the usage store and updater land
-
-    /// Wired to the usage store when it exists.
-    func resetLearnedRanking() {}
-
-    /// Wired to the usage store when it exists.
-    func clearHistory() {}
+    func importSettings() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            _ = try store.importSettings(from: url)
+            applyAppearance()
+            NotificationCenter.default.post(name: .cueSettingsChanged, object: nil)
+        } catch {
+            report("Could not import settings", error)
+        }
+    }
 
     func checkForUpdatesNow() {
         let alert = NSAlert()
@@ -132,41 +166,44 @@ final class SettingsModel {
         alert.runModal()
     }
 
-    // MARK: Export and import
+    func flush() { store.flush() }
 
-    func exportSettings() {
-        let panel = NSSavePanel()
-        panel.nameFieldStringValue = "cue-settings.json"
-        panel.allowedContentTypes = [.json]
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        if let data = try? encoder.encode(values) { try? data.write(to: url) }
-    }
+    // MARK: Internals
 
-    func importSettings() {
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.json]
-        guard panel.runModal() == .OK, let url = panel.url,
-            let data = try? Data(contentsOf: url),
-            let stored = try? JSONDecoder().decode(Stored.self, from: data)
-        else { return }
-        values = stored
-    }
-
-    // MARK: Persistence
-
-    private func changed() {
-        if let data = try? JSONEncoder().encode(values) { UserDefaults.standard.set(data, forKey: Self.defaultsKey) }
-        applyAppearance()
+    private func write(_ value: SettingValue, _ id: SettingID) {
+        guard store.set(value, for: id) else { return }
         NotificationCenter.default.post(name: .cueSettingsChanged, object: nil)
+    }
+
+    private func report(_ message: String, _ error: Error) {
+        let alert = NSAlert()
+        alert.messageText = message
+        alert.informativeText = String(describing: error)
+        alert.runModal()
+    }
+
+    /// Settings made before the settings file existed lived in UserDefaults; carry the hotkey over once.
+    private func migrateLegacyHotKey() {
+        let legacy = HotKeyStore().load()
+        if store.isDefault(.openHotKey), legacy != .default { _ = store.set(.hotkey(legacy), for: .openHotKey) }
+    }
+
+    private func syncLoginItem() {
+        let wanted = store.bool(.openAtLogin)
+        let enabled = SMAppService.mainApp.status == .enabled
+        guard wanted != enabled else { return }
+        do {
+            if wanted { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+        } catch {
+            CueLog.app.error("login item failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private func applyAppearance() {
         #if DEBUG
             if ProcessInfo.processInfo.environment["CUE_APPEARANCE"] != nil { return }
         #endif
-        switch values.appearance {
+        switch appearance {
         case .system: NSApp?.appearance = nil
         case .dark: NSApp?.appearance = NSAppearance(named: .darkAqua)
         case .light: NSApp?.appearance = NSAppearance(named: .aqua)

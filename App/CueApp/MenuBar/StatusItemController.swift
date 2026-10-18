@@ -31,7 +31,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     }
 
     private func applyVisibility() {
-        statusItem.isVisible = controller.settings.values.showInMenuBar
+        statusItem.isVisible = controller.settings.showInMenuBar
     }
 
     // MARK: NSMenuDelegate
@@ -62,9 +62,18 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
 
         menu.addItem(NSMenuItem.sectionHeader(title: "Recent"))
-        let none = NSMenuItem(title: "No recent commands yet", action: nil, keyEquivalent: "")
-        none.isEnabled = false
-        menu.addItem(none)
+        let recents = controller.usage.recents
+        if recents.isEmpty {
+            let none = NSMenuItem(title: "No recent commands yet", action: nil, keyEquivalent: "")
+            none.isEnabled = false
+            menu.addItem(none)
+        }
+        for recent in recents {
+            let title = recent.appName.isEmpty ? recent.title : "\(recent.title)  \u{2014}  \(recent.appName)"
+            let entry = item(title, #selector(runRecent(_:)))
+            entry.representedObject = recent.stableID
+            menu.addItem(entry)
+        }
         menu.addItem(.separator())
 
         menu.addItem(item("Open Cue (\(controller.combo.display))", #selector(openCue)))
@@ -83,6 +92,19 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
         item.target = self
         return item
+    }
+
+    /// Runs a recent command if the app in front still offers it, else opens the panel for that app.
+    @objc private func runRecent(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String else { return }
+        if let command = controller.menus.commands.first(where: { $0.stableID.rawValue == raw }) {
+            let appName = controller.tracker.app?.name
+            Task { [controller] in
+                if await controller.palette.run(command) { controller.usage.recordRun(command, appName: appName) }
+            }
+        } else {
+            controller.togglePanel()
+        }
     }
 
     @objc private func openCue() { controller.togglePanel() }

@@ -5,12 +5,12 @@ import SwiftUI
 /// arithmetic, which is what lets a single highlight slide between rows.
 private enum ListEntry: Identifiable {
     case section(id: String, title: String)
-    case row(RankedCommand, index: Int)
+    case row(RankedCommand, index: Int, fullPath: Bool)
 
     var id: String {
         switch self {
         case .section(let id, _): "section-\(id)"
-        case .row(let ranked, _): ranked.id
+        case .row(let ranked, _, _): ranked.id
         }
     }
 
@@ -26,14 +26,15 @@ struct ResultsList: View {
     let model: PaletteModel
     let actions: PaletteActions
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(UsageController.self) private var usage
+    @Environment(\.cueReduceMotion) private var reduceMotion
     @Environment(\.interfaceMetrics) private var metrics
     @State private var entrance = RowEntrance()
     @State private var lastMouse = NSEvent.mouseLocation
 
     var body: some View {
         let entries = makeEntries()
-        let isGrouped = model.query.trimmingCharacters(in: .whitespaces).isEmpty
+        let symbols = usage.symbols(for: model.results.map(\.command))
         let selectedID = model.selected?.id
         let placement = selectedPlacement(in: entries, selectedID: selectedID)
         ScrollViewReader { proxy in
@@ -54,10 +55,11 @@ struct ResultsList: View {
                             switch entry {
                             case .section(_, let title):
                                 SectionHeader(title: title, height: metrics.section)
-                            case .row(let ranked, let index):
+                            case .row(let ranked, let index, let fullPath):
                                 CommandRow(
-                                    ranked: ranked, appName: model.targetApp?.name, appPID: model.targetApp?.pid,
-                                    showsFullPath: !isGrouped
+                                    ranked: ranked, symbol: symbols[ranked.id] ?? "command",
+                                    appName: model.targetApp?.name, appPID: model.targetApp?.pid,
+                                    showsFullPath: fullPath
                                 )
                                 .rowRise(index: index, entrance: entrance)
                                 .id(ranked.id)
@@ -104,17 +106,33 @@ struct ResultsList: View {
     private func makeEntries() -> [ListEntry] {
         let results = model.results
         let grouped = model.query.trimmingCharacters(in: .whitespaces).isEmpty
+        let leading = model.leadingGroups
+        let leadingCount = leading.pinned + leading.suggested
+        // A title shared by several menus (or one that only makes sense inside its menu) shows its path.
+        var titleCounts: [String: Int] = [:]
+        for ranked in results { titleCounts[ranked.command.displayTitle.lowercased(), default: 0] += 1 }
         var entries: [ListEntry] = []
         var currentGroup: String?
         for (index, ranked) in results.enumerated() {
+            var fullPath = true
             if grouped {
-                let group = ranked.command.path.first ?? "Menu"
-                if group != currentGroup {
-                    currentGroup = group
-                    entries.append(.section(id: "\(index)-\(group)", title: group))
+                if index == 0 && leading.pinned > 0 {
+                    entries.append(.section(id: "pinned", title: "Pinned"))
+                } else if index == leading.pinned && leading.suggested > 0 {
+                    entries.append(.section(id: "suggested", title: "Suggested for this moment"))
+                }
+                if index >= leadingCount {
+                    let group = ranked.command.path.first ?? "Menu"
+                    if group != currentGroup {
+                        currentGroup = group
+                        entries.append(.section(id: "\(index)-\(group)", title: group))
+                    }
+                    fullPath =
+                        CommandDisplay.isAmbiguous(title: ranked.command.title)
+                        || (titleCounts[ranked.command.displayTitle.lowercased()] ?? 0) > 1
                 }
             }
-            entries.append(.row(ranked, index: index))
+            entries.append(.row(ranked, index: index, fullPath: fullPath))
         }
         return entries
     }
@@ -124,7 +142,7 @@ struct ResultsList: View {
         guard let selectedID else { return nil }
         var y: CGFloat = 0
         for entry in entries {
-            if case .row(let ranked, _) = entry, ranked.id == selectedID { return (y, entry.height(metrics)) }
+            if case .row(let ranked, _, _) = entry, ranked.id == selectedID { return (y, entry.height(metrics)) }
             y += entry.height(metrics)
         }
         return nil

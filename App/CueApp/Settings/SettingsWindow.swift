@@ -1,65 +1,29 @@
+import Cue
 import AppKit
 import SwiftUI
 
-enum SettingsPage: String, CaseIterable, Identifiable {
-    case general, appearance, context, privacy, about
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .general: "General"
-        case .appearance: "Appearance"
-        case .context: "Context"
-        case .privacy: "Privacy and data"
-        case .about: "Updates and About"
-        }
-    }
-
-    var symbol: String {
-        switch self {
-        case .general: "gearshape"
-        case .appearance: "paintbrush"
-        case .context: "scope"
-        case .privacy: "lock.shield"
-        case .about: "info.circle"
-        }
-    }
-}
-
-/// One searchable setting, for the sidebar's search field.
-struct SettingsEntry: Identifiable {
+/// Things the settings search should find that are actions, not stored settings.
+struct SettingsAction: Identifiable {
     let title: String
-    let page: SettingsPage
+    let keywords: String
+    let page: SettingPage
     var id: String { title }
 
-    static let all: [SettingsEntry] = [
-        SettingsEntry(title: "Open at login", page: .general),
-        SettingsEntry(title: "Show in menu bar", page: .general),
-        SettingsEntry(title: "Open hotkey", page: .general),
-        SettingsEntry(title: "Close on focus loss", page: .general),
-        SettingsEntry(title: "Reset query", page: .general),
-        SettingsEntry(title: "Theme", page: .appearance),
-        SettingsEntry(title: "Interface size", page: .appearance),
-        SettingsEntry(title: "Row icons", page: .appearance),
-        SettingsEntry(title: "Sense context", page: .context),
-        SettingsEntry(title: "Context chips", page: .context),
-        SettingsEntry(title: "Apps that Cue senses", page: .context),
-        SettingsEntry(title: "Ignored apps", page: .context),
-        SettingsEntry(title: "Accessibility", page: .privacy),
-        SettingsEntry(title: "Reset learned ranking", page: .privacy),
-        SettingsEntry(title: "Clear history", page: .privacy),
-        SettingsEntry(title: "Export settings", page: .privacy),
-        SettingsEntry(title: "Import settings", page: .privacy),
-        SettingsEntry(title: "Check for updates", page: .about),
-        SettingsEntry(title: "Version", page: .about),
+    static let all = [
+        SettingsAction(title: "Reset learned ranking", keywords: "usage frecency suggestions", page: .privacyAndData),
+        SettingsAction(title: "Clear history", keywords: "recent commands", page: .privacyAndData),
+        SettingsAction(title: "Hidden commands", keywords: "unhide show again", page: .privacyAndData),
+        SettingsAction(title: "Export settings", keywords: "backup json", page: .privacyAndData),
+        SettingsAction(title: "Import settings", keywords: "restore json", page: .privacyAndData),
+        SettingsAction(title: "Accessibility access", keywords: "permission", page: .privacyAndData),
+        SettingsAction(title: "Version", keywords: "about build", page: .about),
     ]
 }
 
 @MainActor
 @Observable
 final class SettingsNavigation {
-    var page = SettingsPage.general
+    var page = SettingPage.general
 }
 
 /// Owns the Settings window: one 860 x 600 window with a sidebar and grouped cards.
@@ -75,7 +39,7 @@ final class SettingsWindowController {
 
     var currentWindow: NSWindow? { window }
 
-    func show(page: SettingsPage? = nil) {
+    func show(page: SettingPage? = nil) {
         if let page { navigation.page = page }
         let window = window ?? makeWindow()
         self.window = window
@@ -105,7 +69,7 @@ private struct SettingsRoot: View {
     let navigation: SettingsNavigation
 
     @State private var query = ""
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.cueReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: 0) {
@@ -119,6 +83,7 @@ private struct SettingsRoot: View {
         .background(Theme.windowBackground)
         .tint(Theme.accentText)
         .ignoresSafeArea()
+        .providesReduceMotion(settings.reduceMotion)
     }
 
     private var sidebar: some View {
@@ -137,7 +102,7 @@ private struct SettingsRoot: View {
             .padding(.top, 44)
 
             if query.trimmingCharacters(in: .whitespaces).isEmpty {
-                ForEach(SettingsPage.allCases) { page in pageButton(page) }
+                ForEach(SettingPage.allCases, id: \.self) { page in pageButton(page) }
             } else {
                 searchResults
             }
@@ -146,7 +111,7 @@ private struct SettingsRoot: View {
         .padding(.horizontal, 12)
     }
 
-    private func pageButton(_ page: SettingsPage) -> some View {
+    private func pageButton(_ page: SettingPage) -> some View {
         let selected = navigation.page == page
         return Button {
             navigation.page = page
@@ -178,8 +143,12 @@ private struct SettingsRoot: View {
     }
 
     private var searchResults: some View {
-        let needle = query.lowercased()
-        let hits = SettingsEntry.all.filter { $0.title.lowercased().contains(needle) }
+        let hits: [(title: String, page: SettingPage)] =
+            SettingsRegistry.search(query).map { ($0.title, $0.page) }
+            + SettingsAction.all.filter {
+                let haystack = ($0.title + " " + $0.keywords).lowercased()
+                return query.lowercased().split(separator: " ").allSatisfy { haystack.contains($0) }
+            }.map { ($0.title, $0.page) }
         return VStack(alignment: .leading, spacing: 2) {
             if hits.isEmpty {
                 Text("No settings match")
@@ -187,7 +156,7 @@ private struct SettingsRoot: View {
                     .foregroundStyle(Theme.text3)
                     .padding(8)
             }
-            ForEach(hits) { hit in
+            ForEach(Array(hits.enumerated()), id: \.offset) { _, hit in
                 Button {
                     navigation.page = hit.page
                     query = ""
@@ -228,8 +197,9 @@ private struct SettingsRoot: View {
         case .general: GeneralPage(controller: controller, settings: settings)
         case .appearance: AppearancePage(settings: settings)
         case .context: ContextPage(settings: settings)
-        case .privacy: PrivacyPage(controller: controller, settings: settings)
-        case .about: AboutPage(settings: settings)
+        case .privacyAndData: PrivacyPage(controller: controller, settings: settings)
+        case .updates: UpdatesPage(settings: settings)
+        case .about: AboutPage()
         }
     }
 }

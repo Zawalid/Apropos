@@ -43,7 +43,10 @@ launch() {
   shift
   pkill -x Cue 2>/dev/null || true
   sleep 0.6
-  open --env CUE_APPEARANCE="$mode" --env CUE_SNAPSHOT_DIR="$OUT" "$@" "$APP"
+  # A fresh data directory per launch keeps the shots independent of the real settings and usage files.
+  local data
+  data="$(mktemp -d "${TMPDIR:-/tmp}/cue-shots.XXXXXX")"
+  open --env CUE_APPEARANCE="$mode" --env CUE_SNAPSHOT_DIR="$OUT" --env CUE_DATA_DIR="$data" "$@" "$APP"
   sleep 2
 }
 
@@ -62,7 +65,7 @@ for mode in dark light; do
     label="${entry%%|*}"
     extra="${entry#*|}"
     # shellcheck disable=SC2086
-    launch "$mode" --env CUE_FIXTURE_COMMANDS=finder --env CUE_FIXTURE_CONTEXT=1 \
+    launch "$mode" --env CUE_FIXTURE_COMMANDS=finder --env CUE_FIXTURE_CONTEXT=1 --env CUE_FIXTURE_USAGE=1 \
       --env CUE_SNAPSHOT_NAME="panel-$label-$mode" $extra
     osascript -e "tell application \"$FRONT\" to activate"
     sleep 1.2
@@ -72,7 +75,7 @@ for mode in dark light; do
   done
 
   launch "$mode" --env CUE_FIXTURE_COMMANDS=finder
-  for page in general appearance context privacy about; do
+  for page in general appearance context privacyAndData updates about; do
     post settings "$page"
     sleep 1.6
     mv "$OUT/settings-$page.png" "$OUT/settings-$page-$mode.png"

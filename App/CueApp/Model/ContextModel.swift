@@ -25,7 +25,7 @@ final class ContextModel {
 
     func refresh(for app: TargetApp?) {
         task?.cancel()
-        guard let app, settings.values.contextEnabled else {
+        guard let app, settings.contextSensing else {
             items = []
             itemsPID = nil
             onChange?()
@@ -34,16 +34,14 @@ final class ContextModel {
         // Another app's context must not linger under this app's chip; the same app keeps its chips until fresh ones arrive.
         if itemsPID != app.pid { items = [] }
         var service = self.service
-        service.privacy = ContextPrivacy(
-            disabledBundleIDs: settings.contextDisabledApps,
-            selectionBlockedBundleIDs: service.privacy.selectionBlockedBundleIDs)
-        let hidden = settings.values.hiddenChips
+        service.privacy = settings.contextPrivacy
+        let visible = Set(settings.visibleKinds)
         let sensing = service
         task = Task { [weak self] in
             let snapshot = await sensing.snapshot(for: app)
             guard !Task.isCancelled, let self else { return }
             self.itemsPID = app.pid
-            self.items = snapshot.items.filter { !hidden.contains($0.kind.rawValue) }
+            self.items = snapshot.items.filter { visible.contains($0.kind) }
             self.onChange?()
         }
     }

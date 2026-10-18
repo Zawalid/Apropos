@@ -41,7 +41,7 @@ struct RowRise: ViewModifier {
     let duration: Double
     let entrance: RowEntrance?
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.cueReduceMotion) private var reduceMotion
     @State private var shown = false
 
     func body(content: Content) -> some View {
@@ -68,5 +68,33 @@ extension View {
     /// Context chips rise in a little slower than rows, one after the other.
     func chipRise(index: Int) -> some View {
         modifier(RowRise(index: index, stagger: 0.035, duration: 0.22, entrance: nil))
+    }
+}
+
+private struct CueReduceMotionKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// True when the system asks for reduced motion or Cue's own setting does.
+    var cueReduceMotion: Bool {
+        get { self[CueReduceMotionKey.self] }
+        set { self[CueReduceMotionKey.self] = newValue }
+    }
+}
+
+private struct ReduceMotionProvider: ViewModifier {
+    let setting: Bool
+    @Environment(\.accessibilityReduceMotion) private var system
+
+    func body(content: Content) -> some View {
+        content.environment(\.cueReduceMotion, system || setting)
+    }
+}
+
+extension View {
+    /// Puts the combined reduce-motion flag into the environment of everything below.
+    func providesReduceMotion(_ setting: Bool) -> some View {
+        modifier(ReduceMotionProvider(setting: setting))
     }
 }

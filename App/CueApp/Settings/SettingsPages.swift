@@ -2,22 +2,43 @@ import AppKit
 import Cue
 import SwiftUI
 
+/// The name of an installed app, or the bundle identifier itself when it is not installed here.
+func appDisplayName(_ bundleID: String) -> String {
+    if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+        return FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
+    }
+    return bundleID
+}
+
+/// The registry's definition of a setting, so titles and details are written once.
+private func definition(_ id: SettingID) -> SettingDefinition {
+    SettingsRegistry.definition(for: id)
+        ?? SettingDefinition(id: id, title: id.rawValue, page: .general, type: .bool, defaultValue: .bool(false))
+}
+
+private func toggle(_ id: SettingID, _ binding: Binding<Bool>) -> ToggleRow {
+    let def = definition(id)
+    return ToggleRow(title: def.title, detail: def.detail.isEmpty ? nil : def.detail, isOn: binding)
+}
+
 struct GeneralPage: View {
     let controller: AppController
     let settings: SettingsModel
+
+    private static let presets: [(seconds: Int, title: String)] = [
+        (0, "Immediately"), (15, "After 15 seconds"), (60, "After 1 minute"), (300, "After 5 minutes"),
+        (3600, "After 1 hour"),
+    ]
 
     var body: some View {
         @Bindable var settings = settings
         PageHeader(title: "General", subtitle: "How Cue starts and when the panel opens and closes.")
         SettingsCard {
-            ToggleRow(
-                title: "Open at login",
-                isOn: Binding(get: { settings.launchAtLogin }, set: { settings.setLaunchAtLogin($0) }))
+            toggle(
+                .openAtLogin,
+                Binding(get: { settings.launchAtLogin }, set: { settings.setLaunchAtLogin($0) }))
             SettingsDivider()
-            ToggleRow(
-                title: "Show in menu bar",
-                detail: "Cue stays reachable from its hotkey if you hide the icon.",
-                isOn: $settings.values.showInMenuBar)
+            toggle(.showInMenuBar, $settings.showInMenuBar)
         }
         SettingsCard(
             title: "Panel",
@@ -25,25 +46,36 @@ struct GeneralPage: View {
                 ? nil : "macOS did not accept this shortcut. Another app may be using it. Choose a different one."
         ) {
             SettingsRow(
-                title: "Open hotkey", detail: "Cue runs alongside your launcher. Pick a shortcut it does not use."
+                title: definition(.openHotKey).title,
+                detail: "Cue runs alongside your launcher. Pick a shortcut it does not use."
             ) {
                 ShortcutRecorder(
                     combo: controller.combo, onRecordingChange: { controller.setRecording($0) },
                     onChange: { controller.setCombo($0) })
             }
             SettingsDivider()
-            ToggleRow(
-                title: "Close on focus loss", detail: "Hide the panel when you click another window.",
-                isOn: $settings.values.closeOnFocusLoss)
+            toggle(.closeOnFocusLoss, $settings.closeOnFocusLoss)
             SettingsDivider()
-            SettingsRow(title: "Reset query", detail: "Keep what you typed if you reopen the panel soon after.") {
-                Picker("Reset query", selection: $settings.values.resetQuery) {
-                    ForEach(ResetQueryDelay.allCases) { Text($0.title).tag($0) }
+            SettingsRow(
+                title: definition(.resetQueryAfterSeconds).title,
+                detail: "Keep what you typed if you reopen the panel within this time."
+            ) {
+                Picker("Reset search after", selection: $settings.resetQuerySeconds) {
+                    ForEach(options, id: \.seconds) { Text($0.title).tag($0.seconds) }
                 }
                 .labelsHidden()
-                .frame(width: 160)
+                .frame(width: 170)
             }
+            SettingsDivider()
+            toggle(.showAlternateCommands, $settings.showAlternates)
         }
+    }
+
+    /// The presets, plus the stored value when someone edited the file to something else.
+    private var options: [(seconds: Int, title: String)] {
+        let current = settings.resetQuerySeconds
+        if Self.presets.contains(where: { $0.seconds == current }) { return Self.presets }
+        return (Self.presets + [(current, "After \(current) seconds")]).sorted { $0.seconds < $1.seconds }
     }
 }
 
@@ -54,19 +86,19 @@ struct AppearancePage: View {
         @Bindable var settings = settings
         PageHeader(title: "Appearance", subtitle: "Theme and how dense the command list is.")
         SettingsCard {
-            SettingsRow(title: "Theme") {
-                CueSegmented(
-                    options: AppearanceMode.allCases, title: \.title, selection: $settings.values.appearance)
+            SettingsRow(title: definition(.theme).title) {
+                CueSegmented(options: AppearanceMode.allCases, title: \.title, selection: $settings.appearance)
             }
             SettingsDivider()
-            SettingsRow(title: "Interface size", detail: "Row height, icon tile and text size in the panel.") {
-                CueSegmented(
-                    options: InterfaceSize.allCases, title: \.title, selection: $settings.values.interfaceSize)
+            SettingsRow(title: definition(.interfaceSize).title, detail: definition(.interfaceSize).detail) {
+                CueSegmented(options: InterfaceSize.allCases, title: \.title, selection: $settings.interfaceSize)
             }
             SettingsDivider()
-            SettingsRow(title: "Row icons") {
-                CueSegmented(options: RowIconStyle.allCases, title: \.title, selection: $settings.values.rowIcons)
+            SettingsRow(title: definition(.rowIcons).title) {
+                CueSegmented(options: RowIconStyle.allCases, title: \.title, selection: $settings.rowIcons)
             }
+            SettingsDivider()
+            toggle(.reduceMotion, $settings.reduceMotion)
         }
         SettingsCard(title: "Preview") {
             PreviewRow(settings: settings)
@@ -81,8 +113,8 @@ private struct PreviewRow: View {
     var body: some View {
         let metrics = settings.metrics
         HStack(spacing: 12) {
-            if settings.values.rowIcons != .none {
-                Image(systemName: settings.values.rowIcons == .glyph ? "plus" : "app.fill")
+            if settings.rowIcons != .none {
+                Image(systemName: settings.rowIcons == .glyph ? "plus" : "app.fill")
                     .font(.system(size: metrics.symbol, weight: .medium))
                     .foregroundStyle(Theme.tileInk)
                     .frame(width: metrics.tile, height: metrics.tile)
@@ -90,7 +122,7 @@ private struct PreviewRow: View {
             }
             Text("New Session").font(.system(size: metrics.title, weight: .medium)).foregroundStyle(Theme.text)
             Spacer()
-            KeyCap(text: "⌘")
+            KeyCap(text: "\u{2318}")
             KeyCap(text: "N")
         }
         .padding(.horizontal, 14)
@@ -117,20 +149,23 @@ struct ContextPage: View {
             title: "Context",
             subtitle: "What Cue reads to build the chips under the search field. All of it stays on this Mac.")
         SettingsCard {
-            ToggleRow(
-                title: "Sense context", detail: "Off shows only the app chip.", isOn: $settings.values.contextEnabled)
+            toggle(.contextSensing, $settings.contextSensing)
         }
-        SettingsCard(title: "Chips") {
-            ForEach(Array(ContextKind.allCases.enumerated()), id: \.element) { index, kind in
+        SettingsCard(title: definition(.contextChips).title, footer: definition(.contextChips).detail) {
+            ForEach(Array(SettingsRegistry.contextChipOptions.enumerated()), id: \.element.value) { index, option in
                 if index > 0 { SettingsDivider() }
-                ToggleRow(
-                    title: Self.title(for: kind),
-                    isOn: Binding(get: { settings.isChipShown(kind) }, set: { settings.setChip(kind, shown: $0) }))
+                if let kind = ContextKind(rawValue: option.value) {
+                    ToggleRow(
+                        title: option.title,
+                        isOn: Binding(get: { settings.isChipShown(kind) }, set: { settings.setChip(kind, shown: $0) }))
+                }
             }
         }
-        .opacity(settings.values.contextEnabled ? 1 : 0.5)
-        .disabled(!settings.values.contextEnabled)
-        SettingsCard(title: "Apps", footer: "Turn an app off and Cue reads nothing from it beyond its name.") {
+        .opacity(settings.contextSensing ? 1 : 0.5)
+        .disabled(!settings.contextSensing)
+        SettingsCard(
+            title: "Apps", footer: "Turn an app off and Cue reads nothing from it beyond the menu."
+        ) {
             if apps.isEmpty {
                 SettingsRow(title: "No apps to list") { EmptyView() }
             }
@@ -145,9 +180,8 @@ struct ContextPage: View {
                 }
             }
         }
-        .opacity(settings.values.contextEnabled ? 1 : 0.5)
-        .disabled(!settings.values.contextEnabled)
-        IgnoredAppsCard(settings: settings)
+        .opacity(settings.contextSensing ? 1 : 0.5)
+        .disabled(!settings.contextSensing)
         Color.clear.frame(height: 0).onAppear { apps = loadApps() }
     }
 
@@ -162,42 +196,31 @@ struct ContextPage: View {
             list.append(AppEntry(bundleID: id, name: app.localizedName ?? id, icon: app.icon))
         }
         for id in settings.contextDisabledApps where seen.insert(id).inserted {
-            list.append(AppEntry(bundleID: id, name: id, icon: nil))
+            list.append(AppEntry(bundleID: id, name: appDisplayName(id), icon: nil))
         }
         return list.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
-
-    static func title(for kind: ContextKind) -> String {
-        switch kind {
-        case .document: "Document"
-        case .url: "Web address"
-        case .folder: "Folder"
-        case .branch: "Git branch"
-        case .selection: "Selected text"
-        case .selectionCount: "Selected items"
-        }
-    }
 }
 
-/// Apps where the panel never opens.
-private struct IgnoredAppsCard: View {
+/// Apps Cue never reads, password managers by default.
+private struct IgnoreListCard: View {
     let settings: SettingsModel
 
     var body: some View {
-        @Bindable var settings = settings
-        SettingsCard(title: "Ignored apps", footer: "The Cue hotkey does nothing while one of these is in front.") {
-            ForEach(Array(settings.values.ignoredApps.enumerated()), id: \.element) { index, id in
+        let def = definition(.contextIgnoreList)
+        SettingsCard(title: def.title, footer: def.detail) {
+            ForEach(Array(settings.ignoreList.enumerated()), id: \.element) { index, id in
                 if index > 0 { SettingsDivider() }
-                SettingsRow(title: Self.name(for: id), detail: id) {
-                    Button("Remove") { settings.values.ignoredApps.removeAll { $0 == id } }
+                SettingsRow(title: Self.name(for: id), detail: Self.name(for: id) == id ? nil : id) {
+                    Button("Remove") { settings.ignoreList.removeAll { $0 == id } }
                         .buttonStyle(SecondaryButtonStyle())
                 }
             }
-            if !settings.values.ignoredApps.isEmpty { SettingsDivider() }
+            if !settings.ignoreList.isEmpty { SettingsDivider() }
             SettingsRow(title: "Add an app", detail: "Choose from the apps that are open.") {
                 Menu("Choose") {
                     ForEach(candidates, id: \.bundleID) { app in
-                        Button(app.name) { settings.values.ignoredApps.append(app.bundleID) }
+                        Button(app.name) { settings.ignoreList.append(app.bundleID) }
                     }
                 }
                 .menuStyle(.borderlessButton)
@@ -210,13 +233,11 @@ private struct IgnoredAppsCard: View {
         NSWorkspace.shared.runningApplications
             .filter { $0.activationPolicy == .regular }
             .compactMap { app in app.bundleIdentifier.map { ($0, app.localizedName ?? $0) } }
-            .filter { !settings.values.ignoredApps.contains($0.0) && $0.0 != Bundle.main.bundleIdentifier }
+            .filter { !settings.ignoreList.contains($0.0) && $0.0 != Bundle.main.bundleIdentifier }
             .sorted { $0.1.localizedCaseInsensitiveCompare($1.1) == .orderedAscending }
     }
 
-    private static func name(for bundleID: String) -> String {
-        NSWorkspace.shared.runningApplications.first { $0.bundleIdentifier == bundleID }?.localizedName ?? bundleID
-    }
+    private static func name(for bundleID: String) -> String { appDisplayName(bundleID) }
 }
 
 struct AppIconImage: View {
@@ -263,14 +284,17 @@ struct PrivacyPage: View {
                 }
             }
         }
+        IgnoreListCard(settings: settings)
         SettingsCard(title: "Learned data") {
             SettingsRow(title: "Learned ranking", detail: "Which commands you use most in each app.") {
                 Button("Reset") { confirming = .ranking }.buttonStyle(SecondaryButtonStyle(destructive: true))
             }
             SettingsDivider()
-            SettingsRow(title: "History", detail: "The list of recent commands.") {
+            SettingsRow(title: "History", detail: "The recent commands in the menu bar menu.") {
                 Button("Clear") { confirming = .history }.buttonStyle(SecondaryButtonStyle(destructive: true))
             }
+            SettingsDivider()
+            HiddenCommandsRow(controller: controller)
         }
         SettingsCard(title: "Settings file") {
             SettingsRow(title: "Export settings", detail: "Save your settings as a JSON file.") {
@@ -287,30 +311,59 @@ struct PrivacyPage: View {
             titleVisibility: .visible
         ) {
             Button(confirming == .ranking ? "Reset" : "Clear", role: .destructive) {
-                if confirming == .ranking { settings.resetLearnedRanking() } else { settings.clearHistory() }
+                if confirming == .ranking {
+                    controller.usage.resetLearnedRanking()
+                } else {
+                    controller.usage.clearHistory()
+                }
             }
         } message: {
-            Text("This cannot be undone.")
+            Text("This cannot be undone. Pins and hidden commands are kept.")
         }
     }
 }
 
-struct AboutPage: View {
+/// Brings back commands hidden from the palette, for the app that was in front when Settings opened.
+private struct HiddenCommandsRow: View {
+    let controller: AppController
+
+    var body: some View {
+        let app = controller.tracker.app
+        let hidden = app?.bundleID.map { controller.usage.hiddenIDs(forBundleID: $0) } ?? []
+        SettingsRow(
+            title: "Hidden commands",
+            detail: hidden.isEmpty
+                ? "Nothing is hidden in \(app?.name ?? "the last app you used")."
+                : "\(hidden.count) hidden in \(app?.name ?? "this app")."
+        ) {
+            if !hidden.isEmpty {
+                Button("Show again") { hidden.forEach { controller.usage.unhide($0) } }
+                    .buttonStyle(SecondaryButtonStyle())
+            }
+        }
+    }
+}
+
+struct UpdatesPage: View {
     let settings: SettingsModel
 
     var body: some View {
         @Bindable var settings = settings
-        PageHeader(title: "Updates and About")
-        SettingsCard(
-            title: "Updates", footer: "Cue only contacts the update server when you ask it to or turn this on."
-        ) {
-            ToggleRow(title: "Check for updates automatically", isOn: $settings.values.checkForUpdates)
+        PageHeader(title: "Updates")
+        SettingsCard(footer: "Cue only contacts the update server when you ask it to or turn this on.") {
+            toggle(.checkForUpdates, $settings.checkForUpdates)
             SettingsDivider()
             SettingsRow(title: "Check now") {
                 Button("Check for Updates") { settings.checkForUpdatesNow() }.buttonStyle(SecondaryButtonStyle())
             }
         }
-        SettingsCard(title: "About") {
+    }
+}
+
+struct AboutPage: View {
+    var body: some View {
+        PageHeader(title: "About")
+        SettingsCard {
             SettingsRow(title: "Cue") {
                 Text("Version \(Self.version)").font(.system(size: 12.5)).foregroundStyle(Theme.text2)
             }

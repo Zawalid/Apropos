@@ -53,7 +53,7 @@
             ) { note in
                 let name = note.object as? String ?? "general"
                 MainActor.assumeIsolated {
-                    controller.showSettings(page: SettingsPage(rawValue: name))
+                    controller.showSettings(page: SettingPage(rawValue: name))
                     Task {
                         try? await Task.sleep(for: .milliseconds(700))
                         if let window = controller.settingsWindow { capture(window, name: "settings-\(name)") }

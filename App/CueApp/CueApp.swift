@@ -18,4 +18,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         controller.start()
     }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        controller.flush()
+    }
 }

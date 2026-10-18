@@ -87,7 +87,7 @@ struct CueToggle: View {
     let title: String
     @Binding var isOn: Bool
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.cueReduceMotion) private var reduceMotion
 
     var body: some View {
         Button {
@@ -120,7 +120,7 @@ struct CueSegmented<Value: Hashable & Identifiable>: View {
     @Binding var selection: Value
 
     @Namespace private var namespace
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.cueReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: 2) {

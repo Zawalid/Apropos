@@ -4,6 +4,7 @@ import SwiftUI
 /// One 46pt row. The selection highlight is drawn by the list, not here, so it can slide between rows.
 struct CommandRow: View {
     let ranked: RankedCommand
+    let symbol: String
     let appName: String?
     var appPID: pid_t?
     @Environment(\.interfaceMetrics) private var metrics
@@ -14,9 +15,9 @@ struct CommandRow: View {
     var body: some View {
         let command = ranked.command
         HStack(spacing: 12) {
-            switch settings.values.rowIcons {
+            switch settings.rowIcons {
             case .glyph:
-                IconTile(symbol: CommandDisplay.symbol(for: command), isEnabled: command.isEnabled)
+                IconTile(symbol: symbol, isEnabled: command.isEnabled)
             case .appLogo:
                 if let appPID { AppIcon(pid: appPID, size: metrics.tile).opacity(command.isEnabled ? 1 : 0.4) }
             case .none:

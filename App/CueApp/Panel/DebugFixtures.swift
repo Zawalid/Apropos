@@ -72,5 +72,15 @@
                     isChecked: item.checked, source: .menuItem(bundleID: nil))
             }
         }
+
+        /// Makes the first few fixture commands habits (and pins the fourth) so Suggested and Pinned have something to show.
+        @MainActor
+        static func seedUsage(_ usage: UsageController, commands: [Command]) {
+            for command in commands.prefix(3).enumerated() {
+                for _ in 0..<(8 - command.offset * 2) { usage.store.recordRun(of: command.element) }
+            }
+            if commands.count > 3 { usage.store.setPinned(true, for: commands[3].stableID) }
+            usage.refreshRanker()
+        }
     }
 #endif

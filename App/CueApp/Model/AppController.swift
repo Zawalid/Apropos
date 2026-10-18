@@ -12,12 +12,12 @@ final class AppController {
     let tracker = FrontmostAppTracker()
     let menus: AppMenuModel
     let palette: PaletteModel
-    let settings = SettingsModel()
+    let settings: SettingsModel
     let context: ContextModel
+    let usage: UsageController
     private(set) var combo: HotKeyCombo
     private(set) var isHotKeyRegistered = true
 
-    @ObservationIgnored private let store = HotKeyStore()
     @ObservationIgnored private var hotKey: GlobalHotKey?
     @ObservationIgnored private var panel: PanelController?
     @ObservationIgnored private var settingsController: SettingsWindowController?
@@ -25,10 +25,26 @@ final class AppController {
     @ObservationIgnored private var onboardingWindow: NSWindow?
 
     init() {
+        var settingsURL = SettingsStore.defaultURL
+        var usageURL = UsageStore.defaultURL
+        #if DEBUG
+            // Snapshots and experiments keep their data out of the real files.
+            if let dir = ProcessInfo.processInfo.environment["CUE_DATA_DIR"] {
+                settingsURL = URL(fileURLWithPath: dir).appendingPathComponent("settings.json")
+                usageURL = URL(fileURLWithPath: dir).appendingPathComponent("usage.json")
+            }
+        #endif
+        let settings = SettingsModel(store: SettingsStore(url: settingsURL))
+        self.settings = settings
         let menus = AppMenuModel(tracker: tracker, permission: permission)
+        menus.showAlternates = settings.showAlternates
         self.menus = menus
-        self.palette = PaletteModel(menus: menus, tracker: tracker)
-        self.combo = store.load()
+        let usageStore = UsageStore(url: usageURL)
+        let palette = PaletteModel(
+            menus: menus, tracker: tracker, ranker: CommandRanker(signal: usageStore.rankingSignal()))
+        self.palette = palette
+        self.usage = UsageController(store: usageStore, palette: palette)
+        self.combo = settings.hotKey
         self.context = ContextModel(settings: settings)
     }
 
@@ -37,12 +53,16 @@ final class AppController {
         tracker.start()
         let panel = PanelController(
             model: palette, tracker: tracker, permission: permission, settings: settings, context: context,
-            openSettings: { [weak self] in self?.showSettings() })
+            usage: usage, openSettings: { [weak self] in self?.showSettings() })
         statusItem = StatusItemController(controller: self)
         self.panel = panel
         #if DEBUG
             if let name = ProcessInfo.processInfo.environment["CUE_FIXTURE_COMMANDS"] {
-                menus.seed(DebugFixtures.commands(named: name))
+                let fixtures = DebugFixtures.commands(named: name)
+                menus.seed(fixtures)
+                if ProcessInfo.processInfo.environment["CUE_FIXTURE_USAGE"] != nil {
+                    DebugFixtures.seedUsage(usage, commands: fixtures)
+                }
             }
             DebugSnapshot.installRemoteControl(panel: panel, model: palette)
             DebugSnapshot.installSettingsControl(controller: self)
@@ -54,13 +74,32 @@ final class AppController {
         self.hotKey = hotKey
         isHotKeyRegistered = hotKey.register(combo)
         if !permission.isTrusted { showOnboarding() }
+        NotificationCenter.default.addObserver(
+            forName: .cueSettingsChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.settingsChanged() }
+        }
+    }
+
+    /// Applies the settings that live outside the views: the hotkey and the alternate-command rows.
+    private func settingsChanged() {
+        if menus.showAlternates != settings.showAlternates { menus.showAlternates = settings.showAlternates }
+        if settings.hotKey != combo {
+            combo = settings.hotKey
+            isHotKeyRegistered = hotKey?.register(combo) ?? false
+        }
+    }
+
+    func flush() {
+        settings.flush()
+        usage.flush()
     }
 
     func togglePanel() { panel?.toggle() }
 
     func setCombo(_ new: HotKeyCombo) {
         combo = new
-        store.save(new)
+        settings.hotKey = new
         isHotKeyRegistered = hotKey?.register(new) ?? false
     }
 
@@ -73,7 +112,7 @@ final class AppController {
         }
     }
 
-    func showSettings(page: SettingsPage? = nil) {
+    func showSettings(page: SettingPage? = nil) {
         let controller = settingsController ?? SettingsWindowController(controller: self)
         settingsController = controller
         controller.show(page: page)

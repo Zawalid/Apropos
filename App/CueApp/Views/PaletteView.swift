@@ -16,12 +16,13 @@ struct PaletteView: View {
     let model: PaletteModel
     let state: PanelState
     let context: ContextModel
+    let usage: UsageController
     let permission: AccessibilityPermission
     let settings: SettingsModel
     let actions: PaletteActions
 
     @FocusState private var searchFocused: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.cueReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -33,7 +34,9 @@ struct PaletteView: View {
                 model: model, state: state, content: PaletteContentView.resolve(model), actions: actions)
             if state.actionsOpen {
                 ActionsPopover(
-                    items: PaletteAction.available(for: model.selected?.command, appName: model.targetApp?.name),
+                    items: PaletteAction.available(
+                        for: model.selected?.command, appName: model.targetApp?.name,
+                        isPinned: model.selected.map { usage.isPinned($0.command) } ?? false),
                     selectedIndex: state.actionIndex, actions: actions
                 )
                 .padding(.trailing, 14)
@@ -48,6 +51,8 @@ struct PaletteView: View {
         .tint(Theme.accentText)
         .environment(\.interfaceMetrics, settings.metrics)
         .environment(settings)
+        .environment(usage)
+        .providesReduceMotion(settings.reduceMotion)
         .onChange(of: state.focusToken) { searchFocused = true }
         .onAppear { searchFocused = true }
     }

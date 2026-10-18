@@ -10,6 +10,7 @@ final class PanelController: NSObject {
     private let state = PanelState()
     private let context: ContextModel
     private let settings: SettingsModel
+    private let usage: UsageController
     private var lastHide = Date.distantPast
     private var lastQuery = ""
     private let model: PaletteModel
@@ -21,16 +22,18 @@ final class PanelController: NSObject {
 
     init(
         model: PaletteModel, tracker: FrontmostAppTracker, permission: AccessibilityPermission,
-        settings: SettingsModel, context: ContextModel, openSettings: @escaping () -> Void
+        settings: SettingsModel, context: ContextModel, usage: UsageController, openSettings: @escaping () -> Void
     ) {
         self.model = model
         self.settings = settings
+        self.usage = usage
         self.context = context
         self.openSettings = openSettings
         super.init()
 
         let root = PaletteView(
-            model: model, state: state, context: context, permission: permission, settings: settings,
+            model: model, state: state, context: context, usage: usage, permission: permission,
+            settings: settings,
             actions: PaletteActions(
                 run: { [weak self] in self?.runSelected() },
                 runCommand: { [weak self] command in self?.run(command) },
@@ -57,7 +60,7 @@ final class PanelController: NSObject {
             forName: NSWindow.didResignKeyNotification, object: panel, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, self.settings.values.closeOnFocusLoss else { return }
+                guard let self, self.settings.closeOnFocusLoss else { return }
                 self.hide()
             }
         }
@@ -66,7 +69,7 @@ final class PanelController: NSObject {
     func toggle() {
         if isVisible {
             hide()
-        } else if !settings.isIgnored(model.targetApp?.bundleID) {
+        } else {
             show()
         }
     }
@@ -74,7 +77,7 @@ final class PanelController: NSObject {
     /// Opening is ordering a ready window to the front: no animation, the content is already drawn.
     func show() {
         model.prepareForOpen()
-        if Date().timeIntervalSince(lastHide) < settings.values.resetQuery.seconds { model.query = lastQuery }
+        if Date().timeIntervalSince(lastHide) < TimeInterval(settings.resetQuerySeconds) { model.query = lastQuery }
         context.refresh(for: model.targetApp)
         closeActions(animated: false)
         position()
@@ -152,7 +155,9 @@ final class PanelController: NSObject {
     }
 
     private var availableActions: [PaletteAction] {
-        PaletteAction.available(for: model.selected?.command, appName: model.targetApp?.name)
+        PaletteAction.available(
+            for: model.selected?.command, appName: model.targetApp?.name,
+            isPinned: model.selected.map { usage.isPinned($0.command) } ?? false)
     }
 
     private func actionsOpenSettings() {
@@ -183,6 +188,20 @@ final class PanelController: NSObject {
         switch action.kind {
         case .run:
             run(command)
+        case .runAlternate(let index):
+            guard command.alternates.indices.contains(index) else { return }
+            let alternate = command.alternates[index]
+            run(
+                Command(
+                    id: command.id, title: alternate.title, path: command.path, shortcut: alternate.shortcut,
+                    isEnabled: alternate.isEnabled, isChecked: false, source: command.source, target: alternate.target,
+                    stableID: alternate.stableID))
+        case .pin(let pinned):
+            usage.setPinned(pinned, for: command)
+            hide()
+        case .hide:
+            usage.hide(command)
+            hide()
         case .copyPath:
             PaletteAction.copy((command.path + [command.displayTitle]).joined(separator: " > "))
             hide()
@@ -203,9 +222,11 @@ final class PanelController: NSObject {
     /// the panel comes back with the reason.
     private func run(_ command: Command) {
         hide(immediately: true)
+        let appName = model.targetApp?.name
         Task { [weak self] in
             guard let self else { return }
             let closed = await self.model.run(command)
+            if closed { self.usage.recordRun(command, appName: appName) }
             CueLog.panel.info(
                 "ran \(command.breadcrumb, privacy: .public) > \(command.title, privacy: .public) ok=\(closed) error=\(self.model.runError ?? "none", privacy: .public)"
             )
