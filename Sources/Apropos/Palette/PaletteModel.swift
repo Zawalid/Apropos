@@ -10,6 +10,8 @@ public enum PaletteContent: Equatable {
     case failed(String)
     case noMatches(query: String)
     case results
+    /// The form that saves the sequence draft as a command.
+    case sequenceSave
 }
 
 /// All the palette's behaviour: query, ranked results, selection and running a command. Views only render it.
@@ -22,13 +24,15 @@ public final class PaletteModel {
             selectedID = nil
             // Typing is a change of mind: a send waiting for its Return is dropped.
             sendCenter?.goBackFromPending()
+            sequenceCenter?.dropConfirmation()
         }
     }
     /// The ranked commands for the current query. Recomputed only when the query or the command list changes.
     public var results: [RankedCommand] {
         let key = CacheKey(
             revision: menus.revision, query: query, rankerRevision: rankerRevision, contextRevision: contextRevision,
-            predictionRevision: predictionRevision, targetPID: tracker.app?.pid, sendRevision: sendCenter?.revision ?? 0
+            predictionRevision: predictionRevision, targetPID: tracker.app?.pid, sendRevision: sendCenter?.revision ?? 0,
+            sequenceRevision: sequenceCenter?.revision ?? 0
         )
         if key != cacheKey {
             computeResults()
@@ -65,7 +69,7 @@ public final class PaletteModel {
     /// The command the top Usually next row stands for, or nil when the group is empty.
     public var topPrediction: Command? {
         let list = results
-        let start = pinnedCount
+        let start = draftRows + pinnedCount
         return predictedRows > 0 && list.indices.contains(start) ? list[start].command : nil
     }
 
@@ -97,6 +101,9 @@ public final class PaletteModel {
     @ObservationIgnored private var openHook: ((TargetApp?) -> Void)?
     @ObservationIgnored private var sendCenter: SendToCenter?
     @ObservationIgnored private var queryBeforeSendLevel = ""
+    @ObservationIgnored private var sequenceCenter: SequenceCenter?
+    @ObservationIgnored private var queryBeforeSequenceLevel = ""
+    @ObservationIgnored private var draftRows = 0
     @ObservationIgnored private var contextRunner:
         (@MainActor (Command, TargetApp?, Bool) async -> Result<ActionOutcome, ActionError>)?
     @ObservationIgnored private var pinnedCount = 0
@@ -119,6 +126,7 @@ public final class PaletteModel {
         let predictionRevision: Int
         let targetPID: pid_t?
         let sendRevision: Int
+        let sequenceRevision: Int
     }
 
     public init(
@@ -172,6 +180,71 @@ public final class PaletteModel {
     /// results while open.
     public func attachSend(_ center: SendToCenter) { sendCenter = center }
 
+    /// Connects the sequence builder: its draft row heads the list and its level replaces the results while open.
+    public func attachSequences(_ center: SequenceCenter) { sequenceCenter = center }
+
+    /// The builder, for the views that draw the save form and the draft chip.
+    public var sequences: SequenceCenter? { sequenceCenter }
+
+    /// How many rows at the head of the list belong to the sequence draft (0 or 1), so a view can draw its header.
+    public var draftRowCount: Int {
+        _ = results
+        return draftRows
+    }
+
+    /// The draft level that is open, for the breadcrumb chip. Nil at the top level.
+    public var sequenceLevel: SequenceLevel? { sequenceCenter?.level }
+
+    /// The steps in the draft, for the chip in the search field. Zero when there is no draft.
+    public var draftStepCount: Int { sequenceCenter?.steps.count ?? 0 }
+
+    /// A question waiting for its answer in the search field.
+    public var sequenceAsking: SequenceAsking? {
+        if case .asking(let asking)? = sequenceCenter?.phase { asking } else { nil }
+    }
+
+    /// The combined confirmation of a sequence run, waiting for the confirming Return.
+    public var sequencePending: SequencePending? {
+        if case .confirming(let pending)? = sequenceCenter?.phase { pending } else { nil }
+    }
+
+    /// Why the last sequence step did not happen (a row that could not be added, a run that stopped, a save that failed).
+    public var sequenceFailure: String? { sequenceCenter?.failure }
+
+    /// "Saved ... under Your commands", until the next thing the person does.
+    public var sequenceNotice: String? { sequenceCenter?.notice }
+
+    /// The step highlighted in the draft level, or nil when another row is.
+    public var selectedStepID: String? {
+        guard sequenceCenter?.level == .steps, case .sequence(.step(let id))? = selected?.command.source else {
+            return nil
+        }
+        return id
+    }
+
+    /// Adds a row to the sequence draft. Refused rows say why in `sequenceFailure`.
+    @discardableResult
+    public func addToSequence(_ command: Command) -> SequenceAddResult {
+        guard let sequenceCenter else { return .refused("Sequences are not available.") }
+        return sequenceCenter.add(command)
+    }
+
+    /// Deletes the highlighted step of the draft.
+    public func deleteSelectedStep() {
+        guard let id = selectedStepID else { return }
+        let neighbour = results.firstIndex { $0.id == selected?.id }
+        sequenceCenter?.delete(stepID: id)
+        selectedID = nil
+        if let neighbour, !results.isEmpty { selectedID = results[min(neighbour, results.count - 1)].id }
+    }
+
+    /// Moves the highlighted step up (-1) or down (+1) and keeps it highlighted.
+    public func moveSelectedStep(by delta: Int) {
+        guard let id = selectedStepID else { return }
+        sequenceCenter?.move(stepID: id, by: delta)
+        selectedID = SequenceTarget.step(id).commandID.rawValue
+    }
+
     /// The destination list that is open, for the breadcrumb chip. Nil at the top level.
     public var sendLevel: SendLevel? { sendCenter?.level }
 
@@ -217,13 +290,22 @@ public final class PaletteModel {
         predictedRows = 0
         predictionReasons = [:]
         predictedRowIDs = []
+        draftRows = 0
+        if let center = sequenceCenter, center.isInLevel {
+            cachedResults = center.level == .steps ? ranker.rank(center.levelCommands, query: query) : []
+            return
+        }
         if let center = sendCenter, center.isInDestinationList {
             cachedResults = ranker.rank(center.levelCommands, query: query)
             return
         }
-        let commands = listed(context: activeContextCommands, send: activeSendCommands) + menus.commands
+        let searching = !query.trimmingCharacters(in: .whitespaces).isEmpty
+        // The draft row heads the list. While searching it takes part like any other row, so typing "draft" finds it.
+        let draft = sequenceCenter?.rootCommands ?? []
+        let commands =
+            (searching ? draft : []) + listed(context: activeContextCommands, send: activeSendCommands) + menus.commands
         let base = ranker.rank(commands, query: query)
-        guard query.trimmingCharacters(in: .whitespaces).isEmpty else {
+        guard !searching else {
             cachedResults = base
             return
         }
@@ -254,12 +336,18 @@ public final class PaletteModel {
         pinnedCount = head.count
         predictedRows = predicted.count
         suggestedCount = lifted.count
-        cachedResults = head + predicted + lifted + rest
+        let leading = draft.map { RankedCommand(command: $0, score: 0, titlePositions: []) }
+        draftRows = leading.count
+        cachedResults = leading + head + predicted + lifted + rest
     }
 
     public var targetApp: TargetApp? { tracker.app }
 
     public var content: PaletteContent {
+        if sequenceCenter?.level == .save { return .sequenceSave }
+        if sequenceCenter?.isInLevel == true {
+            return results.isEmpty ? .noMatches(query: query.trimmingCharacters(in: .whitespaces)) : .results
+        }
         if sendCenter?.isInDestinationList == true {
             return results.isEmpty ? .noMatches(query: query.trimmingCharacters(in: .whitespaces)) : .results
         }
@@ -292,6 +380,7 @@ public final class PaletteModel {
         lastSentCommand = nil
         sendFailure = nil
         sendCenter?.beginSession(for: tracker.app)
+        sequenceCenter?.beginSession(for: tracker.app)
         selectedID = nil
         // Context from the last time the panel was open may be gone. Actions come back when the fresh snapshot lands,
         // so a stale selection can never be acted on.
@@ -331,6 +420,8 @@ public final class PaletteModel {
     /// Runs the selected command. Returns true when the palette can close.
     @discardableResult
     public func runSelected() async -> Bool {
+        if sequenceAsking != nil { return await submitSequenceAnswer() }
+        if sequencePending != nil { return await confirmPending() }
         guard let selected else { return false }
         return await run(selected.command)
     }
@@ -343,6 +434,7 @@ public final class PaletteModel {
         sendFailure = nil
         if case .contextAction = command.source { return await runContextAction(command, confirmed: false) }
         if case .sendTo = command.source { return await runSend(command) }
+        if case .sequence = command.source { return await runSequence(command) }
         let outcome: Result<Void, CommandRunError>
         if let runner {
             outcome = await runner(command)
@@ -387,8 +479,63 @@ public final class PaletteModel {
         return false
     }
 
-    /// Whether something waits for the confirming Return (a context action or a send).
-    public var hasPendingConfirmation: Bool { pendingConfirmation != nil || sendCenter?.pending != nil }
+    /// Whether the row belongs to the sequence draft, which keeps the panel open until a run finishes.
+    public func isSequenceRow(_ command: Command) -> Bool {
+        if case .sequence = command.source { return true }
+        return false
+    }
+
+    /// Whether something waits for the confirming Return (a context action, a send or a sequence run).
+    public var hasPendingConfirmation: Bool {
+        pendingConfirmation != nil || sendCenter?.pending != nil || sequencePending != nil
+    }
+
+    private func runSequence(_ command: Command) async -> Bool {
+        guard let center = sequenceCenter else {
+            runError = ActionError.notApplicable.message
+            return false
+        }
+        let wasInLevel = center.isInLevel
+        return handle(await center.perform(command), wasInLevel: wasInLevel)
+    }
+
+    private func handle(_ result: SequenceDraftResult, wasInLevel: Bool = true) -> Bool {
+        switch result {
+        case .enteredLevel:
+            if !wasInLevel { queryBeforeSequenceLevel = query }
+            query = ""
+            selectedID = nil
+            return false
+        case .discarded, .saved:
+            query = queryBeforeSequenceLevel
+            selectedID = nil
+            return false
+        case .needsInput:
+            query = ""
+            return false
+        case .needsConfirmation, .nothing, .failed:
+            return false
+        case .finished:
+            return true
+        }
+    }
+
+    /// Return while a question is asked: the search field holds the answer.
+    public func submitSequenceAnswer() async -> Bool {
+        guard let center = sequenceCenter, sequenceAsking != nil else { return false }
+        let answer = query
+        query = ""
+        return handle(await center.submitAnswer(answer))
+    }
+
+    /// Saves the draft with what the form holds. True when it is saved.
+    @discardableResult
+    public func saveSequence() -> Bool {
+        guard let center = sequenceCenter, center.save() else { return false }
+        query = queryBeforeSequenceLevel
+        selectedID = nil
+        return true
+    }
 
     private func runSend(_ command: Command) async -> Bool {
         guard let center = sendCenter else {
@@ -424,6 +571,7 @@ public final class PaletteModel {
     public func confirmPending() async -> Bool {
         runError = nil
         sendFailure = nil
+        if let center = sequenceCenter, sequencePending != nil { return handle(await center.confirmPending()) }
         if let center = sendCenter, let pending = center.pending {
             guard let step = await center.confirmPending() else { return false }
             return handle(step, command: pending.command)
@@ -435,6 +583,7 @@ public final class PaletteModel {
     public func cancelPending() {
         pendingConfirmation = nil
         sendCenter?.goBackFromPending()
+        sequenceCenter?.dropConfirmation()
     }
 
     /// Escape: cancels a confirmation, else leaves the destination list. Returns false when there was nothing to leave
@@ -445,6 +594,15 @@ public final class PaletteModel {
         sendFailure = nil
         if pendingConfirmation != nil {
             pendingConfirmation = nil
+            return true
+        }
+        if let sequences = sequenceCenter, sequences.isInLevel || sequences.phase != nil {
+            let leaving = sequences.level == .steps && sequences.phase == nil
+            guard sequences.goBack() else { return false }
+            if leaving {
+                query = queryBeforeSequenceLevel
+                selectedID = nil
+            }
             return true
         }
         guard let center = sendCenter else { return false }

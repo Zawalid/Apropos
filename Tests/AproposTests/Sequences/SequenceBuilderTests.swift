@@ -1,0 +1,605 @@
+import Foundation
+import Testing
+
+@testable import Apropos
+
+@MainActor
+@Suite("Sequence builder in the palette")
+struct SequenceBuilderTests {
+    private let app = TargetApp(pid: 100, bundleID: "com.example.editor", name: "Editor")
+
+    private struct Rig {
+        let model: PaletteModel
+        let center: SequenceCenter
+        let context: ContextActionCenter
+        let send: SendToCenter
+        let runner: FakeStepRunner
+        let store: UserCommandStore
+        let tracker: FrontmostAppTracker
+    }
+
+    private func rig(
+        runner: FakeStepRunner? = nil,
+        installed: Set<String> = ["com.apple.Notes", "com.apple.mail", "com.apple.Preview"]
+    ) -> Rig {
+        let tracker = FrontmostAppTracker(ownBundleID: "test")
+        tracker.pin(app)
+        let menus = AppMenuModel(tracker: tracker, permission: AccessibilityPermission(probe: { true }))
+        let model = PaletteModel(menus: menus, tracker: tracker)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "apropos-seq-\(UUID().uuidString)")
+        let recorder = SendRecorder()
+        recorder.installed = installed
+        let send = SendToCenter(
+            library: .bundled(), services: recorder.services,
+            folders: SendFolderStore(url: directory.appendingPathComponent("f.json")))
+        model.attachSend(send)
+        let library = ActionPackLibrary.bundled()
+        let context = ContextActionCenter(
+            library: library, engine: ActionEngine(functions: library.functions, services: ServiceRecorder().services))
+        context.attach(to: model)
+        let store = UserCommandStore(directory: directory.appendingPathComponent("commands"))
+        let fake = runner ?? FakeStepRunner { _, _, _ in .done(produced: "RESULT") }
+        let center = SequenceCenter(
+            store: store, runner: fake,
+            catalogue: {
+                SequenceCatalogue(
+                    contextActions: library.actions, userCommands: store.commands,
+                    destinations: send.sequenceDestinations,
+                    isInstalled: { installed.contains($0) })
+            })
+        model.attachSequences(center)
+        menus.seed(MenuCommandMapper.commands(from: Fixtures.menuBar(), bundleID: app.bundleID))
+        return Rig(
+            model: model, center: center, context: context, send: send, runner: fake, store: store, tracker: tracker)
+    }
+
+    private func feed(_ rig: Rig, _ values: ContextValues = ContextValues(selectedText: "hello world")) {
+        let snapshot = ContextSnapshot(
+            appName: "Editor", bundleID: "com.example.editor", pid: 100, capturedAt: Date(), values: values)
+        rig.context.update(with: snapshot)
+        rig.send.update(with: snapshot)
+        rig.center.update(with: snapshot)
+    }
+
+    private func row(_ rig: Rig, _ id: String) -> Command? { rig.model.results.first { $0.command.id == id }?.command }
+
+    private func titles(_ rig: Rig) -> [String] { rig.model.results.map(\.command.title) }
+
+    @discardableResult
+    private func add(_ rig: Rig, _ id: String) -> SequenceAddResult {
+        guard let command = row(rig, id) else { return .refused("no such row \(id)") }
+        return rig.model.addToSequence(command)
+    }
+
+    /// Opens the draft level the way the person would: Return on the top row.
+    private func openDraft(_ rig: Rig) async {
+        guard let top = rig.model.results.first?.command else { return }
+        _ = await rig.model.run(top)
+    }
+
+    // MARK: The draft row
+
+    @Test func thereIsNoDraftRowUntilSomethingIsAdded() {
+        let rig = rig()
+        feed(rig)
+        #expect(!titles(rig).contains { $0.hasPrefix("Sequence draft") })
+        #expect(rig.model.draftRowCount == 0 && rig.model.draftStepCount == 0)
+    }
+
+    @Test func addingARowMakesTheDraftRowHeadTheList() {
+        let rig = rig()
+        feed(rig)
+        #expect(add(rig, "ctx:text.upper") == .added(steps: 1))
+        #expect(rig.model.results.first?.command.title == "Sequence draft (1 step)")
+        #expect(rig.model.draftRowCount == 1 && rig.model.draftStepCount == 1)
+        add(rig, "send:text>dest:notes")
+        // No direct row exists before a destination has been used, so go through the list for this one.
+        #expect(rig.model.results.first?.command.title == "Sequence draft (1 step)")
+    }
+
+    @Test func theDraftRowIsFoundBySearchToo() {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        rig.model.query = "draft"
+        #expect(rig.model.results.contains { $0.command.title == "Sequence draft (1 step)" })
+        #expect(rig.model.draftRowCount == 0)
+    }
+
+    @Test func theDraftSurvivesTheNextOpeningOfThePanel() {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        rig.model.prepareForOpen()
+        feed(rig, ContextValues(selectedText: "other"))
+        #expect(rig.model.results.first?.command.title == "Sequence draft (1 step)")
+    }
+
+    @Test func theTopPredictionStillMeansTheFirstPredictedRow() {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        #expect(rig.model.topPrediction == nil)
+    }
+
+    // MARK: Adding
+
+    @Test func menuItemsContextActionsAndDestinationsCanBeAdded() async throws {
+        let rig = rig()
+        feed(rig)
+        let menu = try #require(rig.model.results.first { $0.command.source == .menuItem(bundleID: app.bundleID) })
+            .command
+        #expect(rig.model.addToSequence(menu) == .added(steps: 1))
+        #expect(add(rig, "ctx:text.upper") == .added(steps: 2))
+        // Open the destination list and add Notes from it.
+        let generic = try #require(row(rig, "send:text"))
+        _ = await rig.model.run(generic)
+        let notes = try #require(row(rig, "send:text>dest:notes"))
+        #expect(rig.model.addToSequence(notes) == .added(steps: 3))
+        let kinds = rig.center.steps.map(\.kind.tag)
+        #expect(kinds == ["uiSteps", "contextAction", "destination"])
+    }
+
+    @Test func consecutiveMenuItemsJoinOneMenuStep() throws {
+        let rig = rig()
+        feed(rig)
+        let menus = rig.model.results.filter { $0.command.source == .menuItem(bundleID: app.bundleID) }.prefix(2).map(
+            \.command)
+        for command in menus { rig.model.addToSequence(command) }
+        #expect(rig.center.steps.count == 1)
+        if case .uiSteps(let backend) = rig.center.steps[0].kind {
+            #expect(backend.steps.count == 2)
+        } else {
+            Issue.record("expected menu steps")
+        }
+    }
+
+    @Test func theGenericSendRowCannotBeAdded() throws {
+        let rig = rig()
+        feed(rig)
+        let generic = try #require(row(rig, "send:text"))
+        let result = rig.model.addToSequence(generic)
+        #expect(result == .refused("Choose a destination first, then add it."))
+        #expect(rig.model.sequenceFailure == "Choose a destination first, then add it.")
+        #expect(rig.center.steps.isEmpty)
+    }
+
+    @Test func aSequenceCommandCannotBeAddedToASequence() throws {
+        let rig = rig()
+        let inner = CommandSequence(title: "Inner", steps: [Seq.upper(output: "a")]).userCommand()
+        try rig.store.create(inner)
+        rig.context.setUserCommands(rig.store.commands)
+        feed(rig)
+        let row = try #require(row(rig, inner.id.rawValue))
+        #expect(rig.model.addToSequence(row) == .refused("A sequence cannot run another sequence."))
+    }
+
+    @Test func aSequenceHasAtMostTwentySteps() {
+        let rig = rig()
+        feed(rig)
+        for _ in 0..<SequenceLimits.maxSteps { add(rig, "ctx:text.upper") }
+        #expect(rig.center.steps.count == SequenceLimits.maxSteps)
+        #expect(add(rig, "ctx:text.upper") == .refused("A sequence can have at most 20 steps."))
+    }
+
+    @Test func menuItemsInPrivateMenusAreRefusedWithTheReason() {
+        let rig = rig()
+        let recent = Command(
+            id: "1.2", title: "Report.pdf", path: ["File", "Open Recent"],
+            source: .menuItem(bundleID: "com.apple.Preview"))
+        let result = rig.model.addToSequence(recent)
+        guard case .refused(let message) = result else {
+            Issue.record("expected a refusal")
+            return
+        }
+        #expect(message.contains("recent items"))
+    }
+
+    // MARK: Chaining
+
+    @Test func aStepReadsTheResultOfTheStepBeforeWhenItGivesText() throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.lower")
+        let steps = rig.center.steps
+        #expect(steps[0].output?.name == "from-\(steps[0].id)")
+        #expect(steps[1].inputs == [SequenceInput(.text, from: .output("from-\(steps[0].id)"))])
+        #expect(rig.center.plan().isRunnable)
+    }
+
+    @Test func aStepAfterOneThatGivesNoTextReadsTheSelection() {
+        let rig = rig()
+        feed(rig, ContextValues(selectedText: "https://example.com"))
+        add(rig, "ctx:text.open-link")
+        add(rig, "ctx:text.upper")
+        let steps = rig.center.steps
+        #expect(steps[0].output == nil)
+        #expect(steps[1].inputs == [SequenceInput(.text)])
+    }
+
+    @Test func aStepCanBeSwitchedToTheSelectionOrToAQuestion() {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.lower")
+        let second = rig.center.steps[1].id
+        rig.center.setUsesSelection(true, stepID: second)
+        #expect(rig.center.steps[1].inputs == [SequenceInput(.text)] && rig.center.steps[0].output == nil)
+        rig.center.setAsking(true, stepID: second)
+        #expect(rig.center.isAsking(stepID: second))
+        #expect(rig.center.steps[1].inputs.count == 1)
+        rig.center.setAsking(false, stepID: second)
+        rig.center.setUsesSelection(false, stepID: second)
+        #expect(rig.center.steps[1].inputs == [SequenceInput(.text, from: .output("from-\(rig.center.steps[0].id)"))])
+    }
+
+    @Test func deletingTheStepBeforeSendsTheNextOneBackToTheSelection() {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.lower")
+        rig.center.delete(stepID: rig.center.steps[0].id)
+        #expect(rig.center.steps.count == 1)
+        #expect(rig.center.steps[0].inputs == [SequenceInput(.text)])
+        #expect(rig.center.steps[0].output == nil)
+    }
+
+    @Test func movingAStepRechainsTheOthers() {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.lower")
+        add(rig, "ctx:text.trim")
+        let ids = rig.center.steps.map(\.id)
+        rig.center.move(stepID: ids[2], by: -1)
+        #expect(rig.center.steps.map(\.id) == [ids[0], ids[2], ids[1]])
+        #expect(rig.center.steps[1].inputs == [SequenceInput(.text, from: .output("from-\(ids[0])"))])
+        #expect(rig.center.steps[2].inputs == [SequenceInput(.text, from: .output("from-\(ids[2])"))])
+        // Past either end nothing moves.
+        rig.center.move(stepID: ids[0], by: -1)
+        rig.center.move(stepID: ids[1], by: 1)
+        #expect(rig.center.steps.map(\.id) == [ids[0], ids[2], ids[1]])
+        rig.center.move(stepID: ids[1], by: -1)
+        #expect(rig.center.steps.map(\.id) == [ids[0], ids[1], ids[2]])
+    }
+
+    // MARK: The level
+
+    @Test func returnOnTheDraftRowOpensTheDraftLevelInTheSamePanel() async {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.lower")
+        rig.model.query = "seq"
+        guard let top = rig.model.results.first?.command else { return }
+        let closes = await rig.model.run(top)
+        #expect(!closes)
+        #expect(rig.model.sequenceLevel == .steps && rig.model.sequenceLevel?.title == "Sequence draft")
+        #expect(rig.model.query.isEmpty)
+        #expect(titles(rig).prefix(3) == ["Run sequence", "Save as command...", "Discard draft"])
+        #expect(Array(titles(rig).dropFirst(3)) == ["1. UPPERCASE", "2. lowercase"])
+        #expect(rig.model.content == .results)
+    }
+
+    @Test func stepRowsSayWhereTheirInputComesFrom() async {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.lower")
+        await openDraft(rig)
+        let details = rig.model.results.map(\.command.detail)
+        #expect(details[3] == "Uses the selected text")
+        #expect(details[4] == "Uses the result of step 1")
+    }
+
+    @Test func escapeGoesBackOneLevelAndRestoresTheQuery() async {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        rig.model.query = "seq"
+        await openDraft(rig)
+        #expect(rig.model.goBack())
+        #expect(rig.model.sequenceLevel == nil)
+        #expect(rig.model.query == "seq")
+        #expect(!rig.model.goBack())
+    }
+
+    @Test func theSelectedStepIsKnownAndEditableByKeyboardRoutes() async {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.lower")
+        add(rig, "ctx:text.trim")
+        await openDraft(rig)
+        rig.model.moveSelection(by: 4)
+        let second = rig.center.steps[1].id
+        #expect(rig.model.selectedStepID == second)
+        rig.model.moveSelectedStep(by: -1)
+        #expect(rig.center.steps.map(\.id).first == second)
+        #expect(rig.model.selectedStepID == second)
+        rig.model.deleteSelectedStep()
+        #expect(rig.center.steps.count == 2)
+        #expect(!rig.center.steps.contains { $0.id == second })
+        // The highlight stays in the list instead of vanishing.
+        #expect(rig.model.selected != nil)
+    }
+
+    @Test func deletingTheLastStepLeavesTheLevel() async {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        await openDraft(rig)
+        rig.model.moveSelection(by: 3)
+        rig.model.deleteSelectedStep()
+        #expect(rig.model.sequenceLevel == nil)
+        #expect(!titles(rig).contains { $0.hasPrefix("Sequence draft") })
+    }
+
+    @Test func discardClearsTheDraftAndTheLevel() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        rig.model.query = "seq"
+        await openDraft(rig)
+        let discard = try #require(row(rig, "seq:discard"))
+        _ = await rig.model.run(discard)
+        #expect(rig.center.steps.isEmpty && rig.model.sequenceLevel == nil)
+        #expect(rig.model.query == "seq")
+        #expect(!titles(rig).contains { $0.hasPrefix("Sequence draft") })
+    }
+
+    // MARK: Running
+
+    @Test func aRunWithNoEffectsRunsAtOnceOnTheSensedContext() async throws {
+        let rig = rig()
+        feed(rig, ContextValues(selectedText: "sensed"))
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.count")
+        await openDraft(rig)
+        let run = try #require(row(rig, "seq:run"))
+        let closes = await rig.model.run(run)
+        #expect(closes)
+        #expect(rig.runner.ids == [rig.center.steps[0].id, rig.center.steps[1].id])
+        #expect(rig.runner.calls[0].values.selectedText == "sensed")
+        #expect(rig.runner.calls[1].values.selectedText == "RESULT")
+        #expect(rig.center.stepStates.values.allSatisfy { $0 == .done })
+    }
+
+    @Test func externalEffectsShowOneCombinedConfirmationFirst() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        let generic = try #require(row(rig, "send:text"))
+        _ = await rig.model.run(generic)
+        add(rig, "send:text>dest:mail")
+        add(rig, "send:text>dest:notes")
+        _ = rig.model.goBack()
+        await openDraft(rig)
+        let run = try #require(row(rig, "seq:run"))
+        let closes = await rig.model.run(run)
+        #expect(!closes && rig.runner.ids.isEmpty)
+        let pending = try #require(rig.model.sequencePending)
+        #expect(pending.heading == "Allow these 2 things?")
+        #expect(pending.lines.count == 2 && pending.lines[0].hasPrefix("2. ") && pending.lines[1].hasPrefix("3. "))
+        #expect(rig.model.hasPendingConfirmation)
+        let finished = await rig.model.confirmPending()
+        #expect(finished)
+        #expect(rig.runner.ids.count == 3)
+    }
+
+    @Test func typingOrEscapeDropsTheConfirmation() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        let generic = try #require(row(rig, "send:text"))
+        _ = await rig.model.run(generic)
+        add(rig, "send:text>dest:mail")
+        _ = rig.model.goBack()
+        await openDraft(rig)
+        _ = await rig.model.run(try #require(row(rig, "seq:run")))
+        #expect(rig.model.sequencePending != nil)
+        rig.model.query = "m"
+        #expect(rig.model.sequencePending == nil && rig.runner.ids.isEmpty)
+        rig.model.query = ""
+        _ = await rig.model.run(try #require(row(rig, "seq:run")))
+        #expect(rig.model.goBack())
+        #expect(rig.model.sequencePending == nil && rig.model.sequenceLevel == .steps)
+    }
+
+    @Test func askMeAtRunTimeAsksInTheSearchFieldBeforeAnythingRuns() async throws {
+        let rig = rig()
+        feed(rig, ContextValues(selectedText: "https://example.com"))
+        add(rig, "ctx:text.open-link")
+        rig.center.setAsking(true, stepID: rig.center.steps[0].id)
+        await openDraft(rig)
+        let closes = await rig.model.run(try #require(row(rig, "seq:run")))
+        #expect(!closes)
+        let asking = try #require(rig.model.sequenceAsking)
+        #expect(asking.number == 1 && asking.total == 1 && asking.prompt.hasPrefix("Text for "))
+        // A blank answer is refused and the question stays.
+        rig.model.query = "   "
+        #expect(await rig.model.runSelected() == false)
+        #expect(rig.model.sequenceAsking != nil && rig.model.sequenceFailure != nil)
+        rig.model.query = "https://example.com"
+        let done = await rig.model.runSelected()
+        #expect(done)
+        #expect(rig.runner.calls.first?.values.selectedText == "https://example.com")
+    }
+
+    @Test func escapeWhileAskedStopsTheRun() async throws {
+        let rig = rig()
+        feed(rig, ContextValues(selectedText: "https://example.com"))
+        add(rig, "ctx:text.open-link")
+        rig.center.setAsking(true, stepID: rig.center.steps[0].id)
+        await openDraft(rig)
+        _ = await rig.model.run(try #require(row(rig, "seq:run")))
+        #expect(rig.model.goBack())
+        #expect(rig.model.sequenceAsking == nil && rig.model.sequenceLevel == .steps)
+        #expect(rig.runner.ids.isEmpty)
+    }
+
+    @Test func aFailureStaysOnScreenWithTheStepsMarkedAndTheDraftIntact() async throws {
+        let runner = FakeStepRunner { planned, _, _ in
+            planned.index == 1 ? .failed(.backend("The action failed.")) : .done(produced: "RESULT")
+        }
+        let rig = rig(runner: runner)
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.lower")
+        add(rig, "ctx:text.count")
+        await openDraft(rig)
+        let closes = await rig.model.run(try #require(row(rig, "seq:run")))
+        #expect(!closes)
+        #expect(rig.model.sequenceFailure == "Step 2 (lowercase) stopped the sequence: the action failed.")
+        let details = rig.model.results.map(\.command.detail)
+        #expect(details[3] == "Done" && details[4] == "Stopped: the action failed" && details[5] == "Skipped")
+        #expect(rig.center.steps.count == 3)
+        // Return tries again.
+        _ = await rig.model.run(try #require(row(rig, "seq:run")))
+        #expect(rig.runner.ids.count == 4)
+    }
+
+    @Test func aRunCanBeCancelledWithEscape() async throws {
+        let runner = FakeStepRunner { _, _, _ in
+            do { try await Task.sleep(for: .seconds(30)) } catch { return .failed(.cancelled) }
+            return .done(produced: "x")
+        }
+        let rig = rig(runner: runner)
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.count")
+        await openDraft(rig)
+        let run = try #require(row(rig, "seq:run"))
+        let running = Task { await rig.model.run(run) }
+        // Wait until the first step is really in flight; a loaded machine can be slow to start it.
+        for _ in 0..<100 where rig.runner.ids.isEmpty { try await Task.sleep(for: .milliseconds(50)) }
+        #expect(rig.center.isRunning)
+        #expect(rig.model.goBack())
+        let closes = await running.value
+        #expect(!closes)
+        #expect(rig.runner.ids.count == 1)
+        guard case .finished(let report)? = rig.center.phase else {
+            Issue.record("expected a finished run")
+            return
+        }
+        #expect(report.outcome == .cancelled)
+    }
+
+    // MARK: Saving
+
+    @Test func saveAsCommandOpensTheFormWithASuggestedName() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.lower")
+        await openDraft(rig)
+        _ = await rig.model.run(try #require(row(rig, "seq:save")))
+        #expect(rig.model.sequenceLevel == .save && rig.model.content == .sequenceSave)
+        #expect(rig.center.form.name == "UPPERCASE, lowercase")
+        #expect(rig.center.form.symbol == "square.stack.3d.up")
+        #expect(rig.model.goBack() && rig.model.sequenceLevel == .steps)
+    }
+
+    @Test func savingWritesAnOrdinaryCommandUnderYourCommands() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.lower")
+        let steps = rig.center.steps
+        rig.model.query = "seq"
+        await openDraft(rig)
+        _ = await rig.model.run(try #require(row(rig, "seq:save")))
+        rig.center.form.name = "Shout then whisper"
+        rig.center.form.alias = "  SW "
+        rig.center.form.symbol = "megaphone"
+        #expect(rig.model.saveSequence())
+        let saved = try #require(rig.store.commands.first)
+        #expect(saved.title == "Shout then whisper" && saved.aliases == ["sw"] && saved.symbol == "megaphone")
+        #expect(
+            saved.sequenceBackend?.steps
+                == steps.map {
+                    var step = $0
+                    step.trust = .trusted
+                    return step
+                })
+        #expect(saved.review == .approved)
+        // The draft is gone, the query is back and a notice says where it went.
+        #expect(rig.center.steps.isEmpty && rig.model.sequenceLevel == nil && rig.model.query == "seq")
+        #expect(rig.model.sequenceNotice == "Saved Shout then whisper under Your commands")
+        // And it is listed like any command of yours.
+        rig.context.setUserCommands(rig.store.commands)
+        feed(rig)
+        rig.model.query = ""
+        #expect(rig.model.results.contains { $0.command.title == "Shout then whisper" && $0.command.aliases == ["sw"] })
+    }
+
+    @Test func aSavedSequenceThatSendsAsksBeforeItRuns() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        let generic = try #require(row(rig, "send:text"))
+        _ = await rig.model.run(generic)
+        add(rig, "send:text>dest:mail")
+        _ = rig.model.goBack()
+        await openDraft(rig)
+        _ = await rig.model.run(try #require(row(rig, "seq:save")))
+        rig.center.form.name = "Mail it"
+        #expect(rig.model.saveSequence())
+        #expect(rig.store.commands.first?.needsConfirmation == true)
+    }
+
+    @Test func aBadNameAliasOrShortcutIsReportedAndNothingIsLost() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        try rig.store.create(shoutCommand(title: "Taken", aliases: ["taken"]))
+        await openDraft(rig)
+        _ = await rig.model.run(try #require(row(rig, "seq:save")))
+        rig.center.form.name = "  "
+        #expect(!rig.model.saveSequence() && rig.model.sequenceFailure == "Give the command a title.")
+        rig.center.form.name = "Mine"
+        rig.center.form.alias = "taken"
+        #expect(!rig.model.saveSequence() && rig.model.sequenceFailure?.contains("already belongs to") == true)
+        rig.center.form.alias = "Bad Alias!"
+        #expect(!rig.model.saveSequence())
+        rig.center.form.alias = ""
+        rig.center.form.symbol = "has spaces"
+        #expect(!rig.model.saveSequence())
+        #expect(rig.center.steps.count == 1 && rig.model.sequenceLevel == .save)
+        rig.center.form.symbol = "star"
+        #expect(rig.model.saveSequence())
+    }
+
+    @Test func aSavedSequenceRoundTripsThroughTheFileAndRunsAfterReload() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.lower")
+        let steps = rig.center.steps
+        await openDraft(rig)
+        _ = await rig.model.run(try #require(row(rig, "seq:save")))
+        rig.center.form.name = "Round trip"
+        rig.center.form.hotkey = HotKeyCombo(keyCode: 6, modifiers: [.control, .option])
+        #expect(rig.model.saveSequence())
+        let reloaded = UserCommandStore(directory: rig.store.directory)
+        let command = try #require(reloaded.commands.first)
+        #expect(command.hotkey == HotKeyCombo(keyCode: 6, modifiers: [.control, .option]))
+        #expect(CommandSequence(command: command)?.steps == steps)
+    }
+
+    @Test func aSecondCommandCannotTakeTheSameShortcut() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        let combo = HotKeyCombo(keyCode: 6, modifiers: [.control, .option])
+        try rig.store.create(shoutCommand(title: "Other", hotkey: combo))
+        await openDraft(rig)
+        _ = await rig.model.run(try #require(row(rig, "seq:save")))
+        rig.center.form.name = "Mine"
+        rig.center.form.hotkey = combo
+        #expect(!rig.model.saveSequence())
+        #expect(rig.model.sequenceFailure == "That shortcut is already used by Other.")
+    }
+}

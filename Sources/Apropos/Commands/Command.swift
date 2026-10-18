@@ -54,6 +54,8 @@ public enum CommandSource: Sendable, Hashable {
     case contextAction(ActionID)
     /// A row of the send-to layer: "Send selection to...", or a destination for one kind of payload.
     case sendTo(SendTarget)
+    /// A row of the sequence draft: its top row, its actions and its steps.
+    case sequence(SequenceTarget)
 }
 
 /// An Option-key variant of a menu item, such as Empty Trash Securely next to Empty Trash. It is a second way to run
@@ -127,6 +129,8 @@ public struct Command: Identifiable, Sendable {
             case .contextAction(let action):
                 self.stableID = CommandID(rawValue: action.rawValue)
             case .sendTo(let target):
+                self.stableID = target.commandID
+            case .sequence(let target):
                 self.stableID = target.commandID
             }
         }
