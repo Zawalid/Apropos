@@ -422,11 +422,14 @@ final class PanelController: NSObject {
         let appName = model.targetApp?.name
         let appBundleID = model.targetApp?.bundleID
         let kinds = context.senseKinds
+        // What was typed to find it: the panel learns the person's own short names for commands.
+        let typed = model.query
         Task { [weak self] in
             guard let self else { return }
             let closed = await self.model.run(command)
             if closed {
-                self.usage.recordRun(command, appName: appName, appBundleID: appBundleID, contextKinds: kinds)
+                self.usage.recordRun(
+                    command, appName: appName, appBundleID: appBundleID, contextKinds: kinds, query: typed)
             }
             AproposLog.panel.info(
                 "ran \(command.breadcrumb, privacy: .public) > \(command.title, privacy: .public) ok=\(closed) error=\(self.model.runError ?? "none", privacy: .public)"

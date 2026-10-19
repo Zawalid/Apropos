@@ -2,9 +2,23 @@ import Foundation
 
 /// The result of matching a query against one string.
 public struct FuzzyMatch: Sendable, Equatable {
+    /// How the query sits in the candidate. A person who types the start of a name means it more than one who types
+    /// letters that happen to be in it.
+    public enum Kind: Int, Sendable, Comparable {
+        case scattered, initials, wordPrefix, prefix, exact
+        public static func < (lhs: Kind, rhs: Kind) -> Bool { lhs.rawValue < rhs.rawValue }
+    }
+
     public let score: Int
     /// Offsets (in `Character`s) of the candidate characters that matched, ascending.
     public let positions: [Int]
+    public let kind: Kind
+
+    public init(score: Int, positions: [Int], kind: Kind = .scattered) {
+        self.score = score
+        self.positions = positions
+        self.kind = kind
+    }
 }
 
 /// Subsequence matching with scoring in the spirit of fzf: every query character must appear in order, matches at
@@ -23,10 +37,10 @@ public enum FuzzyMatcher {
     static let impossible = Int.min / 2
 
     public static func match(_ query: String, in candidate: String) -> FuzzyMatch? {
-        let needle = Array(query.filter { !$0.isWhitespace }.lowercased())
+        let needle = Array(query.filter { !$0.isWhitespace }).map { fold($0) }
         guard !needle.isEmpty else { return FuzzyMatch(score: 0, positions: []) }
         let original = Array(candidate)
-        let hay = original.map { Character($0.lowercased()) }
+        let hay = original.map { fold($0) }
         guard needle.count <= hay.count else { return nil }
 
         let rows = needle.count
@@ -92,7 +106,29 @@ public enum FuzzyMatcher {
             positions[i] = j
             j = parent[i][j]
         }
-        return FuzzyMatch(score: bestScore, positions: positions)
+        return FuzzyMatch(score: bestScore, positions: positions, kind: kind(of: positions, original: original, bonus: bonus))
+    }
+
+    /// Lowercase and without accents, one character to one character, so positions still point into the original.
+    static func fold(_ character: Character) -> Character {
+        let folded = String(character).folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil)
+        return folded.count == 1 ? folded[folded.startIndex] : Character(character.lowercased())
+    }
+
+    /// Whether the matched characters form the start of the text, the start of a word, the first letters of words, or
+    /// are spread about. Separators between matched characters do not break a run: "newfolder" is all of "New Folder".
+    static func kind(of positions: [Int], original: [Character], bonus: [Int]) -> FuzzyMatch.Kind {
+        guard let first = positions.first, let last = positions.last else { return .scattered }
+        let contiguous = zip(positions, positions.dropFirst()).allSatisfy { pair in
+            pair.1 == pair.0 + 1 || original[(pair.0 + 1)..<pair.1].allSatisfy(isSeparator)
+        }
+        if contiguous, first == 0 {
+            let rest = original[(last + 1)...]
+            return rest.allSatisfy(isSeparator) ? .exact : .prefix
+        }
+        if contiguous, bonus[first] > 0 { return .wordPrefix }
+        if positions.count >= 2, positions.allSatisfy({ bonus[$0] > 0 }) { return .initials }
+        return .scattered
     }
 
     /// The bonus for matching at each position: highest at the start, high after a separator, some at a camelCase hump.

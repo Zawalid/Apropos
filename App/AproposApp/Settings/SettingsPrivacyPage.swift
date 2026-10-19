@@ -30,7 +30,7 @@ struct PrivacyPage: View {
 
         var detail: String {
             switch self {
-            case .ranking: "Which commands you use most in each app. Pins and hidden commands are kept."
+            case .ranking: "Which commands you use most in each app, and the short names you type to find them. Pins and hidden commands are kept."
             case .habits: "What you usually run after what, for Usually next."
             case .recents: "The recent list in the menu bar."
             case .outside: "The list of links and Shortcuts that asked Apropos to do something."

@@ -216,10 +216,20 @@ public struct PredictionModel: Sendable {
     ///     action the model has seen.
     ///   - prior: The frecency fallback.
     ///   - title: How to name a command in a reason. Defaults to a title taken from the identity.
-    public func predict(
-        _ context: PredictionContext, limit: Int = 3, candidates: Set<CommandID>? = nil,
-        prior: FrecencyPrior = .empty, title: (CommandID) -> String = { $0.fallbackTitle }
-    ) -> [Prediction] {
+    /// How likely each candidate is to be the next command, without the sentences. Cheap enough to ask for a whole menu.
+    public func confidences(
+        _ context: PredictionContext, candidates: Set<CommandID>, prior: FrecencyPrior = .empty
+    ) -> [CommandID: Double] {
+        var result: [CommandID: Double] = [:]
+        for prediction in score(context, candidates: candidates, prior: prior).scored {
+            result[prediction.command] = prediction.confidence
+        }
+        return result
+    }
+
+    private func score(
+        _ context: PredictionContext, candidates: Set<CommandID>?, prior: FrecencyPrior
+    ) -> (scored: [Prediction], chain: [(level: Level, bucket: Bucket, total: Double)], slot: TimeSlot) {
         let now = context.date.timeIntervalSince1970
         let appID = appIndex[context.app]
         let slot = TimeSlot(context.date, calendar: calendar)
@@ -281,6 +291,17 @@ public struct PredictionModel: Sendable {
                 Prediction(command: id, confidence: confidence, reason: "", basis: basis))
         }
         scored.sort { ($0.confidence, $1.command) > ($1.confidence, $0.command) }
+        return (scored, chain, slot)
+    }
+
+    public func predict(
+        _ context: PredictionContext, limit: Int = 3, candidates: Set<CommandID>? = nil,
+        prior: FrecencyPrior = .empty, title: (CommandID) -> String = { $0.fallbackTitle }
+    ) -> [Prediction] {
+        let scoring = score(context, candidates: candidates, prior: prior)
+        let scored = scoring.scored
+        let chain = scoring.chain
+        let slot = scoring.slot
         return scored.prefix(limit).map { prediction in
             Prediction(
                 command: prediction.command, confidence: prediction.confidence,

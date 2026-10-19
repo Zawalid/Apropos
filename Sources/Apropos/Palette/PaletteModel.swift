@@ -139,6 +139,8 @@ public final class PaletteModel {
     @ObservationIgnored private var predictionReasons: [String: String] = [:]
     @ObservationIgnored private var predictedRowIDs: Set<String> = []
     @ObservationIgnored private var predictor: (@MainActor ([Command]) -> [Prediction])?
+    /// How likely each command is to come next, used to rank typed searches. Nil means nothing is known.
+    @ObservationIgnored private var priorsProvider: (@MainActor ([Command]) -> [CommandID: Double])?
     /// Observed on purpose: asking again for predictions must redraw a list that is already on screen.
     private var predictionRevision = 0
     @ObservationIgnored private var runner: (@MainActor (Command) async -> Result<Void, CommandRunError>)?
@@ -180,6 +182,10 @@ public final class PaletteModel {
     /// Where "Usually next" comes from. The closure gets the commands that could be offered (available, not hidden, not
     /// pinned) and returns the predictions to show, already limited by the show threshold. Nothing is asked while the
     /// query is not empty.
+    public func setPriors(_ provider: (@MainActor ([Command]) -> [CommandID: Double])?) {
+        priorsProvider = provider
+    }
+
     public func setPredictor(_ predictor: (@MainActor ([Command]) -> [Prediction])?) {
         self.predictor = predictor
         predictionRevision += 1
@@ -342,7 +348,8 @@ public final class PaletteModel {
         let draft = sequenceCenter?.rootCommands ?? []
         let commands =
             (searching ? draft : []) + listed(context: activeContextCommands, send: activeSendCommands) + (menuItemsOff ? [] : menus.commands)
-        let base = ranker.rank(commands, query: query)
+        let base = ranker.rank(
+            commands, query: query, priors: searching ? (priorsProvider?(commands.filter(\.isEnabled)) ?? [:]) : [:])
         guard !searching else {
             cachedResults = base
             return

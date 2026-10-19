@@ -183,6 +183,19 @@ public final class PredictionEngine {
 
     // MARK: Asking
 
+    /// How likely each candidate is to be run next, for ranking typed searches. Empty while prediction is off or the
+    /// app is excluded. Reasons are not built, so asking for a whole menu is cheap.
+    public func confidences(
+        app: String?, candidates: [CommandID], contextKinds: [ContextKind] = [], at date: Date = Date()
+    ) -> [CommandID: Double] {
+        guard isEnabled, isReady, let app, !candidates.isEmpty, !excludedApps.contains(PredictionPrivacy.cleanApp(app))
+        else { return [:] }
+        let context = PredictionContext(
+            app: PredictionPrivacy.cleanApp(app), recent: log.recentCommands(at: date), date: date,
+            contextKinds: contextKinds.map(\.rawValue))
+        return model.confidences(context, candidates: Set(candidates), prior: prior)
+    }
+
     /// What to show under "Usually next" now: empty unless the best prediction clears the threshold.
     ///
     /// - Parameters:

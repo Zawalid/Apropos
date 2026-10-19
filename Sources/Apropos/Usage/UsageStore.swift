@@ -1,11 +1,37 @@
 import Foundation
 import Observation
 
-/// What Apropos has learned about one command. Only the identity and times are stored, never what was typed or selected.
+/// What Apropos has learned about one command: the identity, run times, and the short names the person typed that led
+/// to it. Never what was selected or copied. A typed name is kept only when it is an abbreviation of the command's own
+/// title (see `RankingMemory.learnable`), so it is a fragment of a command name, not free text.
 struct UsageRecord: Codable, Equatable {
     var runs: Int
     /// The last few run times, oldest first, at most `Frecency.sampleLimit`.
     var recent: [Date]
+    /// How many times each typed name led to a run of this command. At most `RankingMemory.queriesPerCommand`.
+    var queries: [String: Int] = [:]
+
+    init(runs: Int, recent: [Date], queries: [String: Int] = [:]) {
+        self.runs = runs
+        self.recent = recent
+        self.queries = queries
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        runs = try container.decode(Int.self, forKey: .runs)
+        recent = try container.decode([Date].self, forKey: .recent)
+        queries = try container.decodeIfPresent([String: Int].self, forKey: .queries) ?? [:]
+    }
+
+    private enum CodingKeys: String, CodingKey { case runs, recent, queries }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(runs, forKey: .runs)
+        try container.encode(recent, forKey: .recent)
+        if !queries.isEmpty { try container.encode(queries, forKey: .queries) }
+    }
 }
 
 /// What the user decided about one command. Survives "Reset learned ranking".
@@ -56,9 +82,11 @@ struct UsageFile: Codable {
 /// year idle), it is read once at launch and written in the background, a person can open it and see exactly what Apropos
 /// learned, and it needs no schema migrations or library. The same atomic-write approach as the settings file.
 ///
-/// Privacy: a record is a command identity (bundle id plus menu path and title) and times. Query text and selection
-/// contents never reach this type. Items under "Open Recent" menus are not recorded at all, because their titles are
-/// document names.
+/// Privacy: a record is a command identity (bundle id plus menu path and title), times, and the short names the person
+/// typed that led to the command. A typed name is kept only when it is an abbreviation of that command's own title, path
+/// or keywords, in letters and digits and at most 16 characters (see `RankingMemory.learnable`), so it is a fragment of a
+/// command name and never free text. Selection contents never reach this type. Items under "Open Recent" menus are not
+/// recorded at all, because their titles are document names.
 @MainActor
 @Observable
 public final class UsageStore {
@@ -98,16 +126,19 @@ public final class UsageStore {
     }
 
     /// Counts one run. Use the alternate's own `stableID` when an Option-key variant was run.
-    public func recordRun(of command: Command, alternate: CommandAlternate? = nil, at date: Date = Date()) {
+    public func recordRun(
+        of command: Command, alternate: CommandAlternate? = nil, query: String = "", at date: Date = Date()
+    ) {
         guard Self.isRecordable(command) else { return }
-        recordRun(id: alternate?.stableID ?? command.stableID, at: date)
+        recordRun(id: alternate?.stableID ?? command.stableID, query: RankingMemory.learnable(query, for: command), at: date)
     }
 
-    public func recordRun(id: CommandID, at date: Date = Date()) {
+    public func recordRun(id: CommandID, query: String = "", at date: Date = Date()) {
         var record = file.usage[id] ?? UsageRecord(runs: 0, recent: [])
         record.runs += 1
         record.recent.append(date)
         if record.recent.count > Frecency.sampleLimit { record.recent.removeFirst(record.recent.count - Frecency.sampleLimit) }
+        RankingMemory.learn(query, into: &record)
         file.usage[id] = record
         scheduleWrite()
     }
@@ -210,9 +241,7 @@ public final class UsageStore {
 
     /// A frozen copy of what ranking needs, safe to hand to `CommandRanker` on any thread. Take a new one after
     /// recording a run or changing a pin.
-    public func rankingSignal(now: Date = Date()) -> UsageSignal {
-        var scores: [CommandID: Double] = [:]
-        for (id, record) in file.usage { scores[id] = Frecency.score(runs: record.runs, recent: record.recent, now: now) }
+    public func rankingSignal(now: Date = Date(), tuning: RankingTuning = RankingTuning()) -> UsageSignal {
         var pins: [CommandID: Date] = [:]
         var hidden: Set<CommandID> = []
         var aliases: [CommandID: [String]] = [:]
@@ -221,7 +250,8 @@ public final class UsageStore {
             if preference.isHidden { hidden.insert(id) }
             if !preference.aliases.isEmpty { aliases[id] = preference.aliases }
         }
-        return UsageSignal(scores: scores, pins: pins, hidden: hidden, aliases: aliases)
+        return UsageSignal.build(
+            records: file.usage, pins: pins, hidden: hidden, aliases: aliases, now: now, tuning: tuning)
     }
 
     /// The learned usage as per-app shares, the cold-start fallback of next-action prediction.
@@ -309,8 +339,43 @@ public struct UsageSignal: RankingSignal {
     let pins: [CommandID: Date]
     let hidden: Set<CommandID>
     let aliases: [CommandID: [String]]
+    var habits: [CommandID: Double] = [:]
+    var index = RankingMemory.Index()
+
+    init(
+        scores: [CommandID: Double], pins: [CommandID: Date], hidden: Set<CommandID>, aliases: [CommandID: [String]],
+        habits: [CommandID: Double] = [:], index: RankingMemory.Index = RankingMemory.Index()
+    ) {
+        self.scores = scores
+        self.pins = pins
+        self.hidden = hidden
+        self.aliases = aliases
+        self.habits = habits
+        self.index = index
+    }
+
+    static func build(
+        records: [CommandID: UsageRecord], pins: [CommandID: Date], hidden: Set<CommandID>,
+        aliases: [CommandID: [String]], now: Date, tuning: RankingTuning
+    ) -> UsageSignal {
+        var scores: [CommandID: Double] = [:]
+        var habits: [CommandID: Double] = [:]
+        for (id, record) in records {
+            scores[id] = Frecency.score(runs: record.runs, recent: record.recent, now: now)
+            if let halfLife = tuning.halfLifeDays {
+                habits[id] = RankingMemory.habit(record, now: now, halfLifeDays: halfLife)
+            }
+        }
+        let index = tuning.learnedMax > 0 ? RankingMemory.Index(records: records) : RankingMemory.Index()
+        return UsageSignal(
+            scores: scores, pins: pins, hidden: hidden, aliases: aliases, habits: habits, index: index)
+    }
 
     public func boost(for command: Command) -> Int { Frecency.boost(forScore: scores[command.stableID] ?? 0) }
+    public func habit(for command: Command) -> Double? { habits[command.stableID] }
+    public func learned(for command: Command, query: String) -> LearnedSignal {
+        index.signal(for: command.stableID, query: query)
+    }
     public func isHidden(_ command: Command) -> Bool { hidden.contains(command.stableID) }
     public func pinOrder(for command: Command) -> Date? { pins[command.stableID] }
     public func aliases(for command: Command) -> [String] { aliases[command.stableID] ?? [] }

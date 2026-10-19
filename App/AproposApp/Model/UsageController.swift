@@ -48,6 +48,12 @@ final class UsageController {
             recents = []
         }
         palette.setPredictor { [weak self] commands in self?.predictions(for: commands) ?? [] }
+        palette.setPriors { [weak self] commands in
+            guard let self else { return [:] }
+            return self.prediction.confidences(
+                app: self.palette.targetApp?.bundleID, candidates: commands.map(\.stableID),
+                contextKinds: self.contextKinds())
+        }
         prediction.onReady = { [weak palette] in palette?.refreshPredictions() }
         let prediction = prediction
         store.onLearnedRankingReset = { bundleID in
@@ -84,10 +90,11 @@ final class UsageController {
     }
 
     func recordRun(
-        _ command: Command, appName: String?, appBundleID: String? = nil, contextKinds: [ContextKind] = []
+        _ command: Command, appName: String?, appBundleID: String? = nil, contextKinds: [ContextKind] = [],
+        query: String = ""
     ) {
         guard UsageStore.isRecordable(command) else { return }
-        store.recordRun(of: command)
+        store.recordRun(of: command, query: query)
         if SequenceLog.isRecordable(command) {
             prediction.recordRun(
                 command.stableID, title: command.displayTitle, app: appBundleID, contextKinds: contextKinds)
