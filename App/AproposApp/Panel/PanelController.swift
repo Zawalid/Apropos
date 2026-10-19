@@ -19,6 +19,7 @@ final class PanelController: NSObject {
     private var clickMonitor: Any?
     private let positions: PanelPositionStore
     private let guides = SnapGuides()
+    private var wasSnapped = false
 
     var isVisible: Bool { panel.isVisible }
 
@@ -153,11 +154,18 @@ final class PanelController: NSObject {
         guard let screen = screen(for: proposed) else { return proposed }
         let snapped = PanelPlacement.snap(proposed, in: screen.visibleFrame)
         guides.show(snapped.guides, in: screen.visibleFrame)
+        // A tick on the trackpad each time the panel catches a guide, like aligning in other Mac apps.
+        let isSnapped = snapped.guides.contains(where: \.isActive)
+        if isSnapped && !wasSnapped {
+            NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+        }
+        wasSnapped = isSnapped
         return PanelPlacement.clamp(snapped.frame, to: screen.visibleFrame)
     }
 
     private func finishDrag(_ frame: CGRect) {
         guides.hide()
+        wasSnapped = false
         guard mode == .remember, let screen = screen(for: frame) else { return }
         positions.set(PanelPlacement.anchor(for: frame, in: screen.visibleFrame), forDisplay: screen.displayKey)
     }
