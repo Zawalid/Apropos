@@ -21,7 +21,7 @@ struct SettingsTests {
         for definition in SettingsRegistry.all {
             #expect(definition.normalized(definition.defaultValue) == definition.defaultValue, "\(definition.id)")
         }
-        for page in SettingPage.allCases where ![.about, .commands, .destinations, .integrations].contains(page) {
+        for page in SettingPage.allCases where ![.about, .commands, .destinations, .integrations, .shortcuts].contains(page) {
             #expect(!SettingsRegistry.definitions(on: page).isEmpty, "\(page)")
         }
     }

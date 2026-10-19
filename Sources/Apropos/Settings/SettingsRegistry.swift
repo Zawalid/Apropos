@@ -6,6 +6,7 @@ public enum SettingPage: String, Sendable, CaseIterable, Codable {
     case appearance
     case commands
     case destinations
+    case shortcuts
     case context
     case prediction
     case integrations
@@ -19,6 +20,7 @@ public enum SettingPage: String, Sendable, CaseIterable, Codable {
         case .appearance: "Appearance"
         case .commands: "Commands"
         case .destinations: "Destinations"
+        case .shortcuts: "Shortcuts"
         case .context: "Context"
         case .prediction: "Prediction"
         case .integrations: "Integrations"
@@ -35,6 +37,7 @@ public enum SettingPage: String, Sendable, CaseIterable, Codable {
         case .appearance: "paintbrush"
         case .commands: "command"
         case .destinations: "paperplane"
+        case .shortcuts: "keyboard"
         case .context: "text.viewfinder"
         case .prediction: "sparkles"
         case .integrations: "link"

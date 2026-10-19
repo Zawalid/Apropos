@@ -122,6 +122,8 @@
             "palette-sequence-failed", PaletteOptions(app: "safari", sequence: .failure, sequenceFails: true))
         static let paletteSequenceSave = palette(
             "palette-sequence-save", PaletteOptions(app: "safari", sequence: .save))
+        static let paletteSequenceSaveQuick = palette(
+            "palette-sequence-save-quick", PaletteOptions(app: "safari", sequence: .saveQuick))
         static let paletteSequenceSaveSearch = palette(
             "palette-sequence-save-search", PaletteOptions(app: "safari", sequence: .saveSearch))
         static let paletteSequenceSaveCustom = palette(
@@ -184,6 +186,7 @@
                 controller.externalLog.record(action: "run", command: "Shout selection", result: .ran)
                 controller.externalLog.record(action: "open", result: .ran)
             })
+        static let settingsShortcuts = settings("settings-shortcuts", page: .shortcuts)
         static let settingsCommandsEmpty = settings("settings-commands-empty", page: .commands)
         static let settingsCommands = settings(
             "settings-commands", page: .commands, prepare: { controller in
@@ -225,10 +228,10 @@
             paletteUsuallyNextOne,
             paletteUsuallyNextFresh, paletteSendRows, paletteSendList, paletteSendConfirm, paletteSendFailed,
             paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceMenus, paletteSequenceConfirm, paletteSequenceAsk,
-            paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaveSearch,
+            paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaveQuick, paletteSequenceSaveSearch,
             paletteSequenceSaveCustom, paletteSequenceSaveNoMatch, paletteSequenceSaveGrid, paletteSequenceSaved, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,
-            settingsGeneral, settingsCommands, settingsCommandsEmpty, settingsIntegrations, settingsPrediction, settingsDestinations, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
+            settingsGeneral, settingsCommands, settingsCommandsEmpty, settingsShortcuts, settingsIntegrations, settingsPrediction, settingsDestinations, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
             settingsUpdates, settingsAbout, settingsSearch, onboardingWelcome, onboardingPermission,
             onboardingPermissionHelp, onboardingPermissionAllowed, onboardingTry, onboardingTryHolding,
             onboardingTryNothingOpen, onboardingTryNoAccess, onboardingTryDone, onboardingDone,
@@ -318,6 +321,7 @@
     #Preview("Palette, sequence, question") { PairedPreview(PreviewCatalog.paletteSequenceAsk) }
     #Preview("Palette, sequence, failed") { PairedPreview(PreviewCatalog.paletteSequenceFailed) }
     #Preview("Palette, sequence, save as command") { PairedPreview(PreviewCatalog.paletteSequenceSave) }
+    #Preview("Palette, sequence, symbol row") { PairedPreview(PreviewCatalog.paletteSequenceSaveQuick) }
     #Preview("Palette, sequence, symbol search") { PairedPreview(PreviewCatalog.paletteSequenceSaveSearch) }
     #Preview("Palette, sequence, symbol typed by name") { PairedPreview(PreviewCatalog.paletteSequenceSaveCustom) }
     #Preview("Palette, sequence, symbol no match") { PairedPreview(PreviewCatalog.paletteSequenceSaveNoMatch) }
