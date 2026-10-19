@@ -66,6 +66,19 @@ struct SequenceBuilderTests {
 
     private func titles(_ rig: Rig) -> [String] { rig.model.results.map(\.command.title) }
 
+    @Test func reopeningSoonKeepsTheDraftLevelOpenButForgetsTheSelection() async {
+        let r = rig()
+        feed(r)
+        add(r, "ctx:text.upper")
+        _ = await r.center.perform(r.center.rootCommands[0])
+        #expect(r.center.isInLevel)
+        r.model.prepareForOpen(restoringLevel: true)
+        #expect(r.center.isInLevel)
+        r.model.prepareForOpen()
+        #expect(!r.center.isInLevel)
+        #expect(r.center.hasDraft)
+    }
+
     @discardableResult
     private func add(_ rig: Rig, _ id: String) -> SequenceAddResult {
         guard let command = row(rig, id) else { return .refused("no such row \(id)") }

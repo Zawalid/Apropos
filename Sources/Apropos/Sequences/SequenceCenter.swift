@@ -184,12 +184,16 @@ public final class SequenceCenter {
 
     /// The panel opened for `app`: forget the last snapshot and any open level or run, so a stale selection is never
     /// used. The draft stays.
-    public func beginSession(for app: TargetApp?) {
+    /// - Parameter keepingLevel: the panel is being reopened soon after it closed, so the draft level the person was in
+    ///   stays open. The selection is still forgotten and a fresh one is read, and a waiting confirmation is dropped.
+    public func beginSession(for app: TargetApp?, keepingLevel: Bool = false) {
         capturedAt = .distantPast
         values = ContextValues()
         target = app
-        level = nil
-        symbolExpanded = false
+        if !(keepingLevel && level == .steps) {
+            level = nil
+            symbolExpanded = false
+        }
         phase = nil
         stepStates = [:]
         failure = nil

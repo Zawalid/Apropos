@@ -416,7 +416,9 @@ public final class PaletteModel {
 
     /// Called each time the palette opens: clears the query and refreshes the menus, since the app may have changed
     /// them while the palette was hidden.
-    public func prepareForOpen() {
+    /// - Parameter restoringLevel: the panel was closed a moment ago. The draft level stays open, so going to the draft,
+    ///   clicking away and coming back lands in the draft again.
+    public func prepareForOpen(restoringLevel: Bool = false) {
         query = ""
         runError = nil
         lastOutcome = nil
@@ -425,7 +427,7 @@ public final class PaletteModel {
         lastSentCommand = nil
         sendFailure = nil
         sendCenter?.beginSession(for: tracker.app)
-        sequenceCenter?.beginSession(for: tracker.app)
+        sequenceCenter?.beginSession(for: tracker.app, keepingLevel: restoringLevel)
         selectedID = nil
         // Context from the last time the panel was open may be gone. Actions come back when the fresh snapshot lands,
         // so a stale selection can never be acted on.

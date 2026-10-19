@@ -96,8 +96,10 @@ final class PanelController: NSObject {
 
     /// Opening is ordering a ready window to the front: no animation, the content is already drawn.
     func show() {
-        model.prepareForOpen()
-        if Date().timeIntervalSince(lastHide) < TimeInterval(settings.resetQuerySeconds) { model.query = lastQuery }
+        // Reopened within the "reset search after" time: the search and the draft level are where the person left them.
+        let recent = Date().timeIntervalSince(lastHide) < TimeInterval(settings.resetQuerySeconds)
+        model.prepareForOpen(restoringLevel: recent)
+        if recent { model.query = lastQuery }
         context.refresh(for: model.targetApp)
         closeActions(animated: false)
         position()
