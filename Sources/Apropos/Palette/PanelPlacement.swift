@@ -82,36 +82,47 @@ public enum PanelPlacement {
         return result
     }
 
-    /// A line to show while dragging: where the panel's centre would line up with the screen's centre or a third.
+    /// A line shown while dragging: the edges of the panel's home place. It is bright while the panel is snapped to it.
     public struct Guide: Equatable, Sendable {
         public enum Axis: Sendable { case vertical, horizontal }
         public let axis: Axis
         /// The x of a vertical line, or the y of a horizontal one, in screen coordinates.
         public let position: CGFloat
+        public let isActive: Bool
 
-        public init(axis: Axis, position: CGFloat) {
+        public init(axis: Axis, position: CGFloat, isActive: Bool = false) {
             self.axis = axis
             self.position = position
+            self.isActive = isActive
         }
     }
 
-    /// Pulls the panel's centre onto the nearest centre or third line of the screen when it is within `threshold` points,
-    /// and returns the lines it snapped to.
+    /// Pulls the panel onto its home place when an edge comes within `threshold` points: the left and right edges to the
+    /// two vertical lines, the top edge to the horizontal one. All three lines are returned, so they can all be drawn
+    /// during the drag, with the ones snapped to marked active.
     public static func snap(
-        _ frame: CGRect, in visibleFrame: CGRect, threshold: CGFloat = 10
+        _ frame: CGRect, in visibleFrame: CGRect, threshold: CGFloat = 12
     ) -> (frame: CGRect, guides: [Guide]) {
+        let home = Self.frame(in: visibleFrame, size: frame.size)
         var result = frame
-        var guides: [Guide] = []
-        let xs = [1.0 / 3, 0.5, 2.0 / 3].map { visibleFrame.minX + visibleFrame.width * $0 }
-        let ys = [1.0 / 3, 0.5, 2.0 / 3].map { visibleFrame.minY + visibleFrame.height * $0 }
-        if let x = xs.min(by: { abs($0 - frame.midX) < abs($1 - frame.midX) }), abs(x - frame.midX) <= threshold {
-            result.origin.x += x - frame.midX
-            guides.append(Guide(axis: .vertical, position: x))
+        var leftActive = false
+        var topActive = false
+        let toLeft = home.minX - frame.minX
+        let toRight = home.maxX - frame.maxX
+        if abs(toLeft) <= threshold || abs(toRight) <= threshold {
+            result.origin.x += abs(toLeft) <= abs(toRight) ? toLeft : toRight
+            leftActive = true
         }
-        if let y = ys.min(by: { abs($0 - frame.midY) < abs($1 - frame.midY) }), abs(y - frame.midY) <= threshold {
-            result.origin.y += y - frame.midY
-            guides.append(Guide(axis: .horizontal, position: y))
+        let toTop = home.maxY - frame.maxY
+        if abs(toTop) <= threshold {
+            result.origin.y += toTop
+            topActive = true
         }
+        let guides = [
+            Guide(axis: .vertical, position: home.minX, isActive: leftActive),
+            Guide(axis: .vertical, position: home.maxX, isActive: leftActive),
+            Guide(axis: .horizontal, position: home.maxY, isActive: topActive),
+        ]
         return (result, guides)
     }
 }

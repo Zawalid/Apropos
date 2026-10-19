@@ -39,16 +39,23 @@ struct PanelPositionTests {
         #expect(screen.contains(kept))
     }
 
-    @Test func snapPullsTheCentreToTheCentreAndThirds() {
-        let near = CGRect(x: screen.midX - 360 + 6, y: screen.midY - 240 - 4, width: 720, height: 480)
+    @Test func snapPullsTheEdgesOntoTheHomePlace() {
+        let home = PanelPlacement.frame(in: screen, size: size)
+        let near = home.offsetBy(dx: 7, dy: -5)
         let result = PanelPlacement.snap(near, in: screen)
-        #expect(result.frame.midX == screen.midX && result.frame.midY == screen.midY)
-        #expect(result.guides.count == 2)
-        let third = CGRect(x: screen.minX + screen.width / 3 - 360 - 5, y: 100, width: 720, height: 480)
-        let onThird = PanelPlacement.snap(third, in: screen)
-        #expect(onThird.guides.contains { $0.axis == .vertical })
-        let far = CGRect(x: 40, y: 60, width: 720, height: 480)
-        #expect(PanelPlacement.snap(far, in: screen).guides.isEmpty)
+        #expect(result.frame == home)
+        #expect(result.guides.count == 3 && result.guides.allSatisfy(\.isActive))
+    }
+
+    @Test func guidesAreAlwaysThereAndOnlyTheSnappedOnesAreActive() {
+        let home = PanelPlacement.frame(in: screen, size: size)
+        let farAcross = home.offsetBy(dx: 300, dy: -4)
+        let result = PanelPlacement.snap(farAcross, in: screen)
+        #expect(result.guides.count == 3)
+        #expect(result.guides.filter(\.isActive).map(\.axis) == [.horizontal])
+        #expect(result.frame.origin.x == farAcross.origin.x && result.frame.maxY == home.maxY)
+        let nowhere = PanelPlacement.snap(home.offsetBy(dx: 200, dy: -200), in: screen)
+        #expect(nowhere.guides.count == 3 && nowhere.guides.allSatisfy { !$0.isActive })
     }
 
     @Test func positionsAreRememberedPerDisplay() {

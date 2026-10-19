@@ -258,10 +258,10 @@ public enum SettingsRegistry {
             defaultValue: .bool(false)),
         SettingDefinition(
             id: .panelPosition, title: "Position",
-            detail: "Where the panel opens. Drag it by the top of the search bar; it remembers the place only in Where you left it.",
+            detail: "Where the panel opens. Drag it by the top of the search bar; it snaps to its home place and remembers where you leave it.",
             keywords: ["move", "drag", "place", "screen", "center", "menu bar", "remember"], page: .general,
             type: .choice(PanelPlacement.Mode.allCases.map { SettingOption($0.rawValue, $0.title) }),
-            defaultValue: .string("centered")),
+            defaultValue: .string("remember")),
         SettingDefinition(
             id: .includeContextActions, title: "Context actions",
             detail: "Actions for what you have selected, the page, the folder or the files.",

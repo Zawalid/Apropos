@@ -26,8 +26,8 @@ final class SnapGuides {
         view.frame = NSRect(origin: .zero, size: screenFrame.size)
         view.guides = guides.map { guide in
             switch guide.axis {
-            case .vertical: .init(axis: .vertical, position: guide.position - screenFrame.minX)
-            case .horizontal: .init(axis: .horizontal, position: guide.position - screenFrame.minY)
+            case .vertical: .init(axis: .vertical, position: guide.position - screenFrame.minX, isActive: guide.isActive)
+            case .horizontal: .init(axis: .horizontal, position: guide.position - screenFrame.minY, isActive: guide.isActive)
             }
         }
         view.needsDisplay = true
@@ -43,8 +43,8 @@ final class SnapGuides {
         var guides: [PanelPlacement.Guide] = []
 
         override func draw(_ dirtyRect: NSRect) {
-            NSColor.systemBlue.withAlphaComponent(0.85).setStroke()
             for guide in guides {
+                NSColor.systemBlue.withAlphaComponent(guide.isActive ? 0.95 : 0.55).setStroke()
                 let path = NSBezierPath()
                 switch guide.axis {
                 case .vertical:
@@ -54,7 +54,7 @@ final class SnapGuides {
                     path.move(to: NSPoint(x: 0, y: guide.position))
                     path.line(to: NSPoint(x: bounds.width, y: guide.position))
                 }
-                path.lineWidth = 1.5
+                path.lineWidth = guide.isActive ? 2 : 1.5
                 path.setLineDash([7, 6], count: 2, phase: 0)
                 path.stroke()
             }
