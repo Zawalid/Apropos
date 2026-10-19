@@ -74,17 +74,24 @@ A list like: `8: only 1 step shown`, `14: Google it missing`, `17: Command-Space
 looked wrong, even if it is not in this list.
 
 ## Part 5. What still needs the real app
-Rendered screens (panel, sequence draft, confirm and save forms, every Settings page, menu bar popover, light and dark)
-were checked from images and look right. Only behaviour is left, and it needs the real app on screen. Keep this list
-short: write the step number and one line for anything that is off.
+Screens (panel, sequence draft, forms, every Settings page, menu bar popover, light and dark) were checked from rendered
+images and look right. What is left is behaviour, which needs the real app on screen. Run `scripts/dev.sh` first so you
+have the current build. Write the step number and one line for anything that is off.
 
-1. Option-Space opens the panel over Finder with two files selected, with a "Selected files" group (steps 1 and 3).
-2. Typing `nf`, `shwo`, `clo` orders results as described (step 2).
-3. Dragging the panel snaps to the guides and remembers where you let go (steps 3 and 4).
-4. The sequence in Part 2 runs for real: Finder > Settings opens Settings in front, and step numbers and Escape-after-
-   the-last-delete behave as written (steps 5 to 10).
-5. A command that asks first shows its question in the panel, asks only the first time, then runs (steps 11 and 14).
-6. Global shortcuts run a command from any app, and Command-Space shows the Spotlight note (step 17).
-7. Context chips and the toggles change what the panel offers (step 18).
-8. An `apropos://run` link from Terminal asks once, and is refused when outside control is off (step 21).
-9. Quit and reopen: settings and panel position stay, the draft is gone (step 26).
+1. Option-Space opens the panel over Finder with two files selected. Typing `nf` puts New Folder first, and `shwo` still
+   finds the Show items (steps 1 and 2).
+2. Drag the panel by its top strip: guides appear, it snaps, and it opens where you let go (steps 3 and 4).
+3. Sequence across apps. In Finder add New Folder, Copy path, Finder > Settings and Copy path again. In the draft each step
+   shows its app icon. Run it: the folder is made, the path is copied, and the Settings window opens in front (steps 5 to 10).
+4. Select nothing, reopen the panel and open the draft: a step that reads files says "Needs selected files, none are
+   selected", and Run sequence names that step.
+5. Menu item alias and shortcut. Highlight New Folder, press Command-K, choose Alias and shortcut. Settings opens on
+   Shortcuts, Menu items with the alias field ready. Type `nf`, then record Control-Option-J. Reopen the panel: `nf` finds New
+   Folder first and the row shows an `nf` pill before its keys. With Finder in front, press Control-Option-J: a folder appears.
+6. Shortcut tip. Run Get Info from the panel five times. Highlight it again: the footer says "Run 5 times from here. Try"
+   with the keys. Command-K, Stop reminding me of the keys, hides it. Settings, General, Shortcut tips turns it off.
+7. A command that asks first shows its question in the panel, asks only the first time, then runs (steps 11 and 14).
+8. A global shortcut of one of your commands runs it from any app, and Command-Space shows the Spotlight note (step 17).
+9. Context chips and the toggles change what the panel offers (step 18).
+10. An `apropos://run` link from Terminal asks once, and is refused when outside control is off (step 21).
+11. Quit and reopen: settings, panel position and item aliases stay, the draft is gone (step 26).
