@@ -19,6 +19,7 @@ final class AppController {
     let send: SendToCenter
     let destinationToggles: DestinationToggles
     let externalLog: ExternalActivityLog
+    let panelPositions: PanelPositionStore
     let sequences: SequenceCenter
     let userCommands: UserCommandStore
     let commandHotKeys = CommandHotKeyManager()
@@ -128,6 +129,10 @@ final class AppController {
                     "apropos-send-disabled-\(UUID().uuidString).json"))
         send.disabled = toggles.disabled
         self.destinationToggles = toggles
+        self.panelPositions = PanelPositionStore(
+            url: sendFoldersURL?.deletingLastPathComponent().appendingPathComponent("panel-position.json")
+                ?? FileManager.default.temporaryDirectory.appendingPathComponent(
+                    "apropos-panel-position-\(UUID().uuidString).json"))
         self.externalLog = ExternalActivityLog(
             url: sendFoldersURL?.deletingLastPathComponent().appendingPathComponent("external-activity.json")
                 ?? FileManager.default.temporaryDirectory.appendingPathComponent(
@@ -177,7 +182,8 @@ final class AppController {
         let panel = PanelController(
             model: palette, tracker: tracker, permission: permission, settings: settings, context: context,
             usage: usage, openSettings: { [weak self] in self?.showSettings() },
-            openGuide: { [weak self] in self?.showOnboarding(step: .permission) })
+            openGuide: { [weak self] in self?.showOnboarding(step: .permission) },
+            positions: panelPositions)
         if AgentMode.isOn {
             // Automated runs stay invisible: no dock icon, status item, hotkey or welcome window.
             NSApp.setActivationPolicy(.accessory)

@@ -92,6 +92,7 @@ public struct SettingID: RawRepresentable, Hashable, Sendable, ExpressibleByStri
     public static let closeOnFocusLoss: SettingID = "closeOnFocusLoss"
     public static let resetQueryAfterSeconds: SettingID = "resetQueryAfterSeconds"
     public static let showAlternateCommands: SettingID = "showAlternateCommands"
+    public static let panelPosition: SettingID = "panelPosition"
     public static let includeContextActions: SettingID = "includeContextActions"
     public static let includeUserCommands: SettingID = "includeUserCommands"
     public static let includeSendTo: SettingID = "includeSendTo"
@@ -255,6 +256,12 @@ public enum SettingsRegistry {
             detail: "Option-key variants, such as Empty Trash Securely, as their own rows.",
             keywords: ["option", "hidden", "variants", "secure"], page: .general, type: .bool,
             defaultValue: .bool(false)),
+        SettingDefinition(
+            id: .panelPosition, title: "Position",
+            detail: "Where the panel opens. Drag it by the top of the search bar; it remembers the place only in Where you left it.",
+            keywords: ["move", "drag", "place", "screen", "center", "menu bar", "remember"], page: .general,
+            type: .choice(PanelPlacement.Mode.allCases.map { SettingOption($0.rawValue, $0.title) }),
+            defaultValue: .string("centered")),
         SettingDefinition(
             id: .includeContextActions, title: "Context actions",
             detail: "Actions for what you have selected, the page, the folder or the files.",

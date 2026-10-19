@@ -17,6 +17,8 @@ final class PanelController: NSObject {
     private let openSettings: () -> Void
     private var resignObserver: NSObjectProtocol?
     private var clickMonitor: Any?
+    private let positions: PanelPositionStore
+    private let guides = SnapGuides()
 
     var isVisible: Bool { panel.isVisible }
 
@@ -26,8 +28,9 @@ final class PanelController: NSObject {
     init(
         model: PaletteModel, tracker: FrontmostAppTracker, permission: AccessibilityPermission,
         settings: SettingsModel, context: ContextModel, usage: UsageController, openSettings: @escaping () -> Void,
-        openGuide: @escaping () -> Void = {}
+        openGuide: @escaping () -> Void = {}, positions: PanelPositionStore
     ) {
+        self.positions = positions
         self.model = model
         self.settings = settings
         self.usage = usage
@@ -70,6 +73,8 @@ final class PanelController: NSObject {
             }
         #endif
         panel.keyHandler = { [weak self] key in self?.handle(key) ?? false }
+        panel.dragAdjust = { [weak self] proposed in self?.adjustDrag(proposed) ?? proposed }
+        panel.dragEnded = { [weak self] frame in self?.finishDrag(frame) }
         resignObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.didResignKeyNotification, object: panel, queue: .main
         ) { [weak self] _ in
@@ -131,12 +136,37 @@ final class PanelController: NSObject {
         }
     #endif
 
+    private var mode: PanelPlacement.Mode { PanelPlacement.Mode(rawValue: settings.panelPosition) ?? .centered }
+
     private func position() {
         let screens = NSScreen.screens
-        let mouse = NSEvent.mouseLocation
-        let index = PanelPlacement.index(containing: mouse, in: screens.map(\.frame))
+        let index = PanelPlacement.index(containing: NSEvent.mouseLocation, in: screens.map(\.frame))
         guard let index else { return }
-        panel.setFrame(PanelPlacement.frame(in: screens[index].visibleFrame), display: false)
+        let screen = screens[index]
+        let anchor = positions.anchor(forDisplay: screen.displayKey)
+        panel.setFrame(
+            PanelPlacement.frame(in: screen.visibleFrame, mode: mode, anchor: anchor), display: false)
+    }
+
+    /// While dragging: snap to the centre and thirds, show the guides, and keep the panel on the screen it is over.
+    private func adjustDrag(_ proposed: CGRect) -> CGRect {
+        guard let screen = screen(for: proposed) else { return proposed }
+        let snapped = PanelPlacement.snap(proposed, in: screen.visibleFrame)
+        guides.show(snapped.guides, in: screen.visibleFrame)
+        return PanelPlacement.clamp(snapped.frame, to: screen.visibleFrame)
+    }
+
+    private func finishDrag(_ frame: CGRect) {
+        guides.hide()
+        guard mode == .remember, let screen = screen(for: frame) else { return }
+        positions.set(PanelPlacement.anchor(for: frame, in: screen.visibleFrame), forDisplay: screen.displayKey)
+    }
+
+    private func screen(for frame: CGRect) -> NSScreen? {
+        NSScreen.screens.max { lhs, rhs in
+            lhs.frame.intersection(frame).width * lhs.frame.intersection(frame).height
+                < rhs.frame.intersection(frame).width * rhs.frame.intersection(frame).height
+        }
     }
 
     private func handle(_ key: PaletteKey) -> Bool {

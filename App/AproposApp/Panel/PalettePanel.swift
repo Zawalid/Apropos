@@ -22,6 +22,14 @@ enum PaletteKey {
 final class PalettePanel: NSPanel {
     /// Returns true when the key was used.
     var keyHandler: ((PaletteKey) -> Bool)?
+    /// Given the frame a drag would give the panel, returns the frame to use: snapped and kept on screen.
+    var dragAdjust: ((CGRect) -> CGRect)?
+    /// Called with the final frame when a drag ends.
+    var dragEnded: ((CGRect) -> Void)?
+    /// How much of the top of the panel can be grabbed to move it.
+    private let grabHeight: CGFloat = 64
+    private var dragStart: (mouse: NSPoint, origin: NSPoint)?
+    private var isDragging = false
 
     init() {
         super.init(
@@ -36,7 +44,7 @@ final class PalettePanel: NSPanel {
         hasShadow = true
         hidesOnDeactivate = false
         isReleasedWhenClosed = false
-        isMovable = false
+        isMovable = false  // moved by our own drag, which snaps
         animationBehavior = .none
     }
 
@@ -44,10 +52,50 @@ final class PalettePanel: NSPanel {
     override var canBecomeMain: Bool { false }
 
     override func sendEvent(_ event: NSEvent) {
+        switch event.type {
+        case .leftMouseDown:
+            dragStart = canGrab(event) ? (NSEvent.mouseLocation, frame.origin) : nil
+            isDragging = false
+        case .leftMouseDragged:
+            if let start = dragStart {
+                let mouse = NSEvent.mouseLocation
+                let dx = mouse.x - start.mouse.x
+                let dy = mouse.y - start.mouse.y
+                if isDragging || hypot(dx, dy) > 4 {
+                    isDragging = true
+                    var proposed = frame
+                    proposed.origin = NSPoint(x: start.origin.x + dx, y: start.origin.y + dy)
+                    setFrame(dragAdjust?(proposed) ?? proposed, display: true)
+                    return
+                }
+            }
+        case .leftMouseUp:
+            let wasDragging = isDragging
+            dragStart = nil
+            isDragging = false
+            if wasDragging {
+                dragEnded?(frame)
+                return
+            }
+        default:
+            break
+        }
         if event.type == .keyDown, let key = Self.key(for: event), !isComposingText, keyHandler?(key) == true {
             return
         }
         super.sendEvent(event)
+    }
+
+    /// A press in the top strip that is not on the search text, so clicking and selecting text still work.
+    private func canGrab(_ event: NSEvent) -> Bool {
+        let point = event.locationInWindow
+        guard point.y >= frame.height - grabHeight else { return false }
+        var view = contentView?.hitTest(point)
+        while let current = view {
+            if current is NSText || current is NSTextField { return false }
+            view = current.superview
+        }
+        return true
     }
 
     /// A Return pressed while an input method has marked text confirms the text; it must not run a command.

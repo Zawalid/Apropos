@@ -58,6 +58,11 @@ final class SettingsModel {
         set { write(.number(newValue), .resetQueryAfterSeconds) }
     }
 
+    var panelPosition: String {
+        get { store.string(.panelPosition) }
+        set { write(.string(newValue), .panelPosition) }
+    }
+
     var includeContextActions: Bool {
         get { store.bool(.includeContextActions) }
         set { write(.bool(newValue), .includeContextActions) }

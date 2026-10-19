@@ -68,6 +68,18 @@ struct GeneralPage: View {
                 ValueMenu(options: options, selection: $settings.resetQuerySeconds)
             }
             .settingsAnchor(SettingID.resetQueryAfterSeconds.rawValue)
+            SettingsRow(title: title(.panelPosition), detail: detail(.panelPosition), settingID: .panelPosition) {
+                HStack(spacing: 8) {
+                    if settings.panelPosition == PanelPlacement.Mode.remember.rawValue {
+                        Button("Reset") { controller.panelPositions.forgetAll() }
+                            .buttonStyle(SecondaryButtonStyle())
+                    }
+                    ValueMenu(
+                        options: PanelPlacement.Mode.allCases.map { ($0.rawValue, $0.title) },
+                        selection: $settings.panelPosition)
+                }
+            }
+            .settingsAnchor(SettingID.panelPosition.rawValue)
         }
         SettingsSection(
             title: "Include in the panel",
