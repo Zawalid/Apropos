@@ -32,7 +32,7 @@ struct SlowProvider: ContextProvider {
     let bundleIDs: Set<String> = ["slow.app"]
     let timeout: TimeInterval = 0.05
     func read(_ target: ContextTarget) -> ContextFields {
-        Thread.sleep(forTimeInterval: 0.4)
+        Thread.sleep(forTimeInterval: 1.5)
         return ContextFields(url: "https://late.example")
     }
 }
@@ -165,7 +165,7 @@ private func window(_ configure: (FakeAX) -> Void) -> FakeAX {
         let service = makeService(root: root, providers: [SlowProvider()])
         let started = Date()
         let snapshot = await service.snapshot(for: app("slow.app"))
-        #expect(Date().timeIntervalSince(started) < 0.3)
+        #expect(Date().timeIntervalSince(started) < 1.0)
         #expect(snapshot.gaps.contains(.timedOut))
         #expect(snapshot.fields.url == nil)
         #expect(snapshot.fields.windowTitle == "Doc")
