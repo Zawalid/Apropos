@@ -64,10 +64,10 @@ enum Theme {
     static let glassEdge = adaptive(light: rgba(0, 0, 0, 0.09), dark: rgba(255, 255, 255, 0.13))
     /// The rim of a glass surface: a lit edge at the top left that fades along the sides and catches a little light again
     /// at the bottom, so the panel looks cut from glass and not drawn with a line.
-    static let rimLit = adaptive(light: rgba(255, 255, 255, 0.95), dark: rgba(255, 255, 255, 0.72))
-    static let rimSide = adaptive(light: rgba(0, 0, 0, 0.10), dark: rgba(255, 255, 255, 0.24))
-    static let rimBottom = adaptive(light: rgba(0, 0, 0, 0.12), dark: rgba(255, 255, 255, 0.34))
-    static let rimInner = adaptive(light: rgba(255, 255, 255, 0.8), dark: rgba(255, 255, 255, 0.14))
+    static let rimLit = adaptive(light: rgba(255, 255, 255, 0.95), dark: rgba(255, 255, 255, 0.56))
+    static let rimSide = adaptive(light: rgba(0, 0, 0, 0.10), dark: rgba(255, 255, 255, 0.15))
+    static let rimBottom = adaptive(light: rgba(0, 0, 0, 0.12), dark: rgba(255, 255, 255, 0.24))
+    static let rimInner = adaptive(light: rgba(255, 255, 255, 0.8), dark: rgba(255, 255, 255, 0.07))
     static let glassEdgeTop = adaptive(light: rgba(255, 255, 255, 0.9), dark: rgba(255, 255, 255, 0.22))
     static let highlight = adaptive(light: rgba(0, 0, 0, 0.06), dark: rgba(255, 255, 255, 0.09))
     static let chip = adaptive(light: rgba(0, 0, 0, 0.05), dark: rgba(255, 255, 255, 0.07))

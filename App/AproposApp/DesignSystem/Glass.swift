@@ -29,7 +29,7 @@ private struct AproposGlass<S: InsettableShape>: ViewModifier {
                             .init(color: Theme.rimBottom, location: 1),
                         ],
                         startPoint: .topLeading, endPoint: .bottomTrailing),
-                    lineWidth: 1.5)
+                    lineWidth: 1.3)
             }
             // A second, fainter line just inside the first: the edge of the glass catching light from within.
             .overlay {
