@@ -8,6 +8,8 @@ struct ShortcutsPage: View {
 
     @State private var message: String?
     @State private var tick = 0
+    @State private var focusedItem: String?
+    @Environment(SettingsNavigation.self) private var navigation
 
     private var store: UserCommandStore { controller.userCommands }
 
@@ -55,6 +57,7 @@ struct ShortcutsPage: View {
                 }
             }
         }
+        menuItems
         if let message { Text(message).font(.system(size: 12)).foregroundStyle(Brand.danger) }
         SettingsSection(
             title: "Keys inside the panel",
@@ -66,6 +69,35 @@ struct ShortcutsPage: View {
                 }
             }
         }
+    }
+
+    // MARK: Menu items
+
+    private var items: [MenuItemSetting] { controller.usage.store.itemSettings }
+
+    private var menuItems: some View {
+        SettingsSection(
+            title: "Menu items",
+            footer: "A shortcut runs the item in its app, and only when that app is in front. The same keys can serve items of different apps."
+        ) {
+            if items.isEmpty {
+                EmptyRows(
+                    title: "No menu items yet",
+                    detail: "Open the panel in any app, highlight a menu item and press Command-K, then choose Alias and shortcut.")
+            }
+            ForEach(items) { item in
+                MenuItemRow(
+                    item: item, usage: controller.usage, controller: controller, isFocused: focusedItem == item.id.rawValue,
+                    onError: { message = $0 })
+            }
+        }
+        .onAppear(perform: takeIntent)
+        .onChange(of: navigation.intentToken) { takeIntent() }
+    }
+
+    private func takeIntent() {
+        guard case .customizeItem(let id)? = navigation.takeIntent() else { return }
+        focusedItem = id
     }
 
     private static let panelKeys: [(action: String, keys: [String])] = [
@@ -113,5 +145,99 @@ struct ShortcutsPage: View {
             message = "That did not work: \(error)"
         }
         tick += 1
+    }
+}
+
+/// One menu item: its name and app, an alias to type, a shortcut to record, and a way to take it out of the list.
+private struct MenuItemRow: View {
+    let item: MenuItemSetting
+    let usage: UsageController
+    let controller: AppController
+    let isFocused: Bool
+    let onError: (String?) -> Void
+
+    @State private var alias = ""
+    @FocusState private var aliasFocus: Bool
+
+    var body: some View {
+        SettingsRow(title: item.label.title, detail: detail) {
+            HStack(spacing: 8) {
+                if let failure = controller.itemHotKeys.failures[item.id] {
+                    Badge(text: Self.label(failure), tone: .warning)
+                }
+                TextField("Alias", text: $alias)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12.5))
+                    .multilineTextAlignment(.center)
+                    .frame(width: 76, height: 30)
+                    .background(Capsule().fill(Brand.raised))
+                    .focused($aliasFocus)
+                    .onSubmit(commitAlias)
+                    .onChange(of: aliasFocus) { if !aliasFocus { commitAlias() } }
+                    .accessibilityLabel("Alias for \(item.label.title)")
+                ShortcutRecorder(
+                    combo: item.hotkey, placeholder: "Add shortcut", minWidth: 110,
+                    onRecordingChange: { controller.setRecording($0) }, onChange: setHotKey,
+                    onClear: { setHotKey(nil) })
+                Button {
+                    usage.removeItemCustomization(item.id)
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Brand.text3)
+                        .frame(width: 24, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("Take this item out of the list")
+                .accessibilityLabel("Remove \(item.label.title)")
+            }
+        }
+        .onAppear {
+            alias = item.aliases.first ?? ""
+            if isFocused { aliasFocus = true }
+        }
+        .onChange(of: isFocused) { if isFocused { aliasFocus = true } }
+    }
+
+    private var detail: String {
+        if let combo = item.hotkey, let note = SystemShortcuts.name(for: combo) {
+            return "\(item.label.appName). macOS normally uses these keys for \(note)."
+        }
+        return item.label.appName
+    }
+
+    private func commitAlias() {
+        let cleaned = alias.trimmingCharacters(in: .whitespaces).lowercased().replacingOccurrences(of: " ", with: "-")
+        alias = cleaned
+        guard cleaned != (item.aliases.first ?? "") else { return }
+        usage.setItemAlias(cleaned, for: item.id)
+    }
+
+    private func setHotKey(_ combo: HotKeyCombo?) {
+        if let combo {
+            if let conflict = controller.userCommands.hotkeyConflict(combo, excluding: nil) {
+                switch conflict {
+                case .panel: onError("That shortcut opens Apropos.")
+                case .command(let title): onError("That shortcut already runs \(title).")
+                }
+                return
+            }
+            if !usage.setItemHotKey(combo, for: item.id) {
+                onError("Another item of \(item.label.appName) already uses that shortcut.")
+                return
+            }
+        } else {
+            usage.setItemHotKey(nil, for: item.id)
+        }
+        onError(nil)
+    }
+
+    private static func label(_ failure: HotKeyFailure) -> String {
+        switch failure {
+        case .refusedBySystem: "Taken by another app"
+        case .panel: "Same as the panel"
+        case .duplicate: "Same as a command"
+        }
     }
 }

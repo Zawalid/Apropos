@@ -7,6 +7,8 @@ enum SettingsIntent: Equatable {
     case newCommand
     /// The detail sheet of one command of yours, by its id.
     case editCommand(String)
+    /// The alias field of one menu item on the Shortcuts page, by its stable id.
+    case customizeItem(String)
 }
 
 /// A request to show Settings: a page, and optionally something to open on it.

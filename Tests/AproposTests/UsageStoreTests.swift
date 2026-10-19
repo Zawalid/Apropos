@@ -217,4 +217,74 @@ struct UsageStoreTests {
         #expect(self.ranked(store, commands).suggested(commands).map(\.command.title) == ["Close"])
         #expect(CommandRanker().suggested(commands).isEmpty)
     }
+
+    // MARK: Customized menu items
+
+    private let combo = HotKeyCombo(keyCode: 0, modifiers: [.control, .option])
+    private let other = HotKeyCombo(keyCode: 11, modifiers: [.control, .option])
+
+    @Test func aMenuItemKeepsItsAliasShortcutAndLabelAcrossRelaunches() {
+        let url = tempURL()
+        let first = store(url)
+        let id = CommandID(rawValue: "com.apple.finder|file>new folder")
+        first.listForCustomizing(id, title: "New Folder", appName: "Finder")
+        first.setAliases(["nf"], for: id)
+        #expect(first.setHotKey(combo, for: id))
+
+        let second = store(url)
+        #expect(second.hotKey(id) == combo)
+        #expect(second.aliases(id) == ["nf"])
+        let setting = second.itemSettings.first
+        #expect(setting?.label == MenuItemLabel(title: "New Folder", appName: "Finder"))
+        #expect(second.itemHotKeys.map(\.id) == [id])
+    }
+
+    @Test func oneAppCannotGiveTheSameKeyToTwoItemsButTwoAppsCan() {
+        let store = store(tempURL())
+        let newFolder = CommandID(rawValue: "com.apple.finder|file>new folder")
+        let getInfo = CommandID(rawValue: "com.apple.finder|file>get info")
+        let newTab = CommandID(rawValue: "com.apple.safari|file>new tab")
+        #expect(store.setHotKey(combo, for: newFolder))
+        #expect(!store.setHotKey(combo, for: getInfo))
+        #expect(store.hotKey(getInfo) == nil)
+        #expect(store.setHotKey(combo, for: newTab))
+        #expect(store.setHotKey(other, for: getInfo))
+        #expect(store.hotKeyOwner(combo, bundleID: "com.apple.finder", excluding: nil) == newFolder)
+    }
+
+    @Test func aShortcutWithoutAModifierIsRefused() {
+        let store = store(tempURL())
+        let id = CommandID(rawValue: "com.apple.finder|file>new folder")
+        #expect(!store.setHotKey(HotKeyCombo(keyCode: 0, modifiers: []), for: id))
+        #expect(store.hotKey(id) == nil)
+    }
+
+    @Test func removingACustomizationKeepsPinsAndForgetsTheRest() {
+        let store = store(tempURL())
+        let id = CommandID(rawValue: "com.apple.finder|file>new folder")
+        store.listForCustomizing(id, title: "New Folder", appName: "Finder")
+        store.setAliases(["nf"], for: id)
+        store.setHotKey(combo, for: id)
+        store.setPinned(true, for: id)
+        store.removeCustomization(id)
+        #expect(store.aliases(id).isEmpty && store.hotKey(id) == nil && store.itemSettings.isEmpty)
+        #expect(store.isPinned(id))
+    }
+
+    @Test func listingAnItemTwiceKeepsTheFirstLabel() {
+        let store = store(tempURL())
+        let id = CommandID(rawValue: "com.apple.finder|file>new folder")
+        store.listForCustomizing(id, title: "New Folder", appName: "Finder")
+        store.listForCustomizing(id, title: "Other", appName: "Other")
+        #expect(store.itemSettings.first?.label.title == "New Folder")
+    }
+
+    @Test func anAliasGivenToAMenuItemFindsItFirst() {
+        let store = store(tempURL())
+        let commands = [command("New Finder Window"), command("Network Utility"), command("New Folder")]
+        store.listForCustomizing(commands[2].stableID, title: "New Folder", appName: "Finder")
+        store.setAliases(["nw"], for: commands[2].stableID)
+        let results = ranked(store, commands).rank(commands, query: "nw")
+        #expect(results.first?.command.title == "New Folder")
+    }
 }

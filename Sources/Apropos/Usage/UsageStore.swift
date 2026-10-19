@@ -42,8 +42,35 @@ struct CommandPreference: Codable, Equatable {
     var aliases: [String] = []
     /// An SF Symbol the user picked for this command's row.
     var symbol: String?
+    /// A system-wide shortcut that runs this menu item in its app. The same combination may belong to items of
+    /// different apps: it runs the one of the app in front.
+    var hotkey: HotKeyCombo?
+    /// How to name the item in Settings when its app is not open: the item's title and its app's name. Present while
+    /// the person keeps the item in their list of customized menu items.
+    var label: MenuItemLabel?
 
-    var isEmpty: Bool { pinnedAt == nil && !isHidden && aliases.isEmpty && symbol == nil }
+    var isEmpty: Bool {
+        pinnedAt == nil && !isHidden && aliases.isEmpty && symbol == nil && hotkey == nil && label == nil
+    }
+}
+
+/// The words Settings shows for a menu item the person gave an alias or a shortcut.
+public struct MenuItemLabel: Codable, Equatable, Sendable {
+    public var title: String
+    public var appName: String
+
+    public init(title: String, appName: String) {
+        self.title = title
+        self.appName = appName
+    }
+}
+
+/// One menu item the person customized: its alias and shortcut, with the words to show for it.
+public struct MenuItemSetting: Identifiable, Equatable, Sendable {
+    public let id: CommandID
+    public let label: MenuItemLabel
+    public let aliases: [String]
+    public let hotkey: HotKeyCombo?
 }
 
 struct UsageFile: Codable {
@@ -198,6 +225,61 @@ public final class UsageStore {
         let cleaned = aliases.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
             .filter { !$0.isEmpty && $0.count <= 32 && seen.insert($0).inserted }
         update(id) { $0.aliases = cleaned }
+    }
+
+    // MARK: Customized menu items
+
+    public func hotKey(_ id: CommandID) -> HotKeyCombo? { file.preferences[id]?.hotkey }
+
+    /// Sets or clears the global shortcut of a menu item. Returns false, and changes nothing, when the same app already
+    /// gave that combination to another of its items: one key cannot run two items of the same app.
+    @discardableResult
+    public func setHotKey(_ combo: HotKeyCombo?, for id: CommandID) -> Bool {
+        if let combo, !combo.isValid { return false }
+        if let combo, hotKeyOwner(combo, bundleID: id.bundleID, excluding: id) != nil { return false }
+        update(id) { $0.hotkey = combo }
+        return true
+    }
+
+    /// The item of the same app that already holds a combination, if any.
+    public func hotKeyOwner(_ combo: HotKeyCombo, bundleID: String?, excluding id: CommandID?) -> CommandID? {
+        file.preferences.first { key, preference in
+            key != id && preference.hotkey == combo && key.bundleID == bundleID
+        }?.key
+    }
+
+    /// Puts a menu item in the list of customized items, so Settings can show it and take an alias and a shortcut for it.
+    public func listForCustomizing(_ id: CommandID, title: String, appName: String) {
+        update(id) { preference in
+            if preference.label == nil { preference.label = MenuItemLabel(title: title, appName: appName) }
+        }
+    }
+
+    /// Takes a menu item out of the list: its alias and shortcut are forgotten. Pins and hiding are kept.
+    public func removeCustomization(_ id: CommandID) {
+        update(id) { preference in
+            preference.aliases = []
+            preference.hotkey = nil
+            preference.label = nil
+        }
+    }
+
+    /// Every customized menu item, by app then title.
+    public var itemSettings: [MenuItemSetting] {
+        file.preferences.compactMap { id, preference in
+            guard let label = preference.label else { return nil }
+            return MenuItemSetting(id: id, label: label, aliases: preference.aliases, hotkey: preference.hotkey)
+        }
+        .sorted { ($0.label.appName, $0.label.title, $0.id) < ($1.label.appName, $1.label.title, $1.id) }
+    }
+
+    /// Items with a shortcut, for the manager that registers them.
+    public var itemHotKeys: [(id: CommandID, combo: HotKeyCombo)] {
+        file.preferences.compactMap { id, preference in
+            guard let combo = preference.hotkey, id.bundleID != nil else { return nil }
+            return (id, combo)
+        }
+        .sorted { $0.id < $1.id }
     }
 
     public func symbolOverride(_ id: CommandID) -> String? { file.preferences[id]?.symbol }

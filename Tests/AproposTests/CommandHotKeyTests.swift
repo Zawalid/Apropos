@@ -165,3 +165,79 @@ struct CommandHotKeyTests {
         #expect(recorder.clipboard.isEmpty)
     }
 }
+
+private let finderNew = CommandID(rawValue: "com.apple.finder|file>new folder")
+private let safariNew = CommandID(rawValue: "com.apple.safari|file>new tab")
+private let finderOther = CommandID(rawValue: "com.apple.finder|file>get info")
+
+@MainActor
+@Suite("MenuItemHotKeyManager", .serialized)
+struct MenuItemHotKeyTests {
+    private func manager() -> MenuItemHotKeyManager {
+        FakeBinding.live = [:]
+        FakeBinding.refusing = []
+        return MenuItemHotKeyManager { FakeBinding(handler: $0) }
+    }
+
+    private var registered: Set<HotKeyCombo> { Set(FakeBinding.live.values) }
+
+    @Test func oneCombinationCanServeItemsOfDifferentApps() {
+        let manager = manager()
+        var pressed: [[CommandID]] = []
+        manager.sync(
+            [(finderNew, keyA), (safariNew, keyA), (finderOther, keyB)], reservedForPanel: [panelKey],
+            reservedForCommands: []
+        ) { pressed.append($0) }
+        #expect(registered == [keyA, keyB])
+        #expect(manager.failures.isEmpty)
+        #expect(FakeBinding.live.count == 2)
+    }
+
+    @Test func conflictsWithThePanelAndWithCommandsAreReported() {
+        let manager = manager()
+        manager.sync(
+            [(finderNew, panelKey), (safariNew, keyA), (finderOther, keyB)], reservedForPanel: [panelKey],
+            reservedForCommands: [keyA]
+        ) { _ in }
+        #expect(registered == [keyB])
+        #expect(manager.failures[finderNew] == .panel)
+        #expect(manager.failures[safariNew] == .duplicate)
+    }
+
+    @Test func refusedByTheSystemIsReported() {
+        let manager = manager()
+        FakeBinding.refusing = [keyA]
+        manager.sync([(finderNew, keyA)], reservedForPanel: [], reservedForCommands: []) { _ in }
+        #expect(registered.isEmpty)
+        #expect(manager.failures[finderNew] == .refusedBySystem)
+    }
+
+    @Test func removedItemsReleaseTheirKeyAndPausingReleasesAll() {
+        let manager = manager()
+        manager.sync([(finderNew, keyA), (finderOther, keyB)], reservedForPanel: [], reservedForCommands: []) { _ in }
+        #expect(registered == [keyA, keyB])
+        manager.sync([(finderOther, keyB)], reservedForPanel: [], reservedForCommands: []) { _ in }
+        #expect(registered == [keyB])
+        manager.setPaused(true)
+        #expect(registered.isEmpty)
+        manager.setPaused(false)
+        #expect(registered == [keyB])
+    }
+
+    @Test func pressingPassesEveryItemThatUsesTheCombination() {
+        FakeBinding.live = [:]
+        FakeBinding.refusing = []
+        var handlers: [@MainActor () -> Void] = []
+        let manager = MenuItemHotKeyManager { handler in
+            handlers.append(handler)
+            return FakeBinding(handler: handler)
+        }
+        var pressed: [[CommandID]] = []
+        manager.sync([(finderNew, keyA), (safariNew, keyA)], reservedForPanel: [], reservedForCommands: []) {
+            pressed.append($0)
+        }
+        #expect(handlers.count == 1)
+        handlers[0]()
+        #expect(pressed == [[safariNew, finderNew].sorted()])
+    }
+}

@@ -12,6 +12,8 @@ struct PaletteAction: Identifiable {
         case hide
         case copyPath
         case copyShortcut
+        /// Open Settings to give this menu item an alias and a shortcut of its own.
+        case customizeItem
         case addToSequence
         /// Open Settings on one of your commands.
         case editCommand
@@ -72,6 +74,10 @@ struct PaletteAction: Identifiable {
                 keys: []))
         list.append(
             PaletteAction(kind: .hide, title: "Hide in \(appName ?? "this app")", symbol: "eye.slash", keys: []))
+        if case .menuItem = command.source {
+            list.append(
+                PaletteAction(kind: .customizeItem, title: "Alias and shortcut...", symbol: "keyboard", keys: []))
+        }
         list.append(PaletteAction(kind: .copyPath, title: "Copy menu path", symbol: "link", keys: []))
         if let shortcut = command.shortcut {
             list.append(

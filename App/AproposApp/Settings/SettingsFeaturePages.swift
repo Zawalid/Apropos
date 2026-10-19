@@ -79,6 +79,8 @@ struct CommandsPage: View {
             creating = true
         case .editCommand(let id):
             detailed = store.commands.first { $0.id.rawValue == id }
+        case .customizeItem:
+            break
         }
     }
 

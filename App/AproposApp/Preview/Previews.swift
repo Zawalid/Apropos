@@ -189,6 +189,18 @@
                 controller.externalLog.record(action: "open", result: .ran)
             })
         static let settingsShortcuts = settings("settings-shortcuts", page: .shortcuts)
+        static let settingsShortcutsItems = settings("settings-shortcuts-items", page: .shortcuts, prepare: { controller in
+            let store = controller.usage.store
+            let finder = CommandID(rawValue: "com.apple.finder|file>new folder")
+            let tabs = CommandID(rawValue: "com.apple.safari|file>close other tabs")
+            let info = CommandID(rawValue: "com.apple.finder|file>get info")
+            store.listForCustomizing(finder, title: "New Folder", appName: "Finder")
+            store.setAliases(["nf"], for: finder)
+            store.setHotKey(HotKeyCombo(keyCode: 45, modifiers: [.control, .option]), for: finder)
+            store.listForCustomizing(tabs, title: "Close Other Tabs", appName: "Safari")
+            store.setAliases(["cot"], for: tabs)
+            store.listForCustomizing(info, title: "Get Info", appName: "Finder")
+        })
         static let settingsCommandsEmpty = settings("settings-commands-empty", page: .commands)
         static let settingsCommands = settings(
             "settings-commands", page: .commands, prepare: { controller in
@@ -233,7 +245,7 @@
             paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaveQuick, paletteSequenceSaveSearch,
             paletteSequenceSaveCustom, paletteSequenceSaveNoMatch, paletteSequenceSaveGrid, paletteSequenceSaved, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,
-            settingsGeneral, settingsCommands, settingsCommandsEmpty, settingsShortcuts, settingsIntegrations, settingsPrediction, settingsDestinations, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
+            settingsGeneral, settingsCommands, settingsCommandsEmpty, settingsShortcuts, settingsShortcutsItems, settingsIntegrations, settingsPrediction, settingsDestinations, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
             settingsUpdates, settingsAbout, settingsSearch, onboardingWelcome, onboardingPermission,
             onboardingPermissionHelp, onboardingPermissionAllowed, onboardingTry, onboardingTryHolding,
             onboardingTryNothingOpen, onboardingTryNoAccess, onboardingTryDone, onboardingDone,

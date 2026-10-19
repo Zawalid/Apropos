@@ -23,6 +23,7 @@ final class AppController {
     let sequences: SequenceCenter
     let userCommands: UserCommandStore
     let commandHotKeys = CommandHotKeyManager()
+    let itemHotKeys = MenuItemHotKeyManager()
     @ObservationIgnored private(set) lazy var external = ExternalRequestHandler(controller: self)
     private(set) var combo: HotKeyCombo
     private(set) var isHotKeyRegistered = true
@@ -179,6 +180,7 @@ final class AppController {
         }
         userCommands.reservedHotKeys = { [weak self] in self.map { [$0.combo] } ?? [] }
         userCommands.onChange = { [weak self] in self?.userCommandsChanged() }
+        usage.onItemShortcutsChanged = { [weak self] in self?.itemShortcutsChanged() }
         userCommands.reload()
         IntegrationHub.controller = self
         permission.startMonitoring()
@@ -241,6 +243,37 @@ final class AppController {
         guard !AgentMode.isOn else { return }
         commandHotKeys.sync(userCommands.commands, reserved: [combo]) { [weak self] command in
             self?.runFromShortcut(command)
+        }
+        itemShortcutsChanged()
+    }
+
+    /// The shortcuts given to menu items changed: register them with the system, after the ones of your commands.
+    private func itemShortcutsChanged() {
+        guard !AgentMode.isOn else { return }
+        let taken = userCommands.commands.filter(\.isRunnable).compactMap(\.hotkey)
+        itemHotKeys.sync(
+            usage.store.itemHotKeys, reservedForPanel: [combo], reservedForCommands: taken
+        ) { [weak self] ids in
+            self?.runItem(among: ids)
+        }
+    }
+
+    /// A shortcut of a menu item was pressed: run the item of the app in front. A key shared by several apps does
+    /// nothing in an app that has no item for it.
+    private func runItem(among ids: [CommandID]) {
+        guard let app = tracker.app, let id = ids.first(where: { $0.bundleID == app.bundleID }) else { return }
+        guard let command = menus.commands.lazy.compactMap({ $0.runnable(as: id) }).first else {
+            AproposLog.app.info("item shortcut: \(id.rawValue, privacy: .public) is not in the front menu")
+            return
+        }
+        let kinds = context.senseKinds
+        Task { [weak self] in
+            guard let self else { return }
+            let result = await self.menus.run(command)
+            if case .success = result {
+                self.usage.recordRun(
+                    command, appName: app.name, appBundleID: app.bundleID, contextKinds: kinds, query: "")
+            }
         }
     }
 
@@ -334,6 +367,7 @@ final class AppController {
     /// While the person is choosing a new shortcut, the current one must not fire.
     func setRecording(_ recording: Bool) {
         commandHotKeys.setPaused(recording)
+        itemHotKeys.setPaused(recording)
         if recording {
             hotKey?.unregister()
         } else {
@@ -389,5 +423,17 @@ final class AppController {
             permission: permission, hotKey: { [weak self] in self?.combo ?? .default }, start: step,
             finish: { [weak self] in self?.onboarding.close() })
         onboarding.show(model: model, reduceMotion: settings.reduceMotion)
+    }
+}
+
+extension Command {
+    /// This command when `id` is its identity, or the Option-key variant that has it, made runnable as a row of its own.
+    func runnable(as id: CommandID) -> Command? {
+        if stableID == id { return self }
+        guard let alternate = alternates.first(where: { $0.stableID == id }) else { return nil }
+        return Command(
+            id: self.id, title: alternate.title, path: path, shortcut: alternate.shortcut,
+            isEnabled: alternate.isEnabled, isChecked: false, source: source, target: alternate.target,
+            stableID: alternate.stableID)
     }
 }

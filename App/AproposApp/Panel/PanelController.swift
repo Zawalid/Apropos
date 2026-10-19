@@ -341,6 +341,10 @@ final class PanelController: NSObject {
         case .copyShortcut:
             PaletteAction.copy(command.shortcut?.display ?? "")
             hide()
+        case .customizeItem:
+            usage.listForCustomizing(command, appName: model.targetApp?.name)
+            hide(immediately: true)
+            openSettings(SettingsRequest(page: .shortcuts, intent: .customizeItem(command.stableID.rawValue)))
         case .editCommand:
             if let id = PaletteModel.userCommandID(of: command), model.perform(.edit(id)) { hide(immediately: true) }
         case .duplicateCommand:

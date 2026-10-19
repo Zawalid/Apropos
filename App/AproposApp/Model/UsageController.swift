@@ -126,6 +126,33 @@ final class UsageController {
         refreshRanker()
     }
 
+    /// Called after the shortcut of a menu item changed, so the keys registered with the system follow.
+    var onItemShortcutsChanged: (() -> Void)?
+
+    /// Adds a menu item to the list on the Shortcuts page, where it takes an alias and a shortcut.
+    func listForCustomizing(_ command: Command, appName: String?) {
+        store.listForCustomizing(command.stableID, title: command.displayTitle, appName: appName ?? "")
+    }
+
+    func setItemAlias(_ alias: String, for id: CommandID) {
+        store.setAliases(alias.isEmpty ? [] : [alias], for: id)
+        refreshRanker()
+    }
+
+    /// Sets or clears the shortcut of a menu item. False when another item of the same app already has it.
+    @discardableResult
+    func setItemHotKey(_ combo: HotKeyCombo?, for id: CommandID) -> Bool {
+        guard store.setHotKey(combo, for: id) else { return false }
+        onItemShortcutsChanged?()
+        return true
+    }
+
+    func removeItemCustomization(_ id: CommandID) {
+        store.removeCustomization(id)
+        refreshRanker()
+        onItemShortcutsChanged?()
+    }
+
     func hiddenIDs(forBundleID bundleID: String) -> [CommandID] { store.hiddenIDs(forBundleID: bundleID) }
 
     func unhide(_ id: CommandID) {

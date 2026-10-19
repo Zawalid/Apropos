@@ -6,6 +6,12 @@ work lands.
 
 ## [Unreleased]
 
+### Added (aliases and shortcuts for menu items)
+- Any menu item of any app can have its own alias and its own global shortcut. In the panel press Command-K on an item and
+  choose Alias and shortcut; Settings opens on Shortcuts, Menu items, with the alias field ready. The alias finds the item
+  first when you type it. The shortcut runs the item in its app while that app is in front, so one key can serve items of
+  different apps. A key another of your commands, the panel or macOS already uses is refused or flagged.
+
 ### Added (settings, onboarding and the menu bar)
 - A new Settings window: a floating glass sidebar and rounded sections, with pages for General, Appearance, Commands,
   Destinations, Context, Prediction, Integrations, Privacy and data, Updates and About. Appearance shows theme and row icons
