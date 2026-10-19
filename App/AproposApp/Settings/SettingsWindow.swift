@@ -353,6 +353,13 @@ struct SettingsRoot: View {
                 }
                 .scrollIndicators(.never)
             }
+            // Content fades out as it slides under the floating back and forward buttons, like a glass header.
+            .mask(
+                VStack(spacing: 0) {
+                    LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 54)
+                    Rectangle()
+                }
+            )
             topBar
         }
     }
@@ -402,7 +409,7 @@ struct SettingsRoot: View {
                     navigation.goForward()
                 }
             }
-            .background(Capsule().fill(Brand.raised))
+            .brandGlass(in: Capsule())
             Spacer()
         }
         .padding(.horizontal, 30)
