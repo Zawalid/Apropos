@@ -95,17 +95,25 @@ struct SettingsRevealer<Content: View>: View {
 struct SettingsSection<Content: View>: View {
     var title: String?
     var footer: String?
+    var accessory: AnyView?
     @ViewBuilder var content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if let title {
-                Text(title)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Brand.text3)
-                    .padding(.leading, 2)
-                    .padding(.bottom, 8)
-                    .accessibilityAddTraits(.isHeader)
+            if title != nil || accessory != nil {
+                HStack(alignment: .center) {
+                    if let title {
+                        Text(title)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(Brand.text3)
+                            .padding(.leading, 2)
+                            .accessibilityAddTraits(.isHeader)
+                    }
+                    Spacer(minLength: 8)
+                    if let accessory { accessory }
+                }
+                .frame(minHeight: 28)
+                .padding(.bottom, 6)
             }
             VStack(spacing: 0) { content }
                 .padding(.bottom, -1)

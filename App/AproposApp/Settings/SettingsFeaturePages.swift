@@ -78,23 +78,23 @@ struct CommandsPage: View {
     }
 
     var body: some View {
-        HStack {
-            if store.commands.count > 4 { filterField }
-            Spacer(minLength: 0)
-            Button {
-                creating = true
-            } label: {
-                Label("New command", systemImage: "plus")
-            }
-            .buttonStyle(BrandButtonStyle(kind: .primary))
-        }
-        .sheet(isPresented: $creating) {
-            NewCommandSheet(store: store) { creating = false }
-        }
+        if store.commands.count > 4 { filterField }
         SettingsSection(
             title: "Your commands",
             footer:
-                "An alias is a short word that finds the command in the panel or runs it from a link. Commands are plain files, so you can edit, copy and share them."
+                "An alias is a short word that finds the command in the panel or runs it from a link. Commands are plain files, so you can edit, copy and share them.",
+            accessory: AnyView(
+                Button {
+                    creating = true
+                } label: {
+                    Label("New command", systemImage: "plus")
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundStyle(Brand.mintInk)
+                        .padding(.horizontal, 12)
+                        .frame(height: 28)
+                        .background(Capsule().fill(Brand.mint))
+                }
+                .buttonStyle(.plain))
         ) {
             if store.commands.isEmpty {
                 CommandsIntro()
@@ -132,6 +132,9 @@ struct CommandsPage: View {
             Text(message).font(.system(size: 12)).foregroundStyle(Brand.danger)
         }
         Color.clear.frame(height: 0)
+            .sheet(isPresented: $creating) {
+                NewCommandSheet(store: store) { creating = false }
+            }
             .confirmationDialog(
                 "Delete \(deleting?.title ?? "this command")?", isPresented: Binding(
                     get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
