@@ -620,8 +620,81 @@ struct SequenceBuilderTests {
         _ = await rig.model.run(try #require(row(rig, "seq:save")))
         #expect(rig.model.sequenceLevel == .save && rig.model.content == .sequenceSave)
         #expect(rig.center.form.name == "UPPERCASE, lowercase")
-        #expect(rig.center.form.symbol == "square.stack.3d.up")
+        // The symbol comes from the first step, and the sequence symbol is offered right after it.
+        #expect(rig.center.form.symbol == "textformat.size.larger")
+        #expect(rig.center.form.suggestedSymbols == ["textformat.size.larger", "square.stack.3d.up"])
         #expect(rig.model.goBack() && rig.model.sequenceLevel == .steps)
+    }
+
+    private func openSaveForm(_ rig: Rig) async throws {
+        await openDraft(rig)
+        _ = await rig.model.run(try #require(row(rig, "seq:save")))
+    }
+
+    @Test func aMenuStepSuggestsASymbolFromItsMenuPath() async throws {
+        let rig = editorRig()
+        feed(rig)
+        rig.model.addToSequence(try #require(menuRow(rig, "New Folder")))
+        try await openSaveForm(rig)
+        let suggested = try #require(rig.center.form.suggestedSymbols.first)
+        #expect(suggested != "questionmark.circle")
+        #expect(rig.center.form.symbol == suggested)
+        #expect(rig.center.form.suggestedSymbols.contains("square.stack.3d.up"))
+    }
+
+    @Test func theSymbolSearchKeepsTheChoiceOnWhatIsShown() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        try await openSaveForm(rig)
+        rig.center.form.symbolQuery = "mail"
+        let shown = rig.center.symbolSections.flatMap(\.symbols).map(\.name)
+        #expect(shown.contains("envelope"))
+        #expect(rig.center.form.symbol == shown.first)
+        rig.center.moveSymbol(.right)
+        #expect(rig.center.form.symbol == shown[1])
+        // Clearing the search keeps the choice.
+        let chosen = rig.center.form.symbol
+        rig.center.form.symbolQuery = ""
+        #expect(rig.center.form.symbol == chosen)
+    }
+
+    @Test func aTypedSymbolNameIsUsedWhenItIsReal() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        try await openSaveForm(rig)
+        rig.center.form.symbolQuery = "folder.badge.gearshape"
+        #expect(rig.center.symbolSections.map(\.title) == ["Custom"])
+        #expect(rig.center.form.symbol == "folder.badge.gearshape")
+        rig.center.form.name = "Raw name"
+        #expect(rig.model.saveSequence())
+        #expect(rig.store.commands.first?.symbol == "folder.badge.gearshape")
+    }
+
+    @Test func aNameThatIsNoSymbolOffersNothingAndKeepsTheChoice() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        try await openSaveForm(rig)
+        let before = rig.center.form.symbol
+        rig.center.form.symbolQuery = "zzzzqx"
+        #expect(rig.center.symbolSections.isEmpty)
+        #expect(rig.center.form.symbol == before)
+        #expect(!rig.center.moveSymbol(.right))
+    }
+
+    @Test func arrowKeysWalkTheGridAndStopAtItsEdges() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        try await openSaveForm(rig)
+        // The first symbol is the suggestion: nothing above it.
+        #expect(!rig.center.moveSymbol(.up) && !rig.center.moveSymbol(.left))
+        #expect(rig.center.moveSymbol(.right))
+        #expect(rig.center.form.symbol == "square.stack.3d.up")
+        #expect(rig.center.moveSymbol(.down))
+        #expect(rig.center.moveSymbol(.left))
     }
 
     @Test func savingWritesAnOrdinaryCommandUnderYourCommands() async throws {

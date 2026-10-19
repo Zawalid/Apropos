@@ -43,6 +43,13 @@ palette rows ── Add to sequence ──► SequenceCenter (draft, in memory)
   `UserCommandStore`; a bad alias or a taken name is reported and nothing is lost. The draft is then gone and a notice says
   where the command went. A shortcut key can be set through `SequenceSaveForm.hotkey`; the panel's form does not offer a
   recorder yet.
+- The **symbol** is picked from a grid of about 240 common SF Symbols in groups (Actions, Files, Web, Text, Dev, Media,
+  Communication, Symbols), listed in `SymbolPicker`. The first group is *Suggested*: a symbol that fits the first step (its
+  action's own, or what the symbol resolver makes of the menu path) and the sequence symbol. Tab and Shift-Tab move between
+  Name, Alias and Symbol; in the symbol field the arrow keys walk the grid (Up from the first row goes back to the alias)
+  and typing narrows it by name or by word ("mail" finds the envelope and the paper plane). The chosen symbol has a mint
+  ring and its name is shown above the grid. A real SF Symbol name that the list lacks can be typed in the same search and
+  appears as a *Custom* tile.
 - The draft lives in memory only. Closing the panel keeps it; relaunching drops it.
 
 ### Chaining by default

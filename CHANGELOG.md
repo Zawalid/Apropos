@@ -32,10 +32,16 @@ work lands.
   opens Settings.
 
 ### Fixed
+- Sequence draft: deleting the last step now returns to the command list (with what you had typed) instead of leaving an
+  empty draft open.
+- Sequence draft: two menu items added one after the other no longer make the draft fail with "Step 2: another step has the
+  same id". The steps of a joined menu step now get their own ids.
 - A command's output could be cut short when its process exited at the moment its last chunk was being read. Output is now
   read to the end before the result is reported.
 
 ### Changed
+- Saving a sequence as a command now picks its symbol from a searchable grid of common SF Symbols, with a suggestion from the
+  first step, instead of asking for a raw symbol name. Arrow keys walk the grid, Tab moves between Name, Alias and Symbol.
 - The app is now called Apropos (formerly Cue). Settings, usage and symbol packs move from `Application Support/Cue` to
   `Application Support/Apropos` once on first launch, and the old UserDefaults values are copied over. The old folder is
   left untouched. macOS treats the renamed app as new, so grant Accessibility again and remove the stale Cue entry.

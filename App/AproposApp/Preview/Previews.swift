@@ -120,6 +120,14 @@
             "palette-sequence-failed", PaletteOptions(app: "safari", sequence: .failure, sequenceFails: true))
         static let paletteSequenceSave = palette(
             "palette-sequence-save", PaletteOptions(app: "safari", sequence: .save))
+        static let paletteSequenceSaveSearch = palette(
+            "palette-sequence-save-search", PaletteOptions(app: "safari", sequence: .saveSearch))
+        static let paletteSequenceSaveCustom = palette(
+            "palette-sequence-save-custom", PaletteOptions(app: "safari", sequence: .saveCustom))
+        static let paletteSequenceSaveNoMatch = palette(
+            "palette-sequence-save-no-match", PaletteOptions(app: "safari", sequence: .saveNoMatch))
+        static let paletteSequenceSaveGrid = palette(
+            "palette-sequence-save-grid", PaletteOptions(app: "safari", sequence: .saveGrid))
         static let paletteSequenceSaved = palette(
             "palette-sequence-saved", PaletteOptions(app: "safari", sequence: .saved))
 
@@ -215,7 +223,8 @@
             paletteUsuallyNextOne,
             paletteUsuallyNextFresh, paletteSendRows, paletteSendList, paletteSendConfirm, paletteSendFailed,
             paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceConfirm, paletteSequenceAsk,
-            paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaved, paletteCompact,
+            paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaveSearch,
+            paletteSequenceSaveCustom, paletteSequenceSaveNoMatch, paletteSequenceSaveGrid, paletteSequenceSaved, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,
             settingsGeneral, settingsCommands, settingsCommandsEmpty, settingsIntegrations, settingsPrediction, settingsDestinations, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
             settingsUpdates, settingsAbout, settingsSearch, onboardingWelcome, onboardingPermission,
@@ -306,6 +315,10 @@
     #Preview("Palette, sequence, question") { PairedPreview(PreviewCatalog.paletteSequenceAsk) }
     #Preview("Palette, sequence, failed") { PairedPreview(PreviewCatalog.paletteSequenceFailed) }
     #Preview("Palette, sequence, save as command") { PairedPreview(PreviewCatalog.paletteSequenceSave) }
+    #Preview("Palette, sequence, symbol search") { PairedPreview(PreviewCatalog.paletteSequenceSaveSearch) }
+    #Preview("Palette, sequence, symbol typed by name") { PairedPreview(PreviewCatalog.paletteSequenceSaveCustom) }
+    #Preview("Palette, sequence, symbol no match") { PairedPreview(PreviewCatalog.paletteSequenceSaveNoMatch) }
+    #Preview("Palette, sequence, symbol grid") { PairedPreview(PreviewCatalog.paletteSequenceSaveGrid) }
     #Preview("Palette, sequence, saved") { PairedPreview(PreviewCatalog.paletteSequenceSaved) }
 
     // MARK: Interface size and row icons

@@ -203,7 +203,10 @@
 
         /// Work that needs the run loop: the failed run that fills the footer's note.
         func settle() async {
-            if let scene = options.sequence { await DebugSequences.apply(scene, model: model) }
+            if let scene = options.sequence {
+                await DebugSequences.apply(scene, model: model)
+                if scene.focusesSymbol { state.formField = 2 }
+            }
             if let scene = options.send, scene != .rows {
                 let generic = model.results.first {
                     $0.command.id.hasPrefix("send:") && $0.command.title.hasSuffix("to...")

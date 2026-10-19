@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 
@@ -73,7 +74,12 @@ public enum SequenceStepState: Equatable, Sendable {
 public struct SequenceSaveForm: Equatable, Sendable {
     public var name = ""
     public var alias = ""
-    public var symbol = "square.stack.3d.up"
+    /// The chosen SF Symbol. The picker highlights it; a name typed in the symbol search that is a real symbol becomes it.
+    public var symbol = SymbolPicker.defaultSymbol
+    /// What is typed in the symbol search.
+    public var symbolQuery = ""
+    /// Symbols worth a look first, taken from the first step. Shown at the head of the picker.
+    public var suggestedSymbols: [String] = []
     public var hotkey: HotKeyCombo?
 
     public init() {}
@@ -124,12 +130,15 @@ public final class SequenceCenter {
     public private(set) var failure: String?
     /// "Saved Shout and note under Your commands", until the next thing the person does.
     public private(set) var notice: String?
-    public var form = SequenceSaveForm()
+    public var form = SequenceSaveForm() {
+        didSet { if form.symbolQuery != oldValue.symbolQuery { followSymbolQuery() } }
+    }
 
     @ObservationIgnored private let store: UserCommandStore?
     @ObservationIgnored private let catalogue: @MainActor () -> SequenceCatalogue
     @ObservationIgnored private let runner: any SequenceStepRunner
     @ObservationIgnored private let privacy: @MainActor () -> ContextPrivacy
+    @ObservationIgnored private let isSymbol: @MainActor (String) -> Bool
     @ObservationIgnored private var values = ContextValues()
     @ObservationIgnored private var target: TargetApp?
     @ObservationIgnored private var capturedAt = Date.distantPast
@@ -144,12 +153,16 @@ public final class SequenceCenter {
     public init(
         store: UserCommandStore?, runner: any SequenceStepRunner,
         catalogue: @escaping @MainActor () -> SequenceCatalogue,
-        privacy: @escaping @MainActor () -> ContextPrivacy = { ContextPrivacy() }
+        privacy: @escaping @MainActor () -> ContextPrivacy = { ContextPrivacy() },
+        isSymbol: @escaping @MainActor (String) -> Bool = {
+            NSImage(systemSymbolName: $0, accessibilityDescription: nil) != nil
+        }
     ) {
         self.store = store
         self.runner = runner
         self.catalogue = catalogue
         self.privacy = privacy
+        self.isSymbol = isSymbol
     }
 
     // MARK: Context
@@ -593,6 +606,8 @@ public final class SequenceCenter {
         case .save:
             form = SequenceSaveForm()
             form.name = suggestedName()
+            form.suggestedSymbols = suggestedSymbols()
+            form.symbol = form.suggestedSymbols.first ?? SymbolPicker.defaultSymbol
             level = .save
             rebuild()
             return .enteredLevel
@@ -602,6 +617,64 @@ public final class SequenceCenter {
         case .step:
             return .nothing
         }
+    }
+
+    // MARK: The symbol picker
+
+    /// Symbols to offer first: the one that fits the first step, then the one that says "sequence".
+    public func suggestedSymbols() -> [String] {
+        var result: [String] = []
+        if let first = plan().steps.first { result.append(symbol(forStep: first)) }
+        result.append(SymbolPicker.defaultSymbol)
+        return result.reduce(into: []) { if !$0.contains($1) { $0.append($1) } }
+    }
+
+    /// The symbol that stands for a step: its action's or destination's own, and for menu steps what the symbol
+    /// resolver makes of the menu path, the way a row of that menu item would look.
+    private func symbol(forStep planned: PlannedStep) -> String {
+        guard case .uiSteps(let backend) = planned.step.kind, let step = backend.steps.first else {
+            return Self.symbol(for: planned)
+        }
+        let path = step.locators.compactMap { locator -> [String]? in
+            if case .menuPath(let path) = locator { path } else { nil }
+        }.first
+        let title = path?.last ?? planned.step.label
+        let command = Command(
+            id: "seq:suggest", title: title, path: Array((path ?? []).dropLast()), source: .sequence(.draft))
+        return SymbolResolver().symbol(for: command)
+    }
+
+    /// What the grid shows now: the suggestions and groups, or the matches for what is typed.
+    public var symbolSections: [SymbolSection] {
+        SymbolPicker.sections(
+            query: form.symbolQuery, suggested: form.suggestedSymbols, custom: customSymbol(for: form.symbolQuery))
+    }
+
+    /// A name typed in the search that is a real SF Symbol the curated list does not have: usable as it is.
+    private func customSymbol(for query: String) -> String? {
+        let name = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return !name.isEmpty && !name.contains(" ") && isSymbol(name) ? name : nil
+    }
+
+    /// Moves the chosen symbol one step with an arrow key. False when there is none that way (the caller may then leave
+    /// the grid, for instance up from the first row).
+    @discardableResult
+    public func moveSymbol(_ move: SymbolMove) -> Bool {
+        guard
+            let next = SymbolPicker.neighbour(of: form.symbol, move: move, in: symbolSections),
+            next != form.symbol
+        else { return false }
+        form.symbol = next
+        return true
+    }
+
+    /// Typing in the search keeps the choice on something that is shown: the best match when the chosen symbol dropped
+    /// out of the results.
+    private func followSymbolQuery() {
+        let shown = symbolSections.flatMap(\.symbols).map(\.name)
+        guard !shown.isEmpty, !shown.contains(form.symbol) else { return }
+        // Assigned inside didSet of `form`, so it does not run this again.
+        form.symbol = shown[0]
     }
 
     private func suggestedName() -> String {
@@ -736,8 +809,8 @@ public final class SequenceCenter {
         let alias = form.alias.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let symbol = form.symbol.trimmingCharacters(in: .whitespacesAndNewlines)
         let sequence = CommandSequence(
-            title: name, aliases: alias.isEmpty ? [] : [alias], symbol: symbol.isEmpty ? "square.stack.3d.up" : symbol,
-            steps: steps)
+            title: name, aliases: alias.isEmpty ? [] : [alias],
+            symbol: symbol.isEmpty ? SymbolPicker.defaultSymbol : symbol, steps: steps)
         let command = sequence.userCommand(hotkey: form.hotkey, needsConfirmation: plan().requiresConfirmation)
         do {
             try store.create(command)

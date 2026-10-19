@@ -18,6 +18,17 @@
         case save
         /// The list again, with the notice of where the command went.
         case saved
+        /// The form with the symbol search holding "mail" and the choice moved one place on.
+        case saveSearch
+        /// The form with a symbol name typed that the curated list does not have.
+        case saveCustom
+        /// The form with a search nothing matches.
+        case saveNoMatch
+        /// The form with the keyboard in the symbol grid and the choice moved down a row.
+        case saveGrid
+
+        /// Whether the keyboard sits in the symbol field, so its ring is drawn.
+        var focusesSymbol: Bool { [.saveSearch, .saveCustom, .saveNoMatch, .saveGrid].contains(self) }
     }
 
     /// Debug builds only: puts the palette into one state of the sequence builder by doing what a person would do, through
@@ -44,8 +55,19 @@
             guard let top = model.results.first?.command else { return }
             _ = await model.run(top)
             if scene == .level { return }
-            if scene == .save || scene == .saved {
+            if scene == .save || scene == .saved || scene.focusesSymbol {
                 if let save = row("seq:save") { _ = await model.run(save) }
+                switch scene {
+                case .saveSearch:
+                    sequences.form.symbolQuery = "mail"
+                    sequences.moveSymbol(.right)
+                case .saveCustom: sequences.form.symbolQuery = "folder.badge.gearshape"
+                case .saveNoMatch: sequences.form.symbolQuery = "zzzzqx"
+                case .saveGrid:
+                    sequences.moveSymbol(.down)
+                    sequences.moveSymbol(.right)
+                default: break
+                }
                 if scene == .saved {
                     sequences.form.name = "Shout and note"
                     sequences.form.alias = "shout"

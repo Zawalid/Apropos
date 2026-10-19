@@ -7,6 +7,10 @@ enum PaletteKey {
     /// Command-Return: run the first Usually next row, whatever is highlighted.
     case runPrediction
     case move(Int)
+    /// Tab (+1) or Shift-Tab (-1). Moves like the arrows in a list, but in the save form it always changes field.
+    case tab(Int)
+    /// Left (-1) or Right (+1). Only the symbol grid of the save form uses it; elsewhere it edits the text.
+    case sideways(Int)
     case first
     case last
     case actions
@@ -125,8 +129,10 @@ final class PalettePanel: NSPanel {
         case 43 where flags == .command: return .settings  // command-comma
         case 125 where flags == .command: return .last
         case 126 where flags == .command: return .first
-        case 48 where flags.isEmpty: return .move(1)
-        case 48 where flags == .shift: return .move(-1)
+        case 48 where flags.isEmpty: return .tab(1)
+        case 48 where flags == .shift: return .tab(-1)
+        case 123 where flags.isEmpty: return .sideways(-1)
+        case 124 where flags.isEmpty: return .sideways(1)
         case 121 where flags.isEmpty: return .move(8)
         case 116 where flags.isEmpty: return .move(-8)
         case 45 where onlyControl: return .move(1)  // control-N

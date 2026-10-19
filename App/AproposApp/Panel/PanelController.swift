@@ -177,6 +177,9 @@ final class PanelController: NSObject {
         }
     }
 
+    /// The symbol grid, the last field of the save-as-command form (`PanelState.formField`).
+    private static let symbolField = 2
+
     private func handle(_ key: PaletteKey) -> Bool {
         AproposLog.panel.info(
             "key \(String(describing: key), privacy: .public) query=\(self.model.query, privacy: .public) selected=\(self.model.selected?.command.title ?? "none", privacy: .public)"
@@ -197,12 +200,32 @@ final class PanelController: NSObject {
             showMenu(of: command)
         case .move(let delta):
             if model.content == .sequenceSave {
-                // In the save form the arrows and Tab move between its fields.
-                state.formField = (state.formField + (delta > 0 ? 1 : 2)) % 3
+                if state.formField == Self.symbolField {
+                    // In the symbol grid the arrows walk the symbols. Up from the first row goes back to the fields.
+                    var moved = false
+                    for _ in 0..<(abs(delta) > 1 ? 3 : 1) {
+                        moved = model.sequences?.moveSymbol(delta > 0 ? .down : .up) ?? false
+                    }
+                    if !moved && delta < 0 { state.formField = Self.symbolField - 1 }
+                } else {
+                    // Elsewhere in the save form the arrows move between the fields.
+                    state.formField = (state.formField + (delta > 0 ? 1 : 2)) % 3
+                }
                 return true
             }
             model.cancelPending()
             model.moveSelection(by: delta)
+        case .tab(let delta):
+            if model.content == .sequenceSave {
+                // Tab and Shift-Tab always change field, the grid included.
+                state.formField = (state.formField + (delta > 0 ? 1 : 2)) % 3
+                return true
+            }
+            return handle(.move(delta))
+        case .sideways(let delta):
+            // Left and right only walk the grid; in every text field they move the cursor as usual.
+            guard model.content == .sequenceSave, state.formField == Self.symbolField else { return false }
+            model.sequences?.moveSymbol(delta > 0 ? .right : .left)
         case .first:
             model.cancelPending()
             model.selectFirst()
@@ -226,7 +249,8 @@ final class PanelController: NSObject {
         switch key {
         case .close, .actions: closeActions(animated: true)
         case .settings: actionsOpenSettings()
-        case .move(let delta):
+        case .sideways: return false
+        case .move(let delta), .tab(let delta):
             guard !items.isEmpty else { return true }
             state.actionIndex = min(max(state.actionIndex + (delta > 0 ? 1 : -1), 0), items.count - 1)
         case .first: state.actionIndex = 0
