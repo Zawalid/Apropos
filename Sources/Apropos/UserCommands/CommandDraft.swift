@@ -75,6 +75,8 @@ public struct CommandDraft: Equatable, Sendable {
     public var arguments = ""
     /// Hands the selected text to the Shortcut or program as its input. Only with "When text is selected".
     public var sendsSelection = false
+    /// The symbol the person chose. Empty means the kind's own.
+    public var symbol = ""
 
     public init() {}
 
@@ -115,7 +117,7 @@ public struct CommandDraft: Equatable, Sendable {
             output = input == nil ? .none : .notify
         }
         return UserCommand(
-            title: name, symbol: kind.symbol, aliases: cleanAlias.isEmpty ? [] : [cleanAlias], requires: requires,
+            title: name, symbol: symbol.isEmpty ? kind.symbol : symbol, aliases: cleanAlias.isEmpty ? [] : [cleanAlias], requires: requires,
             backend: backend, output: output, timeout: kind == .program ? 30 : 10)
     }
 }

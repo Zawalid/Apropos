@@ -352,6 +352,10 @@ private struct NewDestinationSheet: View {
                 case .appendToFile: field("File", text: $draft.filePath, prompt: "/Users/you/Documents/notes.txt")
                 }
                 field("Name", text: $draft.title, prompt: "Bear inbox")
+                HStack(alignment: .center, spacing: 12) {
+                    Text("Symbol").font(.system(size: 12.5)).foregroundStyle(Brand.text2).frame(width: 104, alignment: .leading)
+                    SymbolChooser(symbol: $draft.symbol, fallback: draft.kind.symbol)
+                }
                 if draft.kind != .link {
                     HStack {
                         Text("Also take web pages").font(.system(size: 13)).foregroundStyle(Brand.text)

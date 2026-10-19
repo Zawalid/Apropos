@@ -23,6 +23,7 @@ struct NewCommandSheet: View {
                 kindFields
                 field("Name", text: $draft.title, prompt: "Search Linear")
                 field("Alias", text: $draft.alias, prompt: "Optional, such as lin")
+                labeled("Symbol") { SymbolChooser(symbol: $draft.symbol, fallback: draft.kind.symbol) }
                 labeled("Offered") {
                     ValueMenu(options: CommandDraft.Context.allCases.map { ($0, $0.title) }, selection: $draft.context)
                 }

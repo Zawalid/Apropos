@@ -44,6 +44,8 @@ public struct DestinationDraft: Equatable, Sendable {
     /// Absolute path of the file for `.appendToFile`.
     public var filePath = ""
     public var acceptsPages = false
+    /// The symbol the person chose. Empty means the kind's own.
+    public var symbol = ""
 
     public init() {}
 
@@ -78,7 +80,7 @@ public struct DestinationDraft: Equatable, Sendable {
         }
         let slug = String(fileName.dropFirst(3).dropLast(5))
         let destination: [String: Any] = [
-            "id": "user:\(slug)", "title": name, "symbol": kind.symbol, "accepts": accepts, "review": "approved",
+            "id": "user:\(slug)", "title": name, "symbol": symbol.isEmpty ? kind.symbol : symbol, "accepts": accepts, "review": "approved",
             "variants": [["backend": backend]],
         ]
         let pack: [String: Any] = ["schemaVersion": 1, "name": name, "destinations": [destination]]
