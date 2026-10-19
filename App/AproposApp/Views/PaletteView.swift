@@ -87,16 +87,12 @@ private struct SearchHeader: View {
         let others = chips.filter { !$0.isApp }
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
-                // The app you are in, like Raycast's header, so it reads as a command center and not as Spotlight.
-                if let app = model.targetApp {
-                    AppIcon(pid: app.pid, size: 26)
-                        .accessibilityHidden(true)
-                } else {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 17, weight: .regular))
-                        .foregroundStyle(Theme.text2)
-                        .accessibilityHidden(true)
-                }
+                // Apropos's own mark where a launcher puts its logo, so the panel reads as a command center and not as
+                // a search box. The app you are in is the chip at the right.
+                BrandGlyph()
+                    .foregroundStyle(Theme.text2)
+                    .frame(width: 22, height: 22)
+                    .accessibilityHidden(true)
                 if let level = model.sendLevel {
                     BreadcrumbChip(title: level.title, action: actions.back)
                 }

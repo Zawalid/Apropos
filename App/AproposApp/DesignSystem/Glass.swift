@@ -22,9 +22,14 @@ private struct AproposGlass<S: InsettableShape>: ViewModifier {
             .overlay {
                 shape.strokeBorder(
                     LinearGradient(
-                        colors: [Theme.glassEdgeTop, Theme.glassEdge, Theme.glassEdge],
-                        startPoint: .top, endPoint: .bottom),
-                    lineWidth: 1)
+                        stops: [
+                            .init(color: Theme.rimLit, location: 0),
+                            .init(color: Theme.rimSide, location: 0.32),
+                            .init(color: Theme.rimSide, location: 0.7),
+                            .init(color: Theme.rimBottom, location: 1),
+                        ],
+                        startPoint: .topLeading, endPoint: .bottomTrailing),
+                    lineWidth: 1.25)
             }
     }
 
