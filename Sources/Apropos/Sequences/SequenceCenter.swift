@@ -219,7 +219,7 @@ public final class SequenceCenter {
 
     // MARK: Editing
 
-    /// Adds what a palette row stands for. Menu items become menu steps (joined to a menu step just before), context
+    /// Adds what a palette row stands for. Menu items become menu steps (one step each), context
     /// actions and your commands become action steps, destinations become sends. Rows that need a choice first (the
     /// generic "Send selection to...") cannot be added.
     @discardableResult
@@ -244,13 +244,9 @@ public final class SequenceCenter {
         case .failure(let refusal):
             return refuse(refusal.message)
         case .success(let step):
-            if case .uiSteps(let added) = step.kind, let last = steps.last, case .uiSteps(let before) = last.kind,
-                before.steps.count + added.steps.count <= UIStepsValidator.maxSteps
-            {
-                steps[steps.count - 1].kind = .uiSteps(Self.joined(before, added))
-            } else {
-                steps.append(step)
-            }
+            // One row, one step, even when the same command is added again or the step before is a menu step too: the
+            // list shows, numbers, moves and deletes steps one by one, and each has an id of its own.
+            steps.append(step)
             rechain()
             rebuild()
             return .added(steps: steps.count)
@@ -277,14 +273,6 @@ public final class SequenceCenter {
         rechain()
         rebuild()
         return .added(steps: steps.count)
-    }
-
-    /// Two menu steps become one. Every menu step of a backend must have its own id, and each one was numbered from
-    /// "s1" when it was built, so the added steps get fresh ids whenever theirs are already taken.
-    private static func joined(_ before: UIStepsBackend, _ added: UIStepsBackend) -> UIStepsBackend {
-        var builder = StepSequenceBuilder(steps: before.steps)
-        for step in added.steps { builder.append(step) }
-        return builder.backend
     }
 
     public func delete(stepID: String) {

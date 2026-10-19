@@ -141,20 +141,6 @@ struct SequenceBuilderTests {
         #expect(kinds == ["uiSteps", "contextAction", "destination"])
     }
 
-    @Test func consecutiveMenuItemsJoinOneMenuStep() throws {
-        let rig = rig()
-        feed(rig)
-        let menus = rig.model.results.filter { $0.command.source == .menuItem(bundleID: app.bundleID) }.prefix(2).map(
-            \.command)
-        for command in menus { rig.model.addToSequence(command) }
-        #expect(rig.center.steps.count == 1)
-        if case .uiSteps(let backend) = rig.center.steps[0].kind {
-            #expect(backend.steps.count == 2)
-        } else {
-            Issue.record("expected menu steps")
-        }
-    }
-
     // MARK: Step ids
 
     private func menuRow(_ rig: Rig, _ title: String) -> Command? {
@@ -188,17 +174,125 @@ struct SequenceBuilderTests {
         #expect(rig.center.plan().refusal == nil)
     }
 
-    @Test func menuItemsThatJoinOneMenuStepKeepDistinctInnerIds() throws {
+    /// The rows of the draft level, steps only, the way the palette lists them.
+    private func stepRows(_ rig: Rig) -> [Command] {
+        rig.model.results.map(\.command).filter {
+            if case .sequence(.step) = $0.source { true } else { false }
+        }
+    }
+
+    /// The flow of the bug report: menu items from the app menu added one after another, one of them twice.
+    private func addFinderMenuItems(_ rig: Rig) throws {
+        for title in ["New Folder", "Settings\u{2026}", "Settings\u{2026}", "About Finder"] {
+            let command = try #require(menuRow(rig, title))
+            let expected = rig.center.steps.count + 1
+            #expect(rig.model.addToSequence(command) == .added(steps: expected))
+        }
+    }
+
+    @Test func everyMenuItemAddedIsItsOwnStepWithItsOwnId() throws {
+        let rig = editorRig()
+        feed(rig, filesContext())
+        try addFinderMenuItems(rig)
+        #expect(rig.center.steps.count == 4 && rig.model.draftStepCount == 4)
+        let ids = rig.center.steps.map(\.id)
+        #expect(Set(ids).count == 4)
+        for step in rig.center.steps {
+            guard case .uiSteps(let backend) = step.kind else {
+                Issue.record("expected a menu step")
+                return
+            }
+            #expect(backend.steps.count == 1)
+        }
+        #expect(SequenceValidator.issues(in: SequenceBackend(steps: rig.center.steps)).isEmpty)
+        #expect(rig.center.plan().refusal == nil)
+    }
+
+    @Test func theDraftLevelListsEveryStepNumberedOneToN() async throws {
+        let rig = editorRig()
+        feed(rig, filesContext())
+        try addFinderMenuItems(rig)
+        add(rig, "ctx:files.copy-path")
+        #expect(rig.model.results.first?.command.title == "Sequence draft (5 steps)")
+        await openDraft(rig)
+        let rows = stepRows(rig)
+        #expect(rows.count == 5)
+        #expect(rows.enumerated().allSatisfy { $1.title.hasPrefix("\($0 + 1). ") })
+        #expect(Set(rows.map(\.id)).count == 5)
+        // The two Settings rows read the same but are two rows.
+        #expect(rows[1].title.dropFirst(3) == rows[2].title.dropFirst(3))
+        #expect(rig.model.results.count == 8)
+    }
+
+    @Test func theConfirmationNumbersTheStepsOneToN() async throws {
+        let rig = editorRig()
+        feed(rig, filesContext())
+        try addFinderMenuItems(rig)
+        await openDraft(rig)
+        let closes = await rig.model.run(try #require(row(rig, "seq:run")))
+        #expect(!closes && rig.runner.ids.isEmpty)
+        let pending = try #require(rig.model.sequencePending)
+        #expect(pending.heading == "Allow these 4 things?")
+        #expect(pending.lines.enumerated().allSatisfy { $1.hasPrefix("\($0 + 1). ") })
+        #expect(await rig.model.confirmPending())
+        #expect(rig.runner.ids == rig.center.steps.map(\.id))
+    }
+
+    @Test func theSameCommandAddedTwiceIsTwoStepsThatDeleteAndMoveOneByOne() async throws {
+        let rig = editorRig()
+        feed(rig, filesContext())
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.upper")
+        rig.model.addToSequence(try #require(menuRow(rig, "New Folder")))
+        rig.model.addToSequence(try #require(menuRow(rig, "New Folder")))
+        let ids = rig.center.steps.map(\.id)
+        #expect(ids.count == 4 && Set(ids).count == 4)
+        await openDraft(rig)
+        // Highlight the last step and move it up, then delete the new first one.
+        rig.model.moveSelection(by: 6)
+        #expect(rig.model.selectedStepID == ids[3])
+        rig.model.moveSelectedStep(by: -1)
+        #expect(rig.center.steps.map(\.id) == [ids[0], ids[1], ids[3], ids[2]])
+        #expect(rig.model.selectedStepID == ids[3])
+        rig.model.moveSelection(by: -1)
+        #expect(rig.model.selectedStepID == ids[1])
+        rig.model.deleteSelectedStep()
+        #expect(rig.center.steps.map(\.id) == [ids[0], ids[3], ids[2]])
+        let rows = stepRows(rig)
+        #expect(rows.enumerated().allSatisfy { $1.title.hasPrefix("\($0 + 1). ") })
+        // A step added after a delete never takes a used id.
+        _ = rig.model.goBack()
+        add(rig, "ctx:text.upper")
+        #expect(!ids.contains(rig.center.steps.last?.id ?? ""))
+    }
+
+    @Test func aMixOfMenuItemsActionsAndDestinationsRunsAndSaves() async throws {
         let rig = editorRig()
         feed(rig, filesContext())
         rig.model.addToSequence(try #require(menuRow(rig, "New Folder")))
+        add(rig, "ctx:text.upper")
         rig.model.addToSequence(try #require(menuRow(rig, "Show Preview")))
-        rig.model.addToSequence(try #require(menuRow(rig, "Show Path Bar")))
-        #expect(rig.center.steps.count == 1)
-        let ids = menuStepIDs(rig)
-        #expect(ids.count == 3 && Set(ids).count == 3)
+        rig.model.addToSequence(try #require(menuRow(rig, "Show Preview")))
+        let generic = try #require(row(rig, "send:text"))
+        _ = await rig.model.run(generic)
+        add(rig, "send:text>dest:notes")
+        _ = rig.model.goBack()
+        add(rig, "ctx:files.copy-path")
+        #expect(rig.center.steps.count == 6)
+        let ids = rig.center.steps.map(\.id)
+        #expect(Set(ids).count == 6)
         #expect(SequenceValidator.issues(in: SequenceBackend(steps: rig.center.steps)).isEmpty)
-        #expect(rig.center.plan().refusal == nil)
+        await openDraft(rig)
+        #expect(await rig.model.run(try #require(row(rig, "seq:run"))) == false)
+        let lines = try #require(rig.model.sequencePending?.lines)
+        #expect(lines.count >= 3 && lines.allSatisfy { $0.first?.isNumber == true })
+        #expect(await rig.model.confirmPending())
+        #expect(rig.runner.ids == ids)
+        // And saving the same draft stores every step.
+        _ = await rig.model.run(try #require(row(rig, "seq:save")))
+        rig.center.form.name = "Mixed"
+        #expect(rig.model.saveSequence())
+        #expect(rig.store.commands.first?.sequenceBackend?.steps.map(\.id) == ids)
     }
 
     @Test func removingAStepBetweenTwoMenuStepsStillValidates() throws {

@@ -112,6 +112,8 @@
             "palette-sequence-row", PaletteOptions(app: "safari", sequence: .row))
         static let paletteSequenceDraft = palette(
             "palette-sequence-draft", PaletteOptions(app: "safari", sequence: .level))
+        static let paletteSequenceMenus = palette(
+            "palette-sequence-menus", PaletteOptions(app: "safari", sequence: .menus))
         static let paletteSequenceConfirm = palette(
             "palette-sequence-confirm", PaletteOptions(app: "safari", sequence: .confirm))
         static let paletteSequenceAsk = palette(
@@ -222,7 +224,7 @@
             palettePermission, paletteReadFailed, paletteRunFailed, paletteActions, paletteChips, paletteUsuallyNext,
             paletteUsuallyNextOne,
             paletteUsuallyNextFresh, paletteSendRows, paletteSendList, paletteSendConfirm, paletteSendFailed,
-            paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceConfirm, paletteSequenceAsk,
+            paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceMenus, paletteSequenceConfirm, paletteSequenceAsk,
             paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaveSearch,
             paletteSequenceSaveCustom, paletteSequenceSaveNoMatch, paletteSequenceSaveGrid, paletteSequenceSaved, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,
@@ -311,6 +313,7 @@
 
     #Preview("Palette, sequence draft row") { PairedPreview(PreviewCatalog.paletteSequenceRow) }
     #Preview("Palette, sequence draft level") { PairedPreview(PreviewCatalog.paletteSequenceDraft) }
+    #Preview("Palette, sequence draft, menu items") { PairedPreview(PreviewCatalog.paletteSequenceMenus) }
     #Preview("Palette, sequence, confirm") { PairedPreview(PreviewCatalog.paletteSequenceConfirm) }
     #Preview("Palette, sequence, question") { PairedPreview(PreviewCatalog.paletteSequenceAsk) }
     #Preview("Palette, sequence, failed") { PairedPreview(PreviewCatalog.paletteSequenceFailed) }

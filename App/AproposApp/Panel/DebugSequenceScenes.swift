@@ -18,6 +18,8 @@
         case save
         /// The list again, with the notice of where the command went.
         case saved
+        /// The draft level with four steps: two menu items, the second one added twice, then an action.
+        case menus
         /// The form with the symbol search holding "mail" and the choice moved one place on.
         case saveSearch
         /// The form with a symbol name typed that the curated list does not have.
@@ -40,6 +42,21 @@
             guard let sequences = model.sequences else { return }
             func row(_ id: String) -> Command? { model.results.first { $0.command.id == id }?.command }
 
+            if scene == .menus {
+                // The preview menu has no real app behind it, so the menu steps are added the way the recorder hands
+                // them over: one step each, the second one twice.
+                func menu(_ path: [String]) -> UIStep {
+                    UIStep(
+                        app: "com.apple.Safari", locators: [.menuPath(path)],
+                        description: "Choose \(path.joined(separator: " > "))")
+                }
+                sequences.add(uiSteps: [menu(["File", "New Window"])], label: "Choose File > New Window")
+                sequences.add(uiSteps: [menu(["View", "Show Sidebar"])], label: "Choose View > Show Sidebar")
+                sequences.add(uiSteps: [menu(["View", "Show Sidebar"])], label: "Choose View > Show Sidebar")
+                if let upper = row("ctx:text.upper") { model.addToSequence(upper) }
+                if let top = model.results.first?.command { _ = await model.run(top) }
+                return
+            }
             guard let upper = row("ctx:text.upper") else { return }
             model.addToSequence(upper)
             // A destination is added from the destination list, the way a person adds it.

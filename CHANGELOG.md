@@ -34,8 +34,10 @@ work lands.
 ### Fixed
 - Sequence draft: deleting the last step now returns to the command list (with what you had typed) instead of leaving an
   empty draft open.
-- Sequence draft: two menu items added one after the other no longer make the draft fail with "Step 2: another step has the
-  same id". The steps of a joined menu step now get their own ids.
+- Sequence draft: every menu item you add is now a step of its own. Before, menu items added one after another were folded
+  into a single step: the Steps list showed "1 item", the confirmation numbered every line "1." and the draft could fail
+  with "Step 2: another step has the same id". The list, the numbers, delete, move, run and save now work step by step,
+  including the same command added twice.
 - A command's output could be cut short when its process exited at the moment its last chunk was being read. Output is now
   read to the end before the result is reported.
 

@@ -23,7 +23,8 @@ palette rows ── Add to sequence ──► SequenceCenter (draft, in memory)
 
 - **Add to sequence** is in the Command-K popover of any row that can run: a menu item, a context action, one of your
   commands, a destination (from the destination list or a direct row). The panel stays open, so you add one row after
-  another. The generic "Send selection to..." row cannot be added (it needs a choice first), and neither can a command
+  another. Each row is one step, whatever it is: two menu items in a row are two steps,
+  and the same row added twice is two steps. The generic "Send selection to..." row cannot be added (it needs a choice first), and neither can a command
   that is itself a sequence.
 - With a draft, the list opens with a **Sequence draft (3 steps)** row under its own header, and a chip in the search
   field says the same. Return on the row opens the draft level in the same panel, like the destination list, with a
