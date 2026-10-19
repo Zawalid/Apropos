@@ -6,6 +6,13 @@ work lands.
 
 ## [Unreleased]
 
+### Added (reviewing a recording)
+- When you stop recording, a review window lists every step in plain words with a Sturdy, Fair or Fragile badge, and the
+  things that were not recorded in place. Rename, move, merge or delete a row. Try it looks for each step in the apps as they
+  are now, without pressing anything, and marks it Found, Found by title only, Not found or Cannot check. Save command takes a
+  name, an optional alias and an optional shortcut, and the saved command asks before its first run. Add to draft instead puts
+  the steps in the sequence draft. The red button discards the recording.
+
 ### Added (recording, first version)
 - Record a command: choose it from the panel (type "record"), the menu bar popover or the Record button on the Commands
   page. A permission screen names Accessibility and Input Monitoring, says what each allows and what is never kept, and opens

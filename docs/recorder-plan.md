@@ -9,8 +9,8 @@ first. This plan does not repeat them.
 - **Never run live:** the event tap delivering events, hit tests on real open menus, secure-input detection, non-US key
   layouts, replay under load. The spike found one unexplained replay failure, so retries are part of the plan.
 - **UI (R1, 2026-10-19):** the permission screen, the recording bar, and three entry points (panel row, menu bar popover,
-  Commands page) exist, and a finished recording is handed to the sequence draft. The review sheet (R2) does not exist yet,
-  so a recording is reviewed and saved through the draft.
+  Commands page) exist, and a finished recording is handed to the sequence draft. R2 (review and save) is built too: a review window with edits, Try it
+  (a dry look through `StepDryRun`) and a save form. "Works in this app only or any" is not there yet, because commands have no per-app scope.
 - **Scope decided earlier:** menus and keyboard shortcuts first; controls and typed text later; web and Electron only as
   a separate opt-in decision.
 

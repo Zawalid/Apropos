@@ -20,8 +20,8 @@ public struct RecordingOutcome: Equatable, Sendable {
 /// no window and no timer: the app calls `refresh()` a few times a second and draws what the model says. The recorder
 /// underneath does the listening and keeps every privacy rule.
 ///
-/// A recording ends in the sequence draft: the steps are handed over as one menu step, so they can be run, edited and saved
-/// from the panel with everything else, until the review sheet exists.
+/// A recording ends in a review: the steps in plain words, edits, a look at whether each step still finds its target, and
+/// a form that saves them as a command or puts them in the sequence draft.
 @MainActor
 @Observable
 public final class RecordingModel {
@@ -30,6 +30,8 @@ public final class RecordingModel {
         /// A permission is missing. `status` says which.
         case needsPermission
         case recording
+        /// The recording is over and its steps are being looked at. `review` holds them.
+        case reviewing
         case finished(RecordingOutcome)
         case failed(String)
     }
@@ -38,6 +40,8 @@ public final class RecordingModel {
     public private(set) var status: RecordingPermissionStatus
     public private(set) var elapsed: TimeInterval = 0
     public private(set) var stepCount = 0
+    /// The steps of the last recording, while `phase` is `.reviewing`.
+    public private(set) var review: RecordingReview?
     /// Recording is paused because a password field is active.
     public private(set) var pausedForSecureInput = false
 
@@ -46,7 +50,7 @@ public final class RecordingModel {
 
     @ObservationIgnored private let permission: RecordingPermission
     @ObservationIgnored private let makeRecorder: @MainActor () -> Recorder
-    @ObservationIgnored private let handOff: @MainActor ([UIStep], String) -> SequenceAddResult
+    @ObservationIgnored private let makeReview: @MainActor (RecordingDraft) -> RecordingReview
     @ObservationIgnored private let openURL: @MainActor (URL) -> Void
     @ObservationIgnored private let now: @MainActor () -> TimeInterval
     @ObservationIgnored private var recorder: Recorder?
@@ -55,14 +59,14 @@ public final class RecordingModel {
     public init(
         permission: RecordingPermission = RecordingPermission(), maxDuration: TimeInterval = 300,
         makeRecorder: @escaping @MainActor () -> Recorder,
-        handOff: @escaping @MainActor ([UIStep], String) -> SequenceAddResult,
+        makeReview: @escaping @MainActor (RecordingDraft) -> RecordingReview,
         openURL: @escaping @MainActor (URL) -> Void = { NSWorkspace.shared.open($0) },
         now: @escaping @MainActor () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
     ) {
         self.permission = permission
         self.maxDuration = maxDuration
         self.makeRecorder = makeRecorder
-        self.handOff = handOff
+        self.makeReview = makeReview
         self.openURL = openURL
         self.now = now
         status = permission.status()
@@ -140,7 +144,7 @@ public final class RecordingModel {
             stepCount = recorder.draft.stepCount
             pausedForSecureInput = recorder.state == .pausedForSecureInput
             if recorder.state.isTerminal { finish() }
-        case .idle, .finished, .failed:
+        case .idle, .reviewing, .finished, .failed:
             break
         }
     }
@@ -181,22 +185,36 @@ public final class RecordingModel {
                     addedToDraft: false))
             return
         }
-        let steps: [UIStep]
-        do {
-            steps = try draft.validated(dropTextEntries: true).backend.steps
-        } catch {
-            phase = .finished(
-                RecordingOutcome(steps: 0, message: "Those steps could not be used: \(error)", addedToDraft: false))
-            return
-        }
-        let label = steps.count == 1 ? "Recorded step" : "Recorded steps"
-        switch handOff(steps, label) {
-        case .added:
-            var message = "Recorded \(steps.count) step\(steps.count == 1 ? "" : "s"), now in your draft."
-            if draft.textEntryCount > 0 { message += " What you typed was not recorded." }
-            phase = .finished(RecordingOutcome(steps: steps.count, message: message, addedToDraft: true))
-        case .refused(let reason):
-            phase = .finished(RecordingOutcome(steps: steps.count, message: reason, addedToDraft: false))
-        }
+        review = makeReview(draft)
+        phase = .reviewing
+    }
+
+    // MARK: Ending the review
+
+    /// Saves the reviewed steps as a command. Stays in the review, with the reason, when it cannot.
+    public func saveReview() {
+        guard let review, case .saved(let name)? = review.save() else { return }
+        conclude(
+            RecordingOutcome(
+                steps: review.stepCount, message: "Saved \u{201C}\(name)\u{201D}. Find it in the panel by its name.",
+                addedToDraft: false))
+    }
+
+    /// Puts the reviewed steps in the sequence draft instead of saving them.
+    public func addReviewToDraft() {
+        guard let review, review.addToDraft() == .addedToDraft else { return }
+        var message = "Recorded \(review.stepCount) step\(review.stepCount == 1 ? "" : "s"), now in your draft."
+        if review.textEntryCount > 0 { message += " What you typed was not recorded." }
+        conclude(RecordingOutcome(steps: review.stepCount, message: message, addedToDraft: true))
+    }
+
+    public func discardReview() {
+        review = nil
+        phase = .idle
+    }
+
+    private func conclude(_ outcome: RecordingOutcome) {
+        review = nil
+        phase = .finished(outcome)
     }
 }

@@ -170,7 +170,8 @@
             let model = RecordingModel(
                 permission: RecordingPermission(
                     backend: FakePermissions(accessibility: accessibility, inputMonitoring: inputMonitoring)),
-                makeRecorder: { fatalError("a preview never records") }, handOff: { _, _ in .refused("preview") },
+                makeRecorder: { fatalError("a preview never records") },
+                makeReview: { RecordingReview(draft: $0, store: nil, addToDraft: { _, _ in .refused("preview") }) },
                 openURL: { _ in })
             model.seed(phase: phase, status: source, elapsed: elapsed, stepCount: steps, pausedForSecureInput: paused)
             return model
@@ -218,6 +219,30 @@
                         actions: RecordingActions()))
             }
         }
+
+        private static func recordingReview(
+            _ id: String, name: String = "", checked: Bool = false, problem: Bool = false
+        ) -> PreviewScene {
+            PreviewScene(id: id, size: RecordingReviewView.size, backdrop: false) {
+                let review = RecordingReview(
+                    draft: .previewSample(), suggestedName: name, store: nil,
+                    dryRun: { backend, _ in
+                        let results = backend.steps.enumerated().map { offset, step in
+                            StepDryResult(
+                                step: offset + 1, stepID: step.id, matchedKind: offset == 1 ? .menuPath : .shortcut,
+                                isDegraded: offset == 1, isEnabled: true, failure: offset == 2 ? .notFound : nil,
+                                attempts: [])
+                        }
+                        return StepDryRunReport(results: results, health: .broken, blocked: nil)
+                    },
+                    addToDraft: { _, _ in .refused("preview") })
+                if checked { review.check() }
+                return AnyView(RecordingReviewView(review: review))
+            }
+        }
+
+        static let recordingReview = recordingReview("recording-review")
+        static let recordingReviewChecked = recordingReview("recording-review-checked", name: "Tidy Finder", checked: true)
 
         static let recordingPermissionNone = recordingPermission(
             "recording-permission", accessibility: false, inputMonitoring: false)
@@ -319,7 +344,7 @@
             palettePermission, paletteReadFailed, paletteRunFailed, paletteActions, paletteChips, paletteUsuallyNext,
             paletteUsuallyNextOne,
             paletteUsuallyNextFresh, paletteSendRows, paletteSendList, paletteSendConfirm, paletteSendFailed,
-            paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceMenus, paletteSequenceMissing, recordingLive, recordingEnding, recordingPaused, recordingDone, recordingEmpty, recordingPermissionNone, recordingPermissionOne, recordingPermissionAll, paletteSequenceConfirm, paletteSequenceAsk,
+            paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceMenus, paletteSequenceMissing, recordingLive, recordingEnding, recordingPaused, recordingDone, recordingEmpty, recordingReview, recordingReviewChecked, recordingPermissionNone, recordingPermissionOne, recordingPermissionAll, paletteSequenceConfirm, paletteSequenceAsk,
             paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaveQuick, paletteSequenceSaveSearch,
             paletteSequenceSaveCustom, paletteSequenceSaveNoMatch, paletteSequenceSaveGrid, paletteSequenceSaved, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,

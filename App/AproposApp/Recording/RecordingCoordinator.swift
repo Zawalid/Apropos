@@ -13,6 +13,8 @@ final class RecordingCoordinator {
 
     let model: RecordingModel
     private let openDraft: () -> Void
+    private let shortcutRecording: (Bool) -> Void
+    private var reviewWindow: NSWindow?
     private var bar: NSPanel?
     private var permissionWindow: NSWindow?
     private var timer: Timer?
@@ -20,9 +22,12 @@ final class RecordingCoordinator {
     private var shownPhase: RecordingModel.Phase = .idle
     private var autoDismiss: Task<Void, Never>?
 
-    init(model: RecordingModel, openDraft: @escaping () -> Void) {
+    init(
+        model: RecordingModel, openDraft: @escaping () -> Void, shortcutRecording: @escaping (Bool) -> Void = { _ in }
+    ) {
         self.model = model
         self.openDraft = openDraft
+        self.shortcutRecording = shortcutRecording
     }
 
     private var actions: RecordingActions {
@@ -39,7 +44,19 @@ final class RecordingCoordinator {
                 self?.sync()
             },
             allow: { [weak self] in self?.model.allow($0) },
-            start: { [weak self] in self?.begin() })
+            start: { [weak self] in self?.begin() },
+            saveReview: { [weak self] in
+                self?.model.saveReview()
+                self?.sync()
+            },
+            addReviewToDraft: { [weak self] in
+                self?.model.addReviewToDraft()
+                self?.sync()
+            },
+            discardReview: { [weak self] in
+                self?.model.discardReview()
+                self?.sync()
+            })
     }
 
     // MARK: Entry
@@ -87,10 +104,16 @@ final class RecordingCoordinator {
         case .idle:
             hideBar()
             hidePermission()
+            hideReview()
             releaseStopKey()
         case .needsPermission:
             hideBar()
             showPermission()
+            releaseStopKey()
+        case .reviewing:
+            hideBar()
+            hidePermission()
+            showReview()
             releaseStopKey()
         case .recording:
             hidePermission()
@@ -98,6 +121,7 @@ final class RecordingCoordinator {
             holdStopKey()
         case .finished, .failed:
             hidePermission()
+            hideReview()
             releaseStopKey()
             if changed {
                 showBar()
@@ -163,6 +187,50 @@ final class RecordingCoordinator {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.isReleasedWhenClosed = false
         return panel
+    }
+
+    // MARK: The review
+
+    private func showReview() {
+        guard let review = model.review else { return }
+        let window = reviewWindow ?? makeReviewWindow()
+        window.contentView = NSHostingView(
+            rootView: RecordingReviewView(review: review, actions: actions, shortcutRecording: shortcutRecording))
+        reviewWindow = window
+        if !window.isVisible {
+            if !AgentMode.isOn { NSApp.activate() }
+            window.center()
+            window.makeKeyAndOrderFront(nil)
+            AgentMode.conceal(window)
+        }
+    }
+
+    private func hideReview() {
+        reviewWindow?.orderOut(nil)
+    }
+
+    private func makeReviewWindow() -> NSWindow {
+        let window = NSWindow(
+            contentRect: NSRect(origin: .zero, size: RecordingReviewView.size),
+            styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
+        window.title = "Review recording"
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.isReleasedWhenClosed = false
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        // The red button is the same as Discard: a recording is quick to make again.
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification, object: window, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                if self?.model.phase == .reviewing {
+                    self?.model.discardReview()
+                    self?.sync()
+                }
+            }
+        }
+        return window
     }
 
     // MARK: The permission screen

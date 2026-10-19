@@ -12,6 +12,19 @@ public struct StepDryResult: Equatable, Sendable {
     public let isEnabled: Bool
     public let failure: StepFailureReason?
     public let attempts: [LocatorAttempt]
+
+    public init(
+        step: Int, stepID: String, matchedKind: LocatorKind?, isDegraded: Bool, isEnabled: Bool,
+        failure: StepFailureReason?, attempts: [LocatorAttempt]
+    ) {
+        self.step = step
+        self.stepID = stepID
+        self.matchedKind = matchedKind
+        self.isDegraded = isDegraded
+        self.isEnabled = isEnabled
+        self.failure = failure
+        self.attempts = attempts
+    }
 }
 
 /// Whether a command still finds its way around.
@@ -34,6 +47,12 @@ public struct StepDryRunReport: Equatable, Sendable {
     public let health: StepHealth
     /// Set when nothing could be checked at all.
     public let blocked: StepFailureReason?
+
+    public init(results: [StepDryResult], health: StepHealth, blocked: StepFailureReason?) {
+        self.results = results
+        self.health = health
+        self.blocked = blocked
+    }
 }
 
 /// Finds every step's element without performing anything. It takes only the read-only half of the environment, so it

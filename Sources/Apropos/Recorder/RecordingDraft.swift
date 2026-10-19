@@ -314,3 +314,27 @@ public struct RecordingDraft: Equatable, Sendable {
         return try builder.save(title: name, in: store, privacy: privacy)
     }
 }
+
+extension RecordingDraft {
+    /// A made-up recording of a few Finder actions, for previews and screenshots. Never produced by a real recording.
+    public static func previewSample() -> RecordingDraft {
+        var draft = RecordingDraft()
+        func menu(_ path: [String], key: KeyShortcut? = nil) -> UIStep {
+            var locators: [StepLocator] = [
+                .roleTitle(role: StepAX.menuItem, title: path.last ?? ""), .menuPath(path),
+            ]
+            if let key { locators.append(.shortcut(key: key.key, modifiers: key.modifiers)) }
+            return UIStep(
+                app: "com.apple.finder", locators: locators,
+                description: "Choose \(path.joined(separator: " > ")) in Finder")
+        }
+        draft.append(.appSwitch(bundleID: "com.apple.finder", name: "Finder"))
+        draft.append(.step(menu(["View", "as List"]), origin: .menuClick))
+        draft.note(.controlNotRecordedYet)
+        draft.append(.step(menu(["File", "New Finder Window"], key: KeyShortcut(key: "N", modifiers: .command)), origin: .shortcut))
+        draft.append(.textEntered)
+        draft.append(.step(menu(["View", "Show Path Bar"]), origin: .menuClick))
+        draft.note(.shortcutNotInMenu)
+        return draft
+    }
+}

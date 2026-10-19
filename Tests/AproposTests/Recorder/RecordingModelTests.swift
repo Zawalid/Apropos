@@ -22,6 +22,8 @@ private final class Rig {
     var handedOff: [(steps: [UIStep], label: String)] = []
     var opened: [URL] = []
     var refuseHandOff: String?
+    let store = UserCommandStore(
+        directory: FileManager.default.temporaryDirectory.appendingPathComponent("apropos-rec-\(UUID().uuidString)"))
     lazy var model = RecordingModel(
         permission: RecordingPermission(backend: backend), maxDuration: 300,
         makeRecorder: { [self] in
@@ -32,10 +34,15 @@ private final class Rig {
                     permission: RecordingPermission(backend: backend), log: .silent),
                 source: source)
         },
-        handOff: { [self] steps, label in
-            if let refuseHandOff { return .refused(refuseHandOff) }
-            handedOff.append((steps, label))
-            return .added(steps: handedOff.count)
+        makeReview: { [self] draft in
+            RecordingReview(
+                draft: draft, suggestedName: "Test", store: store,
+                dryRun: { _, _ in StepDryRunReport(results: [], health: .unknown, blocked: .permissionMissing) },
+                addToDraft: { [self] steps, label in
+                    if let refuseHandOff { return .refused(refuseHandOff) }
+                    handedOff.append((steps, label))
+                    return .added(steps: handedOff.count)
+                })
         },
         openURL: { [self] in opened.append($0) }, now: { [self] in clock })
 }
@@ -82,6 +89,10 @@ struct RecordingModelTests {
         #expect(rig.model.elapsed == 7)
         rig.source.send(.keyDown(.command(Key.c)))
         rig.model.stop()
+        #expect(rig.model.phase == .reviewing)
+        #expect(rig.model.review?.stepCount == 2)
+        #expect(rig.handedOff.isEmpty)
+        rig.model.addReviewToDraft()
         #expect(rig.handedOff.count == 1)
         #expect(rig.handedOff.first?.steps.count == 2)
         #expect(rig.handedOff.first?.label == "Recorded steps")
@@ -99,6 +110,7 @@ struct RecordingModelTests {
         rig.source.send(.keyDown(.command(Key.s)))
         rig.source.send(.keyDown(.plain(Key.a)))
         rig.model.stop()
+        rig.model.addReviewToDraft()
         guard case .finished(let outcome) = rig.model.phase else {
             Issue.record("not finished")
             return
@@ -126,11 +138,8 @@ struct RecordingModelTests {
         rig.source.send(.keyDown(.command(Key.s)))
         rig.source.send(.appActivated(rig.world.apropos))
         rig.model.refresh()
-        guard case .finished(let outcome) = rig.model.phase else {
-            Issue.record("not finished")
-            return
-        }
-        #expect(outcome.addedToDraft)
+        #expect(rig.model.phase == .reviewing)
+        #expect(rig.model.review?.stepCount == 1)
     }
 
     @Test func cancelThrowsTheRecordingAway() {
@@ -149,12 +158,9 @@ struct RecordingModelTests {
         rig.model.start()
         rig.source.send(.keyDown(.command(Key.s)))
         rig.model.stop()
-        guard case .finished(let outcome) = rig.model.phase else {
-            Issue.record("not finished")
-            return
-        }
-        #expect(!outcome.addedToDraft)
-        #expect(outcome.message == "A sequence can have at most 20 steps.")
+        rig.model.addReviewToDraft()
+        #expect(rig.model.phase == .reviewing)
+        #expect(rig.model.review?.problem == "A sequence can have at most 20 steps.")
     }
 
     @Test func aSecondStartWhileRecordingDoesNothing() {
@@ -170,5 +176,30 @@ struct RecordingModelTests {
         rig.model.stop()
         rig.model.dismissOutcome()
         #expect(rig.model.phase == .idle)
+    }
+
+    @Test func savingFromTheReviewEndsInAFinishedNote() {
+        let rig = Rig()
+        rig.model.start()
+        rig.source.send(.keyDown(.command(Key.s)))
+        rig.model.stop()
+        rig.model.saveReview()
+        guard case .finished(let outcome) = rig.model.phase else {
+            Issue.record("not finished")
+            return
+        }
+        #expect(outcome.message.contains("Saved"))
+        #expect(rig.store.commands.count == 1)
+        #expect(rig.model.review == nil)
+    }
+
+    @Test func discardingTheReviewSavesNothing() {
+        let rig = Rig()
+        rig.model.start()
+        rig.source.send(.keyDown(.command(Key.s)))
+        rig.model.stop()
+        rig.model.discardReview()
+        #expect(rig.model.phase == .idle)
+        #expect(rig.store.commands.isEmpty && rig.handedOff.isEmpty)
     }
 }

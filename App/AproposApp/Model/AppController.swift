@@ -202,8 +202,14 @@ final class AppController {
                         configuration: RecordingConfiguration(privacy: settings.contextPrivacy)),
                     source: LiveCaptureSource())
             },
-            handOff: { [sequences] steps, label in sequences.add(uiSteps: steps, label: label) })
-        recording = RecordingCoordinator(model: recordingModel, openDraft: { [weak self] in self?.togglePanel() })
+            makeReview: { [userCommands, settings, sequences] draft in
+                RecordingReview(
+                    draft: draft, store: userCommands, privacy: { settings.contextPrivacy },
+                    addToDraft: { steps, label in sequences.add(uiSteps: steps, label: label) })
+            })
+        recording = RecordingCoordinator(
+            model: recordingModel, openDraft: { [weak self] in self?.togglePanel() },
+            shortcutRecording: { [weak self] in self?.setRecording($0) })
         let panel = PanelController(
             model: palette, tracker: tracker, permission: permission, settings: settings, context: context,
             usage: usage, openSettings: { [weak self] request in
