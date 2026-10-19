@@ -6,6 +6,35 @@ work lands.
 
 ## [Unreleased]
 
+### Added (settings, onboarding and the menu bar)
+- A new Settings window: a floating glass sidebar and rounded sections, with pages for General, Appearance, Commands,
+  Destinations, Context, Prediction, Integrations, Privacy and data, Updates and About. Appearance shows theme and row icons
+  as small pictures and a live preview of the panel. General chooses which sources the panel includes: context actions, your
+  commands, Send to and alternate commands.
+- Commands page: a table with an alias and a shortcut per command, a guided New command form (link, Shortcut or program),
+  ready-made examples, a detail sheet that says what a command does and what it can do to your Mac, and approval only after
+  you tick that you have read it. Rows show how often a command was used.
+- Destinations page: real app icons, a switch per destination, saved folders, a detail sheet with a test send, and a guided
+  New destination form.
+- Context page: a live "read right now" card, a switch for each kind of context (document, web address, folder and files,
+  git branch, selected text), and an exceptions list of apps that are not read or only without the selection. Pause context
+  for an hour from the menu bar.
+- Prediction page: what it has learned, an accuracy line, your strongest habits with Forget, sensitivity, rows and how long to
+  keep the log, per-app learning, and Pause learning for an hour from the menu bar.
+- Integrations page: copyable links, which commands may run from outside and whether each asked yet, a link builder, setup
+  recipes, a master switch, "always ask", and a list of recent outside requests (never the values).
+- Privacy and data page: what Apropos keeps with sizes and Reveal and Forget for each, permissions with reasons, the network
+  state, Export all my data, and Forget everything it learned.
+- Updates shows the bundled changelog and says honestly that automatic updates arrive with the first public release. About
+  shows the hero ring, grouped diagnostics and Copy support info.
+- A new onboarding built around the logo ring, which is drawn as you set up. A menu bar popover replaces the plain menu on
+  click: the app in front and what is read from it, a big Open button, recent commands and a row of controls. Command-comma
+  opens Settings.
+
+### Fixed
+- A command's output could be cut short when its process exited at the moment its last chunk was being read. Output is now
+  read to the end before the result is reported.
+
 ### Changed
 - The app is now called Apropos (formerly Cue). Settings, usage and symbol packs move from `Application Support/Cue` to
   `Application Support/Apropos` once on first launch, and the old UserDefaults values are copied over. The old folder is

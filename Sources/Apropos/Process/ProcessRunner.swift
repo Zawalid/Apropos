@@ -116,37 +116,14 @@ public enum ProcessRunner {
             process.standardError = errPipe
             process.standardInput = inPipe
 
-            outPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
-                let chunk = handle.availableData
-                guard let self else { return }
-                if chunk.isEmpty {
-                    handle.readabilityHandler = nil
-                    return
-                }
-                self.lock.lock()
-                self.stdout.append(chunk)
-                let tooBig = self.stdout.count > self.request.outputLimit
-                if tooBig, self.failure == nil { self.failure = .outputTooLarge }
-                self.lock.unlock()
-                if tooBig { self.terminate() }
-            }
-            errPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
-                let chunk = handle.availableData
-                if chunk.isEmpty {
-                    handle.readabilityHandler = nil
-                    return
-                }
-                self?.lock.lock()
-                self?.errorBytes += chunk.count
-                self?.lock.unlock()
-            }
+            // Each pipe is read to the end by its own thread, and the result is reported only after both have
+            // finished and the process has exited, so no chunk that was read but not yet stored can be missed.
+            let readers = DispatchGroup()
+            drain(outPipe.fileHandleForReading, into: readers, isOutput: true)
+            drain(errPipe.fileHandleForReading, into: readers, isOutput: false)
             process.terminationHandler = { [weak self] process in
-                // Let the readers drain what is left in the pipes before reporting.
-                outPipe.fileHandleForReading.readabilityHandler = nil
-                errPipe.fileHandleForReading.readabilityHandler = nil
-                let rest = (try? outPipe.fileHandleForReading.readToEnd()) ?? Data()
-                let errRest = (try? errPipe.fileHandleForReading.readToEnd()) ?? Data()
-                self?.complete(status: process.terminationStatus, tail: rest, errorTail: errRest.count)
+                let status = process.terminationStatus
+                readers.notify(queue: .global()) { self?.complete(status: status, tail: Data(), errorTail: 0) }
             }
 
             do {
@@ -167,6 +144,28 @@ public enum ProcessRunner {
                 if running, self.failure == nil { self.failure = .timedOut }
                 self.lock.unlock()
                 if running { self.terminate() }
+            }
+        }
+
+        private func drain(_ handle: FileHandle, into group: DispatchGroup, isOutput: Bool) {
+            group.enter()
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                defer { group.leave() }
+                while true {
+                    let chunk = handle.availableData
+                    guard !chunk.isEmpty, let self else { return }
+                    self.lock.lock()
+                    var tooBig = false
+                    if isOutput {
+                        self.stdout.append(chunk)
+                        tooBig = self.stdout.count > self.request.outputLimit
+                        if tooBig, self.failure == nil { self.failure = .outputTooLarge }
+                    } else {
+                        self.errorBytes += chunk.count
+                    }
+                    self.lock.unlock()
+                    if tooBig { self.terminate() }
+                }
             }
         }
 
