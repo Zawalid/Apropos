@@ -88,6 +88,11 @@ public enum PanelPlacement {
         public let axis: Axis
         /// The x of a vertical line, or the y of a horizontal one, in screen coordinates.
         public let position: CGFloat
+
+        public init(axis: Axis, position: CGFloat) {
+            self.axis = axis
+            self.position = position
+        }
     }
 
     /// Pulls the panel's centre onto the nearest centre or third line of the screen when it is within `threshold` points,
