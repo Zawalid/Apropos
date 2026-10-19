@@ -87,6 +87,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSPopoverDelegate {
             allowAccess: close { controller.showOnboarding(step: .permission) },
             reviewCommands: close { CommandManagement.reviewPending(controller.userCommands) },
             commands: close { controller.showSettings(page: .commands) },
+            record: close { controller.startRecording() },
             settings: close { controller.showSettings() },
             welcomeGuide: close { controller.showOnboarding() },
             checkForUpdates: close { controller.settings.checkForUpdatesNow() },

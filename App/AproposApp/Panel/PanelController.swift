@@ -29,7 +29,8 @@ final class PanelController: NSObject {
     init(
         model: PaletteModel, tracker: FrontmostAppTracker, permission: AccessibilityPermission,
         settings: SettingsModel, context: ContextModel, usage: UsageController, openSettings: @escaping (SettingsRequest) -> Void,
-        openGuide: @escaping () -> Void = {}, positions: PanelPositionStore
+        openGuide: @escaping () -> Void = {}, startRecording: @escaping () -> Void = {},
+        positions: PanelPositionStore
     ) {
         self.positions = positions
         self.model = model
@@ -72,6 +73,7 @@ final class PanelController: NSObject {
             switch app {
             case .newCommand: openSettings(SettingsRequest(page: .commands, intent: .newCommand))
             case .yourCommands: openSettings(SettingsRequest(page: .commands))
+            case .record: startRecording()
             }
         }
 

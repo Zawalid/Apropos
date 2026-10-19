@@ -102,17 +102,31 @@ struct CommandsPage: View {
             footer:
                 "An alias is a short word that finds the command in the panel or runs it from a link. Commands are plain files, so you can edit, copy and share them.",
             accessory: AnyView(
-                Button {
-                    creating = true
-                } label: {
-                    Label("New command", systemImage: "plus")
-                        .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(Brand.mintInk)
-                        .padding(.horizontal, 12)
-                        .frame(height: 28)
-                        .background(Capsule().fill(Brand.mint))
-                }
-                .buttonStyle(.plain))
+                HStack(spacing: 8) {
+                    Button {
+                        controller.startRecording()
+                    } label: {
+                        Label("Record", systemImage: "record.circle")
+                            .font(.system(size: 12.5, weight: .semibold))
+                            .foregroundStyle(Brand.text)
+                            .padding(.horizontal, 12)
+                            .frame(height: 28)
+                            .background(Capsule().fill(Brand.raised))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Do something once in another app, and keep it as steps")
+                    Button {
+                        creating = true
+                    } label: {
+                        Label("New command", systemImage: "plus")
+                            .font(.system(size: 12.5, weight: .semibold))
+                            .foregroundStyle(Brand.mintInk)
+                            .padding(.horizontal, 12)
+                            .frame(height: 28)
+                            .background(Capsule().fill(Brand.mint))
+                    }
+                    .buttonStyle(.plain)
+                })
         ) {
             if store.commands.isEmpty {
                 CommandsIntro()

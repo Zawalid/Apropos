@@ -7,6 +7,8 @@ public enum AppCommand: String, Sendable, Hashable, CaseIterable {
     case newCommand
     /// Opens Settings on the Commands page.
     case yourCommands
+    /// Starts recording what you do in the app in front, to turn it into steps.
+    case record
 
     public var commandID: CommandID { CommandID(rawValue: "app:\(rawValue)") }
 
@@ -14,6 +16,7 @@ public enum AppCommand: String, Sendable, Hashable, CaseIterable {
         switch self {
         case .newCommand: "New command"
         case .yourCommands: "Your commands"
+        case .record: "Record a command"
         }
     }
 
@@ -21,6 +24,7 @@ public enum AppCommand: String, Sendable, Hashable, CaseIterable {
         switch self {
         case .newCommand: "plus.square"
         case .yourCommands: "list.bullet.rectangle"
+        case .record: "record.circle"
         }
     }
 
@@ -28,6 +32,7 @@ public enum AppCommand: String, Sendable, Hashable, CaseIterable {
         switch self {
         case .newCommand: ["apropos", "create", "make", "add", "custom", "own", "shortcut", "command"]
         case .yourCommands: ["apropos", "list", "manage", "edit", "custom", "own", "commands", "settings"]
+        case .record: ["apropos", "record", "teach", "macro", "capture", "learn", "watch", "steps", "create"]
         }
     }
 
@@ -35,6 +40,7 @@ public enum AppCommand: String, Sendable, Hashable, CaseIterable {
         switch self {
         case .newCommand: "In Apropos: make a command of your own"
         case .yourCommands: "In Apropos: see and edit the commands you made"
+        case .record: "In Apropos: do something once and keep it as steps"
         }
     }
 

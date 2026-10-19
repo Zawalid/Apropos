@@ -150,6 +150,82 @@
 
         // Menu bar menu
 
+        // MARK: Recording
+
+        private struct FakePermissions: RecordingPermissionBackend {
+            var accessibility: Bool
+            var inputMonitoring: Bool
+            func accessibilityGranted() -> Bool { accessibility }
+            func inputMonitoringGranted() -> Bool { inputMonitoring }
+            func requestAccessibility() {}
+            func requestInputMonitoring() {}
+        }
+
+        @MainActor
+        private static func recordingModel(
+            _ phase: RecordingModel.Phase, accessibility: Bool = true, inputMonitoring: Bool = true,
+            elapsed: TimeInterval = 0, steps: Int = 0, paused: Bool = false
+        ) -> RecordingModel {
+            let source = RecordingPermissionStatus(accessibility: accessibility, inputMonitoring: inputMonitoring)
+            let model = RecordingModel(
+                permission: RecordingPermission(
+                    backend: FakePermissions(accessibility: accessibility, inputMonitoring: inputMonitoring)),
+                makeRecorder: { fatalError("a preview never records") }, handOff: { _, _ in .refused("preview") },
+                openURL: { _ in })
+            model.seed(phase: phase, status: source, elapsed: elapsed, stepCount: steps, pausedForSecureInput: paused)
+            return model
+        }
+
+        private static func recordingBar(
+            _ id: String, _ phase: RecordingModel.Phase, elapsed: TimeInterval = 0, steps: Int = 0,
+            paused: Bool = false, height: CGFloat = 110
+        ) -> PreviewScene {
+            PreviewScene(id: id, size: CGSize(width: 520, height: height), backdrop: true) {
+                AnyView(
+                    RecordingBarView(
+                        model: recordingModel(phase, elapsed: elapsed, steps: steps, paused: paused),
+                        stopKeys: RecordingCoordinator.stopCombo.caps, actions: RecordingActions())
+                        .frame(maxWidth: .infinity, maxHeight: .infinity))
+            }
+        }
+
+        static let recordingLive = recordingBar("recording-live", .recording, elapsed: 42, steps: 3)
+        static let recordingEnding = recordingBar("recording-ending", .recording, elapsed: 281, steps: 12)
+        static let recordingPaused = recordingBar("recording-paused", .recording, elapsed: 65, steps: 4, paused: true)
+        static let recordingDone = recordingBar(
+            "recording-done",
+            .finished(
+                RecordingOutcome(
+                    steps: 4,
+                    message: "Recorded 4 steps, now in your draft. What you typed was not recorded.",
+                    addedToDraft: true)), height: 130)
+        static let recordingEmpty = recordingBar(
+            "recording-empty",
+            .finished(
+                RecordingOutcome(
+                    steps: 0,
+                    message: "Nothing was recorded. Menu items you click and shortcuts you press are recorded.",
+                    addedToDraft: false)), height: 120)
+
+        private static func recordingPermission(
+            _ id: String, accessibility: Bool, inputMonitoring: Bool
+        ) -> PreviewScene {
+            PreviewScene(id: id, size: RecordingPermissionView.size, backdrop: false) {
+                AnyView(
+                    RecordingPermissionView(
+                        model: recordingModel(
+                            .needsPermission, accessibility: accessibility, inputMonitoring: inputMonitoring),
+                        actions: RecordingActions()))
+            }
+        }
+
+        static let recordingPermissionNone = recordingPermission(
+            "recording-permission", accessibility: false, inputMonitoring: false)
+        static let recordingPermissionOne = recordingPermission(
+            "recording-permission-one", accessibility: true, inputMonitoring: false)
+        static let recordingPermissionAll = recordingPermission(
+            "recording-permission-ready", accessibility: true, inputMonitoring: true)
+
         static let menuBar = PreviewScene(id: "menubar-menu", size: CGSize(width: 360, height: 460), backdrop: true) {
             AnyView(
                 MenuPopoverPreview(
@@ -243,7 +319,7 @@
             palettePermission, paletteReadFailed, paletteRunFailed, paletteActions, paletteChips, paletteUsuallyNext,
             paletteUsuallyNextOne,
             paletteUsuallyNextFresh, paletteSendRows, paletteSendList, paletteSendConfirm, paletteSendFailed,
-            paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceMenus, paletteSequenceMissing, paletteSequenceConfirm, paletteSequenceAsk,
+            paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceMenus, paletteSequenceMissing, recordingLive, recordingEnding, recordingPaused, recordingDone, recordingEmpty, recordingPermissionNone, recordingPermissionOne, recordingPermissionAll, paletteSequenceConfirm, paletteSequenceAsk,
             paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaveQuick, paletteSequenceSaveSearch,
             paletteSequenceSaveCustom, paletteSequenceSaveNoMatch, paletteSequenceSaveGrid, paletteSequenceSaved, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,

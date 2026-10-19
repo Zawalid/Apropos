@@ -8,7 +8,9 @@ first. This plan does not repeat them.
   permission model, session state machine, draft with edits, validation, save through `UserCommandStore`.
 - **Never run live:** the event tap delivering events, hit tests on real open menus, secure-input detection, non-US key
   layouts, replay under load. The spike found one unexplained replay failure, so retries are part of the plan.
-- **No UI.** Nothing in the app can start a recording, show the draft or save it.
+- **UI (R1, 2026-10-19):** the permission screen, the recording bar, and three entry points (panel row, menu bar popover,
+  Commands page) exist, and a finished recording is handed to the sequence draft. The review sheet (R2) does not exist yet,
+  so a recording is reviewed and saved through the draft.
 - **Scope decided earlier:** menus and keyboard shortcuts first; controls and typed text later; web and Electron only as
   a separate opt-in decision.
 

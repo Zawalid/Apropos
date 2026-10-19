@@ -30,6 +30,7 @@ final class AppController {
 
     @ObservationIgnored private var hotKey: GlobalHotKey?
     @ObservationIgnored private var panel: PanelController?
+    @ObservationIgnored private(set) var recording: RecordingCoordinator?
     @ObservationIgnored private var settingsController: SettingsWindowController?
     @ObservationIgnored private var statusItem: StatusItemController?
     @ObservationIgnored private let onboarding = OnboardingWindowController()
@@ -191,13 +192,25 @@ final class AppController {
         if !(AgentMode.isOn && ProcessInfo.processInfo.environment["APROPOS_FIXTURE_COMMANDS"] != nil) {
             tracker.start()
         }
+        let recordingModel = RecordingModel(
+            makeRecorder: { [settings] in
+                Recorder(
+                    engine: RecordingEngine(
+                        services: RecordingServices(
+                            system: LiveRecordingSystem(), hitTester: LiveHitTester(), menus: LiveMenuInspector(),
+                            keyLayout: LiveKeyLayout()),
+                        configuration: RecordingConfiguration(privacy: settings.contextPrivacy)),
+                    source: LiveCaptureSource())
+            },
+            handOff: { [sequences] steps, label in sequences.add(uiSteps: steps, label: label) })
+        recording = RecordingCoordinator(model: recordingModel, openDraft: { [weak self] in self?.togglePanel() })
         let panel = PanelController(
             model: palette, tracker: tracker, permission: permission, settings: settings, context: context,
             usage: usage, openSettings: { [weak self] request in
                 self?.showSettings(page: request.page, intent: request.intent)
             },
             openGuide: { [weak self] in self?.showOnboarding(step: .permission) },
-            positions: panelPositions)
+            startRecording: { [weak self] in self?.startRecording() }, positions: panelPositions)
         if AgentMode.isOn {
             // Automated runs stay invisible: no dock icon, status item, hotkey or welcome window.
             NSApp.setActivationPolicy(.accessory)
@@ -401,6 +414,12 @@ final class AppController {
                 return .failed("That command could not be deleted.")
             }
         }
+    }
+
+    /// Starts recording what happens in the app in front, or shows the permission screen. Automated runs never record.
+    func startRecording() {
+        guard !AgentMode.isOn else { return }
+        recording?.begin()
     }
 
     func showSettings(page: SettingPage? = nil, intent: SettingsIntent? = nil) {

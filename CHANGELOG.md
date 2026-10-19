@@ -6,6 +6,14 @@ work lands.
 
 ## [Unreleased]
 
+### Added (recording, first version)
+- Record a command: choose it from the panel (type "record"), the menu bar popover or the Record button on the Commands
+  page. A permission screen names Accessibility and Input Monitoring, says what each allows and what is never kept, and opens
+  the right page of System Settings; nothing is requested until you press Allow. While recording, a small glass bar floats
+  near the top of the screen with the time and the step count, and Control-Option-Command-R stops it from any app. What you
+  recorded lands in your sequence draft as one menu step, ready to run or save from the panel. Not yet verified on a real
+  Mac: see docs/recorder-plan.md, milestone R0.
+
 ### Added (shortcut tips)
 - When you run a menu item from the panel five times or more and it has a keyboard shortcut, the footer shows "Run 8 times
   from here. Try" with the keys while that row is highlighted. Command-K has "Stop reminding me of the keys" for one item,
