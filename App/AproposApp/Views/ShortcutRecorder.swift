@@ -9,11 +9,13 @@ struct ShortcutRecorder: View {
     let onChange: (HotKeyCombo) -> Void
 
     @State private var isRecording = false
-    @State private var monitor: Any?
     @State private var hint: String?
 
     var body: some View {
         HStack(spacing: 8) {
+            if let hint {
+                Text(hint).font(.system(size: 12)).foregroundStyle(Theme.cautionText)
+            }
             Button {
                 isRecording ? stop() : start()
             } label: {
@@ -30,23 +32,16 @@ struct ShortcutRecorder: View {
                 }
                 .frame(minWidth: 110, minHeight: 30)
                 .padding(.horizontal, 10)
-                .background(
-                    RoundedRectangle(cornerRadius: 9, style: .continuous).fill(
-                        isRecording ? Theme.accentSoft : Theme.Settings.chip)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .strokeBorder(isRecording ? Theme.accentText : .clear, lineWidth: 1)
-                )
-                .contentShape(Rectangle())
+                .background(Capsule().fill(isRecording ? Theme.accentSoft : Theme.Settings.chip))
+                .overlay(Capsule().strokeBorder(isRecording ? Theme.accentText : .clear, lineWidth: 1))
+                .contentShape(Capsule())
             }
             .buttonStyle(.plain)
-            .focusable()
-            .aproposFocusRing(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .focusEffectDisabled()
+            .background(
+                KeyCatcher(active: isRecording, onKey: handle, onLoseFocus: stop)
+                    .frame(width: 0, height: 0))
             .accessibilityLabel("Global shortcut, \(combo.display)")
-            if let hint {
-                Text(hint).font(.system(size: 12)).foregroundStyle(Theme.cautionText)
-            }
         }
         .onDisappear { stop() }
     }
@@ -55,15 +50,9 @@ struct ShortcutRecorder: View {
         hint = nil
         isRecording = true
         onRecordingChange(true)
-        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            handle(event)
-            return nil
-        }
     }
 
     private func stop() {
-        if let monitor { NSEvent.removeMonitor(monitor) }
-        monitor = nil
         if isRecording { onRecordingChange(false) }
         isRecording = false
     }
@@ -86,5 +75,45 @@ struct ShortcutRecorder: View {
         }
         stop()
         onChange(candidate)
+    }
+}
+
+/// An invisible view that takes the keyboard while recording, so every key reaches the recorder, command combinations
+/// included, and nothing else in the window reacts to them.
+private struct KeyCatcher: NSViewRepresentable {
+    let active: Bool
+    let onKey: (NSEvent) -> Void
+    let onLoseFocus: () -> Void
+
+    func makeNSView(context: Context) -> CatcherView { CatcherView() }
+
+    func updateNSView(_ view: CatcherView, context: Context) {
+        view.onKey = onKey
+        view.onLoseFocus = onLoseFocus
+        view.isActive = active
+        if active, view.window?.firstResponder !== view {
+            DispatchQueue.main.async { view.window?.makeFirstResponder(view) }
+        }
+    }
+
+    final class CatcherView: NSView {
+        var onKey: (NSEvent) -> Void = { _ in }
+        var onLoseFocus: () -> Void = {}
+        var isActive = false
+
+        override var acceptsFirstResponder: Bool { isActive }
+
+        override func keyDown(with event: NSEvent) { onKey(event) }
+
+        override func performKeyEquivalent(with event: NSEvent) -> Bool {
+            guard isActive, window?.firstResponder === self else { return false }
+            onKey(event)
+            return true
+        }
+
+        override func resignFirstResponder() -> Bool {
+            if isActive { onLoseFocus() }
+            return super.resignFirstResponder()
+        }
     }
 }
