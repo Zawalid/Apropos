@@ -109,6 +109,32 @@ public final class SendToCenter {
         runner = DestinationRunner(services: services)
     }
 
+    /// Destinations the person turned off. They are never offered or run, and stay in the library.
+    @ObservationIgnored public var disabled: Set<ActionID> = [] {
+        didSet { if disabled != oldValue { rebuild() } }
+    }
+
+    /// The folders remembered for copying and moving, for the settings page.
+    public var savedFolders: [URL] { folders.folders }
+
+    public func addFolder(_ folder: URL) {
+        folders.remember(folder)
+        rebuild()
+    }
+
+    public func forgetFolder(_ folder: URL) {
+        folders.forget(folder)
+        rebuild()
+    }
+
+    /// Sends a harmless sample text, so a destination can be tried from settings. Asks nothing: the person asked.
+    public func sendTest(to destination: Destination) async -> Result<SendOutcome, SendError> {
+        guard let payload = Payload.text("Hello from Apropos") else {
+            return .failure(.notApplicable(destination: destination.title))
+        }
+        return await runner.send(destination, payload: payload, confirmed: true)
+    }
+
     public func reload(_ library: DestinationLibrary) {
         self.library = library
         rebuild()
@@ -193,11 +219,15 @@ public final class SendToCenter {
     }
 
     private func availableDestinations(for payload: Payload) -> [Destination] {
-        var all = library.runnable
+        var all = library.runnable.filter { !disabled.contains($0.id) }
         if payload.kind == .files || payload.kind == .folder {
             for folder in folders.folders.prefix(Self.folderRows) {
-                if let copy = FolderDestinations.destination(for: folder, move: false) { all.append(copy) }
-                if let move = FolderDestinations.destination(for: folder, move: true) { all.append(move) }
+                if let copy = FolderDestinations.destination(for: folder, move: false), !disabled.contains(copy.id) {
+                    all.append(copy)
+                }
+                if let move = FolderDestinations.destination(for: folder, move: true), !disabled.contains(move.id) {
+                    all.append(move)
+                }
             }
             all.append(FolderDestinations.chooser(move: false))
             all.append(FolderDestinations.chooser(move: true))

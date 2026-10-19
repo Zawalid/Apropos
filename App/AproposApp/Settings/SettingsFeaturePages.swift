@@ -3,7 +3,7 @@ import Apropos
 import SwiftUI
 
 /// A small rounded label: a trust state, a payload kind, a hotkey.
-private struct Badge: View {
+struct Badge: View {
     let text: String
     var tone: Tone = .quiet
 
@@ -36,7 +36,7 @@ private struct Badge: View {
 }
 
 /// A short empty state: one plain sentence and, optionally, the next step.
-private struct EmptyRows: View {
+struct EmptyRows: View {
     let title: String
     let detail: String
 
@@ -534,58 +534,6 @@ private struct CommandDetailSheet: View {
 }
 
 // MARK: Destinations
-
-/// Where Send to can put what you have selected.
-struct DestinationsPage: View {
-    let controller: AppController
-
-    @State private var destinations: [Destination] = []
-
-    var body: some View {
-        SettingsSection(
-            title: "Send to",
-            footer: "Destinations that leave this Mac ask you to confirm once more. Your own live in the destinations folder."
-        ) {
-            if destinations.isEmpty {
-                EmptyRows(title: "No destinations", detail: "Add a destination file to the destinations folder.")
-            }
-            ForEach(destinations) { destination in
-                SettingsRow(
-                    title: destination.title,
-                    detail: destination.subtitle,
-                    leading: AnyView(
-                        Image(systemName: destination.symbol)
-                            .font(.system(size: 14))
-                            .foregroundStyle(Brand.text2)
-                            .frame(width: 22))
-                ) {
-                    HStack(spacing: 6) {
-                        if !destination.isRunnable {
-                            Badge(text: "Needs approval", tone: .warning)
-                        } else if destination.confirmation == .preview {
-                            Badge(text: "Asks first")
-                        }
-                        if destination.origin == .user { Badge(text: "Yours", tone: .mint) }
-                        ForEach(destination.accepts.sorted { $0.rawValue < $1.rawValue }, id: \.self) { kind in
-                            Badge(text: kind.rawValue.capitalized)
-                        }
-                    }
-                }
-            }
-        }
-        SettingsSection {
-            SettingsRow(title: "Destinations folder", detail: "Add a file here to add a destination.") {
-                Button("Reveal in Finder") {
-                    let folder = DestinationLibrary.userDirectory
-                    try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-                    NSWorkspace.shared.activateFileViewerSelecting([folder])
-                }
-                .buttonStyle(SecondaryButtonStyle())
-            }
-        }
-        Color.clear.frame(height: 0).onAppear { destinations = controller.send.library.destinations }
-    }
-}
 
 // MARK: Prediction
 

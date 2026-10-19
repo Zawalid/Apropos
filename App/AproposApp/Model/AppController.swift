@@ -17,6 +17,7 @@ final class AppController {
     let usage: UsageController
     let actions: ContextActionCenter
     let send: SendToCenter
+    let destinationToggles: DestinationToggles
     let sequences: SequenceCenter
     let userCommands: UserCommandStore
     let commandHotKeys = CommandHotKeyManager()
@@ -120,6 +121,12 @@ final class AppController {
                 url: sendFoldersURL
                     ?? FileManager.default.temporaryDirectory.appendingPathComponent(
                         "apropos-send-folders-\(UUID().uuidString).json")))
+        let toggles = DestinationToggles(
+            url: sendFoldersURL?.deletingLastPathComponent().appendingPathComponent("send-disabled.json")
+                ?? FileManager.default.temporaryDirectory.appendingPathComponent(
+                    "apropos-send-disabled-\(UUID().uuidString).json"))
+        send.disabled = toggles.disabled
+        self.destinationToggles = toggles
         send.frecency = { [weak usageStore] id in usageStore?.frecency(id) ?? 0 }
         send.chooseFolder = { move in await FolderChooser.choose(move: move) }
         palette.attachSend(send)
@@ -266,6 +273,17 @@ final class AppController {
 
     /// Links opened with the apropos scheme.
     func handleExternal(_ urls: [URL]) { external.handle(urls) }
+
+    /// Turns a destination on or off in the panel. It stays in the library either way.
+    func setDestination(_ id: ActionID, enabled: Bool) {
+        destinationToggles.set(id, enabled: enabled)
+        send.disabled = destinationToggles.disabled
+    }
+
+    /// Reads the destinations folder again, after one was added.
+    func reloadDestinations() {
+        send.reload(.bundled(plus: DestinationLibrary.userDirectory))
+    }
 
     func setCombo(_ new: HotKeyCombo) {
         combo = new

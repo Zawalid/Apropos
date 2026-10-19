@@ -109,6 +109,15 @@ public final class SendFolderStore: @unchecked Sendable {
         }
     }
 
+    /// Removes one folder from the remembered list.
+    public func forget(_ folder: URL) {
+        let path = folder.standardizedFileURL.path
+        lock.withLock {
+            paths.removeAll { $0 == path }
+            if let data = try? JSONEncoder().encode(paths) { try? data.write(to: url, options: .atomic) }
+        }
+    }
+
     public func forgetAll() {
         lock.withLock {
             paths = []
