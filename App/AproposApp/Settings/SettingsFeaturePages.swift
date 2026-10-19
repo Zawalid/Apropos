@@ -64,6 +64,7 @@ struct CommandsPage: View {
     @State private var message: String?
     @State private var deleting: UserCommand?
     @State private var filter = ""
+    @State private var creating = false
 
     private var store: UserCommandStore { controller.userCommands }
 
@@ -77,16 +78,26 @@ struct CommandsPage: View {
     }
 
     var body: some View {
-        if store.commands.count > 4 { filterField }
+        HStack {
+            if store.commands.count > 4 { filterField }
+            Spacer(minLength: 0)
+            Button {
+                creating = true
+            } label: {
+                Label("New command", systemImage: "plus")
+            }
+            .buttonStyle(BrandButtonStyle(kind: .primary))
+        }
+        .sheet(isPresented: $creating) {
+            NewCommandSheet(store: store) { creating = false }
+        }
         SettingsSection(
             title: "Your commands",
             footer:
                 "An alias is a short word that finds the command in the panel or runs it from a link. Commands are plain files, so you can edit, copy and share them."
         ) {
             if store.commands.isEmpty {
-                EmptyRows(
-                    title: "No commands yet",
-                    detail: "Save a sequence as a command from the panel, or import a file below.")
+                CommandsIntro()
             } else if visible.isEmpty {
                 EmptyRows(title: "No match", detail: "Nothing named \"\(filter)\".")
             }
@@ -95,6 +106,7 @@ struct CommandsPage: View {
                     command: command, store: store, onDelete: { deleting = command }, onError: { message = $0 })
             }
         }
+        examples
         if !store.issues.isEmpty {
             SettingsSection(title: "Files that could not be read") {
                 ForEach(store.issues, id: \.fileName) { issue in
@@ -141,6 +153,39 @@ struct CommandsPage: View {
             }
     }
 
+    /// Ready-made commands to start from, minus the ones already added.
+    @ViewBuilder
+    private var examples: some View {
+        let remaining = CommandTemplate.all.filter { template in !store.commands.contains { $0.title == template.title } }
+        if !remaining.isEmpty {
+            SettingsSection(
+                title: store.commands.isEmpty ? "Start with an example" : "Examples",
+                footer: "Each is harmless. Add one, then try it from the panel."
+            ) {
+                ForEach(remaining) { template in
+                    SettingsRow(
+                        title: template.title, detail: template.summary,
+                        leading: AnyView(
+                            Image(systemName: template.symbol)
+                                .font(.system(size: 14))
+                                .foregroundStyle(Brand.text2)
+                                .frame(width: 22))
+                    ) {
+                        Button("Add") {
+                            do {
+                                _ = try store.create(template.command())
+                                message = nil
+                            } catch {
+                                message = "That did not work: \(error)"
+                            }
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                    }
+                }
+            }
+        }
+    }
+
     private var filterField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass").font(.system(size: 12, weight: .medium)).foregroundStyle(Brand.text3)
@@ -156,6 +201,44 @@ struct CommandsPage: View {
     private func reveal() {
         try? FileManager.default.createDirectory(at: store.directory, withIntermediateDirectories: true)
         NSWorkspace.shared.activateFileViewerSelecting([store.directory])
+    }
+}
+
+/// What a command is, for someone who has never made one: a sentence and a picture of the result.
+private struct CommandsIntro: View {
+    var body: some View {
+        VStack(spacing: 18) {
+            VStack(spacing: 6) {
+                Text("Your own actions, in the panel")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Brand.text)
+                Text(
+                    "A command is something you teach Apropos once: open a folder in Terminal, search the web for what you selected, run a Shortcut. It then shows up as a row in the panel, and can have its own shortcut and a short alias."
+                )
+                .font(.system(size: 12.5))
+                .lineSpacing(2)
+                .foregroundStyle(Brand.text2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: 10) {
+                Image(systemName: "terminal").font(.system(size: 14)).foregroundStyle(Theme.text2).frame(width: 22)
+                Text("Open in Terminal here").font(.system(size: 13.5, weight: .medium)).foregroundStyle(Theme.text).lineLimit(1)
+                Text("Your commands").font(.system(size: 12)).foregroundStyle(Theme.text3).lineLimit(1)
+                Spacer(minLength: 8)
+                HStack(spacing: 4) {
+                    ForEach(["\u{2303}", "\u{2325}", "T"], id: \.self) { KeyCap(text: $0) }
+                }
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 40)
+            .background(Capsule().fill(Theme.highlight))
+            .frame(maxWidth: 440)
+            .accessibilityHidden(true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 26)
+        .padding(.horizontal, 28)
     }
 }
 

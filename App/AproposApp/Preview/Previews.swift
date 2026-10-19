@@ -149,6 +149,7 @@
         // Settings
 
         static let settingsGeneral = settings("settings-general", page: .general)
+        static let settingsCommandsEmpty = settings("settings-commands-empty", page: .commands)
         static let settingsCommands = settings(
             "settings-commands", page: .commands, prepare: { controller in
                 let sample: [(String, String, String, String?, HotKeyCombo?, CommandReview)] = [
@@ -191,7 +192,7 @@
             paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceConfirm, paletteSequenceAsk,
             paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaved, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,
-            settingsGeneral, settingsCommands, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
+            settingsGeneral, settingsCommands, settingsCommandsEmpty, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
             settingsUpdates, settingsAbout, settingsSearch, onboardingWelcome, onboardingPermission,
             onboardingPermissionHelp, onboardingPermissionAllowed, onboardingTry, onboardingTryHolding,
             onboardingTryNothingOpen, onboardingTryNoAccess, onboardingTryDone, onboardingDone,
