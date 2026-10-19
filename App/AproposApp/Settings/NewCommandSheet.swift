@@ -43,10 +43,10 @@ struct NewCommandSheet: View {
                     .foregroundStyle(Brand.danger)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            Text("It appears in the panel as soon as you add it.")
+                .font(.system(size: 12))
+                .foregroundStyle(Brand.text3)
             HStack {
-                Text("It appears in the panel as soon as you add it.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Brand.text3)
                 Spacer()
                 Button("Cancel", action: onDone).buttonStyle(BrandButtonStyle(kind: .plain))
                     .keyboardShortcut(.cancelAction)

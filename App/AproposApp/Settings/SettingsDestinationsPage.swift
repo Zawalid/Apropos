@@ -367,8 +367,8 @@ private struct NewDestinationSheet: View {
             if let problem {
                 Text(problem).font(.system(size: 12.5)).foregroundStyle(Brand.danger).fixedSize(horizontal: false, vertical: true)
             }
+            Text("It appears in Send to as soon as you add it.").font(.system(size: 12)).foregroundStyle(Brand.text3)
             HStack {
-                Text("It appears in Send to as soon as you add it.").font(.system(size: 12)).foregroundStyle(Brand.text3)
                 Spacer()
                 Button("Cancel", action: onDone).buttonStyle(BrandButtonStyle(kind: .plain)).keyboardShortcut(.cancelAction)
                 Button("Add destination", action: add).buttonStyle(BrandButtonStyle(kind: .primary))
