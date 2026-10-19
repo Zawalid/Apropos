@@ -36,12 +36,9 @@ struct MenuPopoverView: View {
             contextCard
                 .padding(.horizontal, 10)
                 .padding(.top, 10)
-            pauseRow(
-                paused: contextPaused, resume: "Context paused. Resume", pause: "Pause context for an hour",
-                action: actions.togglePause)
-            pauseRow(
-                paused: learningPaused, resume: "Learning paused. Resume", pause: "Pause learning for an hour",
-                action: actions.toggleLearning)
+            pauseButtons
+                .padding(.horizontal, 10)
+                .padding(.top, 8)
             openButton
                 .padding(.horizontal, 10)
                 .padding(.top, 8)
@@ -87,19 +84,37 @@ struct MenuPopoverView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// One quiet line under the card: stop reading or learning for an hour, for screen sharing or a talk.
-    private func pauseRow(paused: Bool, resume: String, pause: String, action: @escaping () -> Void) -> some View {
+    /// Two real buttons: stop reading, or stop learning, for an hour. A paused one fills with the pearl, the colour of
+    /// "now", and offers to resume.
+    private var pauseButtons: some View {
+        HStack(spacing: 8) {
+            pauseButton(
+                paused: contextPaused, pause: "Pause context", resume: "Resume context",
+                help: "Stop reading the app in front for an hour", action: actions.togglePause)
+            pauseButton(
+                paused: learningPaused, pause: "Pause learning", resume: "Resume learning",
+                help: "Stop learning what you run next for an hour", action: actions.toggleLearning)
+        }
+    }
+
+    private func pauseButton(
+        paused: Bool, pause: String, resume: String, help: String, action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             HStack(spacing: 6) {
-                Image(systemName: paused ? "play.circle" : "pause.circle").font(.system(size: 12))
-                Text(paused ? resume : pause).font(.system(size: 12))
+                Image(systemName: paused ? "play.fill" : "pause.fill").font(.system(size: 10, weight: .bold))
+                Text(paused ? resume : pause).font(.system(size: 12.5, weight: .medium))
             }
-            .foregroundStyle(paused ? Brand.pearl : Brand.text3)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .foregroundStyle(paused ? Brand.pearl : Brand.text2)
+            .frame(maxWidth: .infinity)
+            .frame(height: 32)
+            .background(Capsule().fill(paused ? Brand.pearl.opacity(0.16) : Brand.raised))
+            .overlay(Capsule().strokeBorder(paused ? Brand.pearl.opacity(0.5) : Brand.line, lineWidth: 1))
+            .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressScaleStyle())
+        .help(help)
+        .accessibilityLabel(paused ? resume : pause)
     }
 
     private var openButton: some View {
