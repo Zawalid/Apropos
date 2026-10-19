@@ -4,8 +4,9 @@ A command is something you define once and run from the palette, from its own sh
 It uses the same engine, backends and variables as the built-in context actions (see [context-actions.md](context-actions.md)),
 so the same safety rules apply.
 
-Until Settings has a page for commands, you manage them as files and with the menu bar menu: Import Commands, Export
-Commands, Review Imported Commands (only when some wait), Reveal Commands Folder and Reload Commands.
+You manage them on the Commands page of Settings: a table with an alias and a shortcut per command, a New command form,
+ready-made examples, a detail sheet with approval, and Import, Export and Reveal in Finder. They are also plain files you
+can edit.
 
 ## Where they live
 

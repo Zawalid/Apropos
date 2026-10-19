@@ -33,14 +33,28 @@ page, type, default and search keywords.
 | `closeOnFocusLoss` | General | bool | true |
 | `resetQueryAfterSeconds` | General | number 0...3600 | 60 (0 clears every time) |
 | `showAlternateCommands` | General | bool | false |
+| `includeContextActions` | General | bool, list context actions in the panel | true |
+| `includeUserCommands` | General | bool, list your commands and sequences | true |
+| `includeSendTo` | General | bool, list Send to rows | true |
 | `theme` | Appearance | `system`, `dark`, `light` | `system` |
 | `interfaceSize` | Appearance | `compact`, `default`, `large` | `default` |
 | `rowIcons` | Appearance | `glyph`, `appLogo`, `none` | `glyph` |
 | `reduceMotion` | Appearance | bool | false |
 | `contextSensing` | Context | bool, master switch | true |
 | `contextDisabledApps` | Context | list of bundle ids | empty |
-| `contextChips` | Context | subset of `document`, `url`, `folder`, `branch`, `selection`, `selectionCount` | all |
-| `contextIgnoreList` | Privacy and data | list of bundle ids | password managers |
+| `contextChips` | Appearance | subset of `document`, `url`, `folder`, `branch`, `selection`, `selectionCount` | none |
+| `contextSources` | Context | subset of `document`, `url`, `folder`, `branch`, `selection`: what may be read at all | all |
+| `contextSelectionBlockedApps` | Context | list of bundle ids where the selected text is never read | password managers |
+| `contextIgnoreList` | Context | list of bundle ids where nothing is read | password managers |
+| `predictNextCommand` | Prediction | bool | true |
+| `showPredictionReasons` | Prediction | bool | true |
+| `predictionSensitivity` | Prediction | `cautious`, `balanced`, `eager` | `balanced` |
+| `predictionMaxRows` | Prediction | `1`, `2` | `2` |
+| `predictionKeepDays` | Prediction | `30`, `90`, `365`, `0` (forever) | `365` |
+| `predictionExcludedApps` | Prediction | list of bundle ids | empty |
+| `externalControl` | Integrations | bool, links and Shortcuts may open Apropos and run allowed commands | true |
+| `externalAlwaysConfirm` | Integrations | bool, ask before every outside run | false |
+| `externalLog` | Integrations | bool, keep the last 50 outside requests | true |
 | `checkForUpdates` | Updates | bool | false (opt-in) |
 
 Value shapes: bool is `true`/`false`, choices are strings, numbers are whole numbers (clamped into their range), lists
