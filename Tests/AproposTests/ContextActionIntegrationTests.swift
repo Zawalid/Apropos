@@ -90,6 +90,30 @@ struct ContextActionIntegrationTests {
         #expect(rig.center.commands.isEmpty)
     }
 
+    @Test func yourOwnCommandWaitingForContextIsFoundWhileSearchingAndSaysWhatItNeeds() async throws {
+        let rig = rig(target: app)
+        let mine = UserCommand(
+            title: "Zebra files", aliases: ["zf"], requires: [.selectedFiles],
+            backend: .shell(ShellBackend(executable: "/usr/bin/true", arguments: [])), output: .none)
+        rig.center.setUserCommands([mine])
+        rig.center.update(with: snapshot(ContextValues(selectedText: "hello")))
+        // Not listed while nothing is typed.
+        #expect(!rig.model.results.contains { $0.command.title == "Zebra files" })
+        rig.model.query = "zebra"
+        let found = try #require(rig.model.results.first { $0.command.title == "Zebra files" })
+        #expect(!found.command.isEnabled)
+        #expect(found.command.detail == "Needs selected files")
+        rig.model.query = "zf"
+        #expect(rig.model.results.first?.command.title == "Zebra files")
+        let closed = await rig.model.runSelected()
+        #expect(!closed && rig.model.runError == "Needs selected files")
+        // With files selected it runs normally.
+        rig.center.update(
+            with: snapshot(ContextValues(selectedFiles: [URL(fileURLWithPath: "/tmp/a")]), at: Date().addingTimeInterval(1)))
+        rig.model.query = "zebra"
+        #expect(rig.model.results.first { $0.command.title == "Zebra files" }?.command.isEnabled == true)
+    }
+
     @Test func searchFindsActionsByTitleAndKeyword() {
         let rig = rig(target: app)
         rig.center.update(with: snapshot(ContextValues(selectedText: "hello")))

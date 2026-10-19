@@ -321,6 +321,9 @@ public final class PaletteModel {
     /// The context actions currently listed.
     private var activeContextCommands: [Command] {
         guard let pid = tracker.app?.pid, pid == contextPID else { return [] }
+        // Your commands that are waiting for context are listed, dimmed, only when something is typed.
+        let searching = !query.trimmingCharacters(in: .whitespaces).isEmpty
+        let contextCommands = contextCommands.filter { searching || $0.isEnabled }
         guard !(sources.contextActions && sources.userCommands) else { return contextCommands }
         return contextCommands.filter { command in
             guard case .contextAction(let id) = command.source else { return true }
@@ -470,6 +473,11 @@ public final class PaletteModel {
         if sequenceAsking != nil { return await submitSequenceAnswer() }
         if sequencePending != nil { return await confirmPending() }
         guard let selected else { return false }
+        // One of your commands that is waiting for context says what it needs instead of failing.
+        if !selected.command.isEnabled, case .contextAction = selected.command.source {
+            runError = selected.command.detail ?? "That command is not available here."
+            return false
+        }
         return await run(selected.command)
     }
 

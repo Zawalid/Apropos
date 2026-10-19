@@ -335,18 +335,19 @@ private struct CommandRowView: View {
         .onAppear { alias = command.aliases.first ?? "" }
     }
 
-    /// What it does, then how it has been used: "Runs a script, used 14 times, last 2 days ago".
+    /// What it does, then how it has been used when it has: "Runs a script, used 14 times, last 2 days ago". A command
+    /// that was never used says nothing about it, so the line stays short next to the alias and shortcut fields.
     private var detailLine: String {
         let id = CommandID(rawValue: command.id.rawValue)
-        var parts = [command.subtitle ?? CommandGroup.of(command).blurb]
+        var base = command.subtitle ?? CommandGroup.of(command).blurb
+        while base.hasSuffix(".") { base.removeLast() }
+        var parts = [base]
         let runs = usage.runCount(id)
         if runs > 0 {
             parts.append("used \(runs) time\(runs == 1 ? "" : "s")")
             if let last = usage.lastRun(id) {
                 parts.append("last " + last.formatted(.relative(presentation: .named, unitsStyle: .wide)))
             }
-        } else {
-            parts.append("not used yet")
         }
         return parts.joined(separator: ", ")
     }

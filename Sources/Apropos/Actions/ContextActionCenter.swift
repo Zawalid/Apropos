@@ -77,6 +77,11 @@ public final class ContextActionCenter {
 
     private func rebuild() {
         let mine = userCommands.filter { $0.action.applies(to: values, bundleID: lastBundleID) }
+        // Your own commands that cannot run right now are still listed, dimmed, with what they are waiting for, so a
+        // command you made can always be found by name. The panel shows them only while searching.
+        let waiting = userCommands.filter { command in
+            !mine.contains { $0.id == command.id } && command.action.apps.allows(lastBundleID)
+        }
         let applicable = library.applicable(to: values, bundleID: lastBundleID)
         var pairs: [(ContextAction, [String])] = mine.map { ($0.action, $0.aliases) }
         pairs += applicable.map { ($0, []) }
@@ -86,12 +91,35 @@ public final class ContextActionCenter {
             command.aliases = aliases
             return command
         }
+        for command in waiting {
+            var row = Self.command(for: command.action, isEnabled: false)
+            row.aliases = command.aliases
+            row.detail = Self.waitingNote(for: command.action, values: values)
+            commands.append(row)
+        }
         onChange?(commands, snapshotPID)
     }
 
-    static func command(for action: ContextAction) -> Command {
+    /// "Needs selected files": what a command that cannot run now is waiting for.
+    static func waitingNote(for action: ContextAction, values: ContextValues) -> String {
+        let missing = ContextRequirement.allCases.filter { action.requires.contains($0) && !values.has($0) }
+        let words = missing.map { requirement -> String in
+            switch requirement {
+            case .selectedText: "selected text"
+            case .selectedFiles: "selected files"
+            case .pageURL: "a web page"
+            case .folder: "an open folder"
+            case .gitRepo: "a git repository"
+            case .document: "an open document"
+            }
+        }
+        return words.isEmpty ? "Not available here" : "Needs " + words.joined(separator: " and ")
+    }
+
+    static func command(for action: ContextAction, isEnabled: Bool = true) -> Command {
         var command = Command(
-            id: action.id.rawValue, title: action.title, path: [action.group.title], source: .contextAction(action.id))
+            id: action.id.rawValue, title: action.title, path: [action.group.title], isEnabled: isEnabled,
+            source: .contextAction(action.id))
         command.symbolName = action.symbol
         command.keywords = action.keywords
         command.detail = action.subtitle
