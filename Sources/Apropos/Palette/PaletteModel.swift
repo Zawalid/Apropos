@@ -32,7 +32,7 @@ public final class PaletteModel {
         let key = CacheKey(
             revision: menus.revision, query: query, rankerRevision: rankerRevision, contextRevision: contextRevision,
             predictionRevision: predictionRevision, targetPID: tracker.app?.pid, sendRevision: sendCenter?.revision ?? 0,
-            sequenceRevision: sequenceCenter?.revision ?? 0
+            sequenceRevision: sequenceCenter?.revision ?? 0, sourcesRevision: sourcesRevision
         )
         if key != cacheKey {
             computeResults()
@@ -95,6 +95,24 @@ public final class PaletteModel {
     @ObservationIgnored private let tracker: FrontmostAppTracker
     @ObservationIgnored private var ranker: CommandRanker
     @ObservationIgnored private var rankerRevision = 0
+    @ObservationIgnored private var sourcesRevision = 0
+
+    /// Which sources besides the front app's menu the list draws from. All on by default.
+    public struct Sources: Sendable, Equatable {
+        public var contextActions = true
+        public var userCommands = true
+        public var sendTo = true
+
+        public init(contextActions: Bool = true, userCommands: Bool = true, sendTo: Bool = true) {
+            self.contextActions = contextActions
+            self.userCommands = userCommands
+            self.sendTo = sendTo
+        }
+    }
+
+    public var sources = Sources() {
+        didSet { if sources != oldValue { sourcesRevision += 1 } }
+    }
     @ObservationIgnored private var contextCommands: [Command] = []
     @ObservationIgnored private var contextPID: pid_t?
     @ObservationIgnored private var contextRevision = 0
@@ -127,6 +145,7 @@ public final class PaletteModel {
         let targetPID: pid_t?
         let sendRevision: Int
         let sequenceRevision: Int
+        let sourcesRevision: Int
     }
 
     public init(
@@ -253,7 +272,7 @@ public final class PaletteModel {
 
     /// The send-to rows listed now, only while the app they were built for is the target.
     private var activeSendCommands: [Command] {
-        guard let center = sendCenter, let pid = tracker.app?.pid, pid == center.pid else { return [] }
+        guard sources.sendTo, let center = sendCenter, let pid = tracker.app?.pid, pid == center.pid else { return [] }
         return center.rootCommands
     }
 
@@ -281,7 +300,11 @@ public final class PaletteModel {
     /// The context actions currently listed.
     private var activeContextCommands: [Command] {
         guard let pid = tracker.app?.pid, pid == contextPID else { return [] }
-        return contextCommands
+        guard !(sources.contextActions && sources.userCommands) else { return contextCommands }
+        return contextCommands.filter { command in
+            guard case .contextAction(let id) = command.source else { return true }
+            return id.rawValue.hasPrefix("user:") ? sources.userCommands : sources.contextActions
+        }
     }
 
     private func computeResults() {

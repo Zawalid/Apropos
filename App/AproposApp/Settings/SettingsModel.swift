@@ -58,6 +58,26 @@ final class SettingsModel {
         set { write(.number(newValue), .resetQueryAfterSeconds) }
     }
 
+    var includeContextActions: Bool {
+        get { store.bool(.includeContextActions) }
+        set { write(.bool(newValue), .includeContextActions) }
+    }
+
+    var includeUserCommands: Bool {
+        get { store.bool(.includeUserCommands) }
+        set { write(.bool(newValue), .includeUserCommands) }
+    }
+
+    var includeSendTo: Bool {
+        get { store.bool(.includeSendTo) }
+        set { write(.bool(newValue), .includeSendTo) }
+    }
+
+    var paletteSources: PaletteModel.Sources {
+        PaletteModel.Sources(
+            contextActions: includeContextActions, userCommands: includeUserCommands, sendTo: includeSendTo)
+    }
+
     var showAlternates: Bool {
         get { store.bool(.showAlternateCommands) }
         set { write(.bool(newValue), .showAlternateCommands) }

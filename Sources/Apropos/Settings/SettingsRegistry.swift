@@ -92,6 +92,9 @@ public struct SettingID: RawRepresentable, Hashable, Sendable, ExpressibleByStri
     public static let closeOnFocusLoss: SettingID = "closeOnFocusLoss"
     public static let resetQueryAfterSeconds: SettingID = "resetQueryAfterSeconds"
     public static let showAlternateCommands: SettingID = "showAlternateCommands"
+    public static let includeContextActions: SettingID = "includeContextActions"
+    public static let includeUserCommands: SettingID = "includeUserCommands"
+    public static let includeSendTo: SettingID = "includeSendTo"
     public static let theme: SettingID = "theme"
     public static let interfaceSize: SettingID = "interfaceSize"
     public static let rowIcons: SettingID = "rowIcons"
@@ -233,10 +236,25 @@ public enum SettingsRegistry {
             keywords: ["query", "clear", "forget", "timeout"], page: .general,
             type: .number(range: 0...3600, unit: "seconds"), defaultValue: .number(60)),
         SettingDefinition(
-            id: .showAlternateCommands, title: "Show alternate commands",
-            detail: "List Option-key variants, such as Empty Trash Securely, as their own rows.",
+            id: .showAlternateCommands, title: "Alternate commands",
+            detail: "Option-key variants, such as Empty Trash Securely, as their own rows.",
             keywords: ["option", "hidden", "variants", "secure"], page: .general, type: .bool,
             defaultValue: .bool(false)),
+        SettingDefinition(
+            id: .includeContextActions, title: "Context actions",
+            detail: "Actions for what you have selected, the page, the folder or the files.",
+            keywords: ["include", "sources", "selection", "actions", "search"], page: .general, type: .bool,
+            defaultValue: .bool(true)),
+        SettingDefinition(
+            id: .includeUserCommands, title: "Your commands",
+            detail: "The commands and sequences you made or imported.",
+            keywords: ["include", "sources", "custom", "sequences", "search"], page: .general, type: .bool,
+            defaultValue: .bool(true)),
+        SettingDefinition(
+            id: .includeSendTo, title: "Send to",
+            detail: "Destinations for the selection, such as Notes or a folder.",
+            keywords: ["include", "sources", "destinations", "share", "search"], page: .general, type: .bool,
+            defaultValue: .bool(true)),
     ]
 
     private static let appearance: [SettingDefinition] = [

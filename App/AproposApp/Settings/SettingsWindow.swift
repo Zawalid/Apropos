@@ -17,7 +17,9 @@ struct SettingsHit: Identifiable, Hashable {
 enum SettingsCatalog {
     private static let sections: [SettingID: String] = [
         .openAtLogin: "Startup", .showInMenuBar: "Startup", .openHotKey: "Panel", .closeOnFocusLoss: "Panel",
-        .resetQueryAfterSeconds: "Panel", .showAlternateCommands: "Panel", .theme: "Look", .interfaceSize: "Look",
+        .resetQueryAfterSeconds: "Panel", .showAlternateCommands: "Include in the panel",
+        .includeContextActions: "Include in the panel", .includeUserCommands: "Include in the panel",
+        .includeSendTo: "Include in the panel", .theme: "Look", .interfaceSize: "Look",
         .rowIcons: "Look", .reduceMotion: "Look", .contextSensing: "Context", .contextChips: "Chips",
         .contextDisabledApps: "Apps", .contextIgnoreList: "Never read these apps", .checkForUpdates: "Updates",
     ]

@@ -68,6 +68,14 @@ struct GeneralPage: View {
                 ValueMenu(options: options, selection: $settings.resetQuerySeconds)
             }
             .settingsAnchor(SettingID.resetQueryAfterSeconds.rawValue)
+        }
+        SettingsSection(
+            title: "Include in the panel",
+            footer: "The front app's menu is always listed. Suggestions from Prediction are set on their own page."
+        ) {
+            SettingToggleRow(id: .includeContextActions, isOn: $settings.includeContextActions)
+            SettingToggleRow(id: .includeUserCommands, isOn: $settings.includeUserCommands)
+            SettingToggleRow(id: .includeSendTo, isOn: $settings.includeSendTo)
             SettingToggleRow(id: .showAlternateCommands, isOn: $settings.showAlternates)
         }
     }
