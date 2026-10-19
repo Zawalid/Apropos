@@ -13,6 +13,7 @@ struct MenuPopoverActions {
     var welcomeGuide: () -> Void = {}
     var checkForUpdates: () -> Void = {}
     var togglePause: () -> Void = {}
+    var toggleLearning: () -> Void = {}
     var quit: () -> Void = {}
 }
 
@@ -25,6 +26,7 @@ struct MenuPopoverView: View {
     let hasAccess: Bool
     var pendingCommands = 0
     var contextPaused = false
+    var learningPaused = false
     let actions: MenuPopoverActions
 
     static let width: CGFloat = 320
@@ -34,7 +36,12 @@ struct MenuPopoverView: View {
             contextCard
                 .padding(.horizontal, 10)
                 .padding(.top, 10)
-            pauseRow
+            pauseRow(
+                paused: contextPaused, resume: "Context paused. Resume", pause: "Pause context for an hour",
+                action: actions.togglePause)
+            pauseRow(
+                paused: learningPaused, resume: "Learning paused. Resume", pause: "Pause learning for an hour",
+                action: actions.toggleLearning)
             openButton
                 .padding(.horizontal, 10)
                 .padding(.top, 8)
@@ -80,15 +87,14 @@ struct MenuPopoverView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// One quiet line under the card: stop reading for an hour, for screen sharing or a talk.
-    private var pauseRow: some View {
-        Button(action: actions.togglePause) {
+    /// One quiet line under the card: stop reading or learning for an hour, for screen sharing or a talk.
+    private func pauseRow(paused: Bool, resume: String, pause: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             HStack(spacing: 6) {
-                Image(systemName: contextPaused ? "play.circle" : "pause.circle").font(.system(size: 12))
-                Text(contextPaused ? "Context paused. Resume" : "Pause context for an hour")
-                    .font(.system(size: 12))
+                Image(systemName: paused ? "play.circle" : "pause.circle").font(.system(size: 12))
+                Text(paused ? resume : pause).font(.system(size: 12))
             }
-            .foregroundStyle(contextPaused ? Brand.pearl : Brand.text3)
+            .foregroundStyle(paused ? Brand.pearl : Brand.text3)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
             .padding(.top, 8)

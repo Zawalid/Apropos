@@ -150,8 +150,9 @@ struct ContextPage: View {
 }
 
 /// A searchable list of installed apps to choose one from.
-private struct AppPickerSheet: View {
+struct AppPickerSheet: View {
     let apps: [ContextPage.AppEntry]
+    var note = "Apropos will read nothing in the app you choose."
     let onChoose: (ContextPage.AppEntry) -> Void
     let onCancel: () -> Void
 
@@ -196,7 +197,7 @@ private struct AppPickerSheet: View {
             }
             .frame(height: 300)
             HStack {
-                Text("Apropos will read nothing in the app you choose.")
+                Text(note)
                     .font(.system(size: 12)).foregroundStyle(Brand.text3)
                 Spacer()
                 Button("Cancel", action: onCancel).buttonStyle(BrandButtonStyle(kind: .plain))

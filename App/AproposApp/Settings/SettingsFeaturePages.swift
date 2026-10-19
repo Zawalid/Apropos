@@ -535,54 +535,6 @@ private struct CommandDetailSheet: View {
 
 // MARK: Destinations
 
-// MARK: Prediction
-
-/// What Apropos learns, and how to make it forget.
-struct PredictionPage: View {
-    let controller: AppController
-    let settings: SettingsModel
-
-    @State private var confirmingReset = false
-
-    var body: some View {
-        SettingsSection(
-            footer: "Learned on this Mac from command names and times only. Nothing you type or select is kept."
-        ) {
-            SettingToggleRow(
-                id: .predictNextCommand,
-                isOn: Binding(
-                    get: { settings.predictNextCommand },
-                    set: {
-                        settings.predictNextCommand = $0
-                        controller.usage.prediction.configure(from: settings.store)
-                    }))
-            SettingToggleRow(
-                id: .showPredictionReasons,
-                isOn: Binding(
-                    get: { settings.showPredictionReasons },
-                    set: {
-                        settings.showPredictionReasons = $0
-                        controller.usage.prediction.configure(from: settings.store)
-                    })
-            )
-            .opacity(settings.predictNextCommand ? 1 : 0.5)
-            .disabled(!settings.predictNextCommand)
-        }
-        SettingsSection(title: "Learned data") {
-            SettingsRow(title: "Forget what it learned", detail: "Clears the log of runs and starts over.") {
-                Button("Forget") { confirmingReset = true }
-                    .buttonStyle(SecondaryButtonStyle())
-            }
-        }
-        .confirmationDialog(
-            "Forget everything Apropos learned about what you run next?", isPresented: $confirmingReset,
-            titleVisibility: .visible
-        ) {
-            Button("Forget", role: .destructive) { controller.usage.prediction.reset() }
-        }
-    }
-}
-
 // MARK: Integrations
 
 /// How other things reach Apropos: its web-style links.

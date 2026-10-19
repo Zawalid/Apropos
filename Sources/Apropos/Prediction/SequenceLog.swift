@@ -158,6 +158,33 @@ public final class SequenceLog {
         scheduleWrite()
     }
 
+    /// Forgets the runs of one command that followed another in one app. Dismissals of it stay.
+    public func forgetPattern(app: String, previous: CommandID, command: CommandID) {
+        let before = events.count
+        events.removeAll {
+            $0.kind == .run && $0.app == app && $0.previous == previous && $0.command == command
+        }
+        guard events.count != before else { return }
+        revision += 1
+        scheduleWrite()
+    }
+
+    /// Drops events older than `days`. Zero keeps everything up to the log's own limits.
+    public func prune(keepingDays days: Int, now: Date = Date()) {
+        guard days > 0 else { return }
+        let cutoff = now.timeIntervalSince1970 - Double(days) * 86_400
+        let before = events.count
+        events.removeAll { $0.time < cutoff }
+        guard events.count != before else { return }
+        revision += 1
+        scheduleWrite()
+    }
+
+    /// The size of the log file on disk, in bytes, or nil when there is none yet.
+    public var fileSize: Int? {
+        (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? nil
+    }
+
     /// Forgets the whole log.
     public func clear() {
         guard !events.isEmpty else { return }

@@ -150,6 +150,18 @@
 
         static let settingsGeneral = settings("settings-general", page: .general)
         static let settingsDestinations = settings("settings-destinations", page: .destinations)
+        static let settingsPrediction = settings(
+            "settings-prediction", page: .prediction, prepare: { controller in
+                let app = "com.apple.dt.Xcode"
+                let test = CommandID.base(bundleID: app, path: ["Product"], title: "Run Tests")
+                let commit = CommandID.base(bundleID: app, path: ["Source Control"], title: "Commit")
+                let engine = controller.usage.prediction
+                for day in 0..<9 {
+                    let at = Date().addingTimeInterval(-Double(day) * 86_400 - 3600)
+                    engine.recordRun(test, title: "Run Tests", app: app, at: at)
+                    engine.recordRun(commit, title: "Commit", app: app, at: at.addingTimeInterval(45))
+                }
+            })
         static let settingsCommandsEmpty = settings("settings-commands-empty", page: .commands)
         static let settingsCommands = settings(
             "settings-commands", page: .commands, prepare: { controller in
@@ -193,7 +205,7 @@
             paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceConfirm, paletteSequenceAsk,
             paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaved, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,
-            settingsGeneral, settingsCommands, settingsCommandsEmpty, settingsDestinations, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
+            settingsGeneral, settingsCommands, settingsCommandsEmpty, settingsPrediction, settingsDestinations, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
             settingsUpdates, settingsAbout, settingsSearch, onboardingWelcome, onboardingPermission,
             onboardingPermissionHelp, onboardingPermissionAllowed, onboardingTry, onboardingTryHolding,
             onboardingTryNothingOpen, onboardingTryNoAccess, onboardingTryDone, onboardingDone,

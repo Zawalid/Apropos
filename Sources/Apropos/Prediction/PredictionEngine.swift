@@ -17,6 +17,26 @@ public final class PredictionEngine {
     }
     /// Whether the reason sentence is offered for display. The engine always builds it; this is the person's choice.
     public var showsReasons = true
+    /// How sure the model must be before a row is shown.
+    public var sensitivity = PredictionSensitivity.balanced {
+        didSet { if sensitivity != oldValue { revision += 1 } }
+    }
+    /// Rows under Usually next, 1 or 2.
+    public var maxRows = PredictionPolicy.maxRows {
+        didSet { if maxRows != oldValue { revision += 1 } }
+    }
+    /// Apps where nothing is learned and nothing is predicted.
+    public var excludedApps: Set<String> = [] {
+        didSet { if excludedApps != oldValue { revision += 1 } }
+    }
+    /// While set to a future time, runs are not recorded. Predictions keep working from what is known.
+    public private(set) var pausedUntil: Date?
+
+    public var isLearningPaused: Bool { pausedUntil.map { $0 > Date() } ?? false }
+
+    public func pauseLearning(for interval: TimeInterval) { pausedUntil = Date().addingTimeInterval(interval) }
+
+    public func resumeLearning() { pausedUntil = nil }
     /// Bumped whenever the answer to `rows` could differ, so a view knows to ask again.
     public private(set) var revision = 0
     public private(set) var isReady = false
@@ -81,7 +101,7 @@ public final class PredictionEngine {
     public func recordRun(
         _ id: CommandID, title: String? = nil, app: String?, contextKinds: [ContextKind] = [], at date: Date = Date()
     ) -> RunEvent? {
-        guard isEnabled else { return nil }
+        guard isEnabled, !isLearningPaused, !(app.map(excludedApps.contains) ?? false) else { return nil }
         let shown = currentOffer(at: date)
         offer = nil
         guard let event = log.recordRun(id, app: app, contextKinds: contextKinds, offered: shown, at: date) else {
@@ -113,11 +133,20 @@ public final class PredictionEngine {
     public func configure(from settings: SettingsStore) {
         isEnabled = settings.bool(.predictNextCommand)
         showsReasons = settings.bool(.showPredictionReasons)
+        sensitivity = PredictionSensitivity(rawValue: settings.string(.predictionSensitivity)) ?? .balanced
+        maxRows = Int(settings.string(.predictionMaxRows)).map { min(max($0, 1), PredictionPolicy.maxRows) } ?? 2
+        excludedApps = Set(settings.stringList(.predictionExcludedApps))
+        if let days = Int(settings.string(.predictionKeepDays)) { log.prune(keepingDays: days) }
     }
 
     /// Forgets one app's part of the log and relearns from what is left.
     public func reset(forApp bundleID: String) {
         log.clear(forApp: bundleID)
+        relearn()
+    }
+
+    /// Rebuilds the model from the log as it is now, after part of it was removed.
+    public func relearn() {
         generation += 1
         model = PredictionModel(settings: model.settings, calendar: calendar)
         model.train(log.events)
@@ -138,6 +167,9 @@ public final class PredictionEngine {
         isReady = true
         revision += 1
     }
+
+    /// A readable name for a command in the log: its title if it was on screen this session, else one made from its id.
+    public func title(for id: CommandID) -> String { titles[id] ?? id.fallbackTitle }
 
     private func remember(_ title: String, for id: CommandID) {
         if titles.count > 400 { titles.removeAll(keepingCapacity: true) }
@@ -160,7 +192,8 @@ public final class PredictionEngine {
     public func rows(
         app: String?, candidates: [CommandID: String], contextKinds: [ContextKind] = [], at date: Date = Date()
     ) -> [Prediction] {
-        guard isEnabled, isReady, let app, !candidates.isEmpty else { return [] }
+        guard isEnabled, isReady, let app, !candidates.isEmpty, !excludedApps.contains(PredictionPrivacy.cleanApp(app))
+        else { return [] }
         let context = PredictionContext(
             app: PredictionPrivacy.cleanApp(app), recent: log.recentCommands(at: date), date: date,
             contextKinds: contextKinds.map(\.rawValue))
@@ -168,7 +201,8 @@ public final class PredictionEngine {
         let predictions = model.predict(
             context, limit: PredictionPolicy.maxRows + 1, candidates: Set(candidates.keys), prior: prior,
             title: { candidates[$0] ?? known[$0] ?? $0.fallbackTitle })
-        let rows = PredictionPolicy.rows(from: predictions).map { showsReasons ? $0 : $0.withoutReason() }
+        let rows = PredictionPolicy.rows(from: predictions, threshold: sensitivity.threshold, maxRows: maxRows)
+            .map { showsReasons ? $0 : $0.withoutReason() }
         if let top = rows.first { offer = (top.command, date) }
         return rows
     }

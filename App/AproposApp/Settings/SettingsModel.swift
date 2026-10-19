@@ -173,6 +173,26 @@ final class SettingsModel {
         write(.stringList(store.stringList(.contextDisabledApps)), .contextDisabledApps)
     }
 
+    var predictionSensitivity: String {
+        get { store.string(.predictionSensitivity) }
+        set { write(.string(newValue), .predictionSensitivity) }
+    }
+
+    var predictionMaxRows: String {
+        get { store.string(.predictionMaxRows) }
+        set { write(.string(newValue), .predictionMaxRows) }
+    }
+
+    var predictionKeepDays: String {
+        get { store.string(.predictionKeepDays) }
+        set { write(.string(newValue), .predictionKeepDays) }
+    }
+
+    var predictionExcludedApps: [String] {
+        get { store.stringList(.predictionExcludedApps) }
+        set { write(.stringList(newValue), .predictionExcludedApps) }
+    }
+
     var ignoreList: [String] {
         get { store.stringList(.contextIgnoreList) }
         set { write(.stringList(newValue), .contextIgnoreList) }

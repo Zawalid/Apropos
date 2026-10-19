@@ -90,11 +90,16 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSPopoverDelegate {
             togglePause: close {
                 if controller.context.isPaused { controller.context.resume() } else { controller.context.pause(for: 3600) }
             },
+            toggleLearning: close {
+                let engine = controller.usage.prediction
+                if engine.isLearningPaused { engine.resumeLearning() } else { engine.pauseLearning(for: 3600) }
+            },
             quit: close { NSApp.terminate(nil) })
         let view = MenuPopoverView(
             header: header, recents: controller.usage.recents, hotKey: controller.combo,
             hasAccess: controller.permission.isTrusted, pendingCommands: controller.userCommands.pending.count,
-            contextPaused: controller.context.isPaused, actions: actions)
+            contextPaused: controller.context.isPaused, learningPaused: controller.usage.prediction.isLearningPaused,
+            actions: actions)
         let host = NSHostingController(rootView: view)
         host.sizingOptions = [.preferredContentSize]
         popover.contentViewController = host

@@ -108,6 +108,10 @@ public struct SettingID: RawRepresentable, Hashable, Sendable, ExpressibleByStri
     public static let checkForUpdates: SettingID = "checkForUpdates"
     public static let predictNextCommand: SettingID = "predictNextCommand"
     public static let showPredictionReasons: SettingID = "showPredictionReasons"
+    public static let predictionSensitivity: SettingID = "predictionSensitivity"
+    public static let predictionMaxRows: SettingID = "predictionMaxRows"
+    public static let predictionKeepDays: SettingID = "predictionKeepDays"
+    public static let predictionExcludedApps: SettingID = "predictionExcludedApps"
 }
 
 /// Everything the settings window needs to draw and search one setting, and everything the store needs to validate it.
@@ -329,6 +333,32 @@ public enum SettingsRegistry {
             detail: "Under each Usually next row, say what it is based on, such as \"After Run Tests you chose Commit 9 of 12 times\".",
             keywords: ["reason", "explain", "usually next", "prediction"], page: .prediction, type: .bool,
             defaultValue: .bool(true)),
+        SettingDefinition(
+            id: .predictionSensitivity, title: "How sure before it suggests",
+            detail: "Cautious shows a row only when it is nearly certain. Eager shows one more often, and is wrong more often.",
+            keywords: ["confidence", "threshold", "cautious", "eager", "suggest", "prediction"], page: .prediction,
+            type: .choice([
+                SettingOption("cautious", "Cautious"), SettingOption("balanced", "Balanced"),
+                SettingOption("eager", "Eager"),
+            ]), defaultValue: .string("balanced")),
+        SettingDefinition(
+            id: .predictionMaxRows, title: "Rows under Usually next",
+            detail: "How many suggestions can show at once.", keywords: ["rows", "how many", "usually next"],
+            page: .prediction, type: .choice([SettingOption("1", "One"), SettingOption("2", "Two")]),
+            defaultValue: .string("2")),
+        SettingDefinition(
+            id: .predictionKeepDays, title: "Keep what it learned for",
+            detail: "Older runs are dropped from the log. Forever keeps up to a year of use.",
+            keywords: ["history", "retention", "forget", "days", "log"], page: .prediction,
+            type: .choice([
+                SettingOption("30", "30 days"), SettingOption("90", "90 days"), SettingOption("365", "A year"),
+                SettingOption("0", "Forever"),
+            ]), defaultValue: .string("365")),
+        SettingDefinition(
+            id: .predictionExcludedApps, title: "Apps it does not learn from",
+            detail: "Bundle identifiers of apps where nothing is learned or suggested.",
+            keywords: ["exclude", "per app", "bundle", "prediction"], page: .prediction, type: .stringList,
+            defaultValue: .stringList([])),
     ]
 
     private static let updates: [SettingDefinition] = [
