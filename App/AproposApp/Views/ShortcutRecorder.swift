@@ -4,9 +4,12 @@ import SwiftUI
 
 /// A button that shows the current global shortcut and, when clicked, records the next key combination.
 struct ShortcutRecorder: View {
-    let combo: HotKeyCombo
+    let combo: HotKeyCombo?
+    var placeholder = "Record shortcut"
+    var minWidth: CGFloat = 110
     let onRecordingChange: (Bool) -> Void
     let onChange: (HotKeyCombo) -> Void
+    var onClear: (() -> Void)?
 
     @State private var isRecording = false
     @State private var hint: String?
@@ -24,13 +27,17 @@ struct ShortcutRecorder: View {
                         Text("Press the new shortcut")
                             .font(.system(size: 12.5, weight: .medium))
                             .foregroundStyle(Theme.accentText)
-                    } else {
+                    } else if let combo {
                         HStack(spacing: 4) {
                             ForEach(Array(combo.caps.enumerated()), id: \.offset) { KeyCap(text: $0.element) }
                         }
+                    } else {
+                        Text(placeholder)
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(Theme.text3)
                     }
                 }
-                .frame(minWidth: 110, minHeight: 30)
+                .frame(minWidth: minWidth, minHeight: 30)
                 .padding(.horizontal, 10)
                 .background(Capsule().fill(isRecording ? Theme.accentSoft : Theme.Settings.chip))
                 .overlay(Capsule().strokeBorder(isRecording ? Theme.accentText : .clear, lineWidth: 1))
@@ -41,7 +48,16 @@ struct ShortcutRecorder: View {
             .background(
                 KeyCatcher(active: isRecording, onKey: handle, onLoseFocus: stop)
                     .frame(width: 0, height: 0))
-            .accessibilityLabel("Global shortcut, \(combo.display)")
+            .accessibilityLabel("Shortcut, \(combo?.display ?? "none")")
+            if combo != nil, let onClear, !isRecording {
+                Button(action: onClear) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.text3)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Remove shortcut")
+            }
         }
         .onDisappear { stop() }
     }

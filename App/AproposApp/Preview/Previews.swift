@@ -23,10 +23,12 @@
 
         private static func settings(
             _ id: String, page: SettingPage, query: String = "", trusted: Bool = false, app: String? = "finder",
-            customize: @escaping @MainActor (SettingsModel) -> Void = { _ in }
+            customize: @escaping @MainActor (SettingsModel) -> Void = { _ in },
+            prepare: @escaping @MainActor (AppController) -> Void = { _ in }
         ) -> PreviewScene {
             PreviewScene(id: id, size: settings) {
                 let controller = PreviewStores.controller(trusted: trusted, app: app, customize: customize)
+                prepare(controller)
                 let navigation = SettingsNavigation()
                 navigation.select(page)
                 return AnyView(
@@ -147,6 +149,25 @@
         // Settings
 
         static let settingsGeneral = settings("settings-general", page: .general)
+        static let settingsCommands = settings(
+            "settings-commands", page: .commands, prepare: { controller in
+                let sample: [(String, String, String, String?, HotKeyCombo?, CommandReview)] = [
+                    ("Open in Terminal here", "folder", "terminal", "here", HotKeyCombo(keyCode: 17, modifiers: [.control, .option]), .approved),
+                    ("Shout selection", "textformat", "shout", nil, nil, .approved),
+                    ("Weekly report", "doc.text", "report", "wr", nil, .pending),
+                ]
+                for (title, symbol, _, alias, hotkey, review) in sample {
+                    guard let template = try? ActionTemplate("{directory}") else { continue }
+                    let backend = ActionBackend.shell(
+                        ShellBackend(
+                            executable: "/usr/bin/open", arguments: [template], standardInput: nil,
+                            workingDirectory: .directory))
+                    _ = try? controller.userCommands.create(
+                        UserCommand(
+                            title: title, symbol: symbol, aliases: alias.map { [$0] } ?? [], requires: [.folder], backend: backend,
+                            hotkey: hotkey, review: review))
+                }
+            })
         static let settingsAppearance = settings("settings-appearance", page: .appearance)
         static let settingsContext = settings("settings-context", page: .context) {
             $0.setChip(.folder, shown: true)
@@ -170,7 +191,7 @@
             paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceConfirm, paletteSequenceAsk,
             paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaved, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,
-            settingsGeneral, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
+            settingsGeneral, settingsCommands, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
             settingsUpdates, settingsAbout, settingsSearch, onboardingWelcome, onboardingPermission,
             onboardingPermissionHelp, onboardingPermissionAllowed, onboardingTry, onboardingTryHolding,
             onboardingTryNothingOpen, onboardingTryNoAccess, onboardingTryDone, onboardingDone,

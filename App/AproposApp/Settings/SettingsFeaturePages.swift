@@ -57,60 +57,42 @@ private struct EmptyRows: View {
 
 // MARK: Commands
 
-/// Your own commands and sequences: what they are called, their key, and whether they may run yet.
+/// Your own commands and sequences, as a table: name, alias, shortcut, and whether each may run yet.
 struct CommandsPage: View {
     let controller: AppController
 
     @State private var message: String?
     @State private var deleting: UserCommand?
+    @State private var filter = ""
 
     private var store: UserCommandStore { controller.userCommands }
 
+    private var visible: [UserCommand] {
+        let words = filter.lowercased().split(separator: " ").map(String.init)
+        guard !words.isEmpty else { return store.commands }
+        return store.commands.filter { command in
+            let haystack = ([command.title, command.subtitle ?? ""] + command.aliases).joined(separator: " ").lowercased()
+            return words.allSatisfy { haystack.contains($0) }
+        }
+    }
+
     var body: some View {
+        if store.commands.count > 4 { filterField }
         SettingsSection(
             title: "Your commands",
-            footer: "Commands are plain files, so you can edit, copy and share them. Imported ones wait here until you approve them."
+            footer:
+                "An alias is a short word that finds the command in the panel or runs it from a link. Commands are plain files, so you can edit, copy and share them."
         ) {
             if store.commands.isEmpty {
                 EmptyRows(
                     title: "No commands yet",
-                    detail: "Create one in the palette, or drop a command file into the commands folder.")
+                    detail: "Save a sequence as a command from the panel, or import a file below.")
+            } else if visible.isEmpty {
+                EmptyRows(title: "No match", detail: "Nothing named \"\(filter)\".")
             }
-            ForEach(store.commands) { command in
-                SettingsRow(
-                    title: command.title,
-                    detail: command.subtitle,
-                    leading: AnyView(
-                        Image(systemName: command.symbol)
-                            .font(.system(size: 14))
-                            .foregroundStyle(Brand.text2)
-                            .frame(width: 22))
-                ) {
-                    HStack(spacing: 8) {
-                        if let hotkey = command.hotkey { Badge(text: hotkey.display) }
-                        if !command.isRunnable {
-                            Badge(text: "Needs approval", tone: .warning)
-                            Button("Approve") { approve(command) }
-                                .buttonStyle(SecondaryButtonStyle())
-                        } else if command.runsScripts {
-                            Badge(text: "Runs a script")
-                        }
-                        Menu {
-                            Button("Duplicate") { duplicate(command) }
-                            Button("Delete", role: .destructive) { deleting = command }
-                        } label: {
-                            Image(systemName: "ellipsis")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(Brand.text2)
-                                .frame(width: 28, height: 28)
-                                .contentShape(Circle())
-                        }
-                        .menuStyle(.borderlessButton)
-                        .menuIndicator(.hidden)
-                        .fixedSize()
-                        .accessibilityLabel("More for \(command.title)")
-                    }
-                }
+            ForEach(visible) { command in
+                CommandRowView(
+                    command: command, store: store, onDelete: { deleting = command }, onError: { message = $0 })
             }
         }
         if !store.issues.isEmpty {
@@ -144,7 +126,14 @@ struct CommandsPage: View {
                 titleVisibility: .visible
             ) {
                 Button("Delete", role: .destructive) {
-                    if let deleting { run { try store.delete(deleting.id) } }
+                    if let deleting {
+                        do {
+                            try store.delete(deleting.id)
+                            message = nil
+                        } catch {
+                            message = "That did not work: \(error)"
+                        }
+                    }
                     deleting = nil
                 }
             } message: {
@@ -152,21 +141,113 @@ struct CommandsPage: View {
             }
     }
 
-    private func approve(_ command: UserCommand) { run { _ = try store.approve(command.id) } }
-    private func duplicate(_ command: UserCommand) { run { _ = try store.duplicate(command.id) } }
-
-    private func run(_ work: () throws -> Void) {
-        do {
-            try work()
-            message = nil
-        } catch {
-            message = "That did not work: \(error)"
+    private var filterField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").font(.system(size: 12, weight: .medium)).foregroundStyle(Brand.text3)
+            TextField("Filter commands", text: $filter)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
         }
+        .padding(.horizontal, 12)
+        .frame(height: 32)
+        .background(Capsule().fill(Brand.section))
     }
 
     private func reveal() {
         try? FileManager.default.createDirectory(at: store.directory, withIntermediateDirectories: true)
         NSWorkspace.shared.activateFileViewerSelecting([store.directory])
+    }
+}
+
+/// One command: icon, name, an alias to edit, a shortcut to record, and a menu.
+private struct CommandRowView: View {
+    let command: UserCommand
+    let store: UserCommandStore
+    let onDelete: () -> Void
+    let onError: (String?) -> Void
+
+    @State private var alias = ""
+
+    var body: some View {
+        SettingsRow(
+            title: command.title,
+            detail: command.isRunnable
+                ? (command.subtitle ?? (command.runsScripts ? "Runs a script" : nil)) : "Needs approval before it can run",
+            leading: AnyView(
+                Image(systemName: command.symbol)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Brand.text2)
+                    .frame(width: 22))
+        ) {
+            HStack(spacing: 8) {
+                if command.isRunnable {
+                    aliasField
+                    ShortcutRecorder(
+                        combo: command.hotkey, placeholder: "Add shortcut", minWidth: 100,
+                        onRecordingChange: { _ in }, onChange: setHotkey, onClear: { setHotkey(nil) })
+                } else {
+                    Button("Approve") { run { _ = try store.approve(command.id) } }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+                Menu {
+                    Button("Duplicate") { run { _ = try store.duplicate(command.id) } }
+                    Button("Delete", role: .destructive, action: onDelete)
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Brand.text2)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Circle())
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .accessibilityLabel("More for \(command.title)")
+            }
+        }
+        .onAppear { alias = command.aliases.first ?? "" }
+    }
+
+    private var aliasField: some View {
+        TextField("Alias", text: $alias)
+            .textFieldStyle(.plain)
+            .font(.system(size: 12.5))
+            .multilineTextAlignment(.center)
+            .frame(width: 76, height: 30)
+            .background(Capsule().fill(Brand.raised))
+            .onSubmit(commitAlias)
+            .accessibilityLabel("Alias for \(command.title)")
+    }
+
+    private func commitAlias() {
+        let cleaned = alias.trimmingCharacters(in: .whitespaces).lowercased().replacingOccurrences(of: " ", with: "-")
+        alias = cleaned
+        guard cleaned != (command.aliases.first ?? "") else { return }
+        var edited = command
+        edited.aliases = cleaned.isEmpty ? [] : [cleaned]
+        run { _ = try store.update(edited) }
+    }
+
+    private func setHotkey(_ combo: HotKeyCombo?) {
+        if let combo, let conflict = store.hotkeyConflict(combo, excluding: command.id) {
+            switch conflict {
+            case .panel: onError("That shortcut opens Apropos.")
+            case .command(let title): onError("That shortcut already runs \(title).")
+            }
+            return
+        }
+        var edited = command
+        edited.hotkey = combo
+        run { _ = try store.update(edited) }
+    }
+
+    private func run(_ work: () throws -> Void) {
+        do {
+            try work()
+            onError(nil)
+        } catch {
+            onError("That did not work: \(error)")
+        }
     }
 }
 
