@@ -37,11 +37,11 @@ struct HotKeyAndPlacementTests {
         #expect(store.load() == custom)
     }
 
-    @Test func panelIsCentredHorizontallyNearTheTop() {
+    @Test func panelIsCentredHorizontallyAndJustAboveTheMiddle() {
         let screen = CGRect(x: 0, y: 0, width: 1600, height: 1000)
         let frame = PanelPlacement.frame(in: screen)
         #expect(frame.midX == screen.midX)
-        #expect(frame.maxY == 800)
+        #expect(frame.midY == 540)  // 46% of the way down: 4% above the true centre
         #expect(screen.contains(frame))
     }
 

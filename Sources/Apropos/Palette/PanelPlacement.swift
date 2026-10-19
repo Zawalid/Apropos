@@ -8,9 +8,10 @@ public enum PanelPlacement {
     /// `visibleFrame` is the screen's usable area in AppKit coordinates (origin bottom-left).
     public static func frame(in visibleFrame: CGRect, size: CGSize = PanelPlacement.size) -> CGRect {
         let x = visibleFrame.midX - size.width / 2
-        // The top edge of the panel sits about a fifth of the way down, which keeps the search field near eye level.
-        let top = visibleFrame.maxY - visibleFrame.height * 0.2
-        return CGRect(x: x.rounded(), y: (top - size.height).rounded(), width: size.width, height: size.height)
+        // The panel's middle sits 46% of the way down the usable area: just above the true centre, which is where
+        // a centred thing looks centred to the eye, and below the "top of the screen" feel it had before.
+        let middle = visibleFrame.maxY - visibleFrame.height * 0.46
+        return CGRect(x: x.rounded(), y: (middle - size.height / 2).rounded(), width: size.width, height: size.height)
     }
 
     /// The screen whose frame contains `point`, falling back to the first one. Generic over the frame list so it can be
