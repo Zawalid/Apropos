@@ -155,6 +155,90 @@ struct SequenceBuilderTests {
         }
     }
 
+    // MARK: Step ids
+
+    private func menuRow(_ rig: Rig, _ title: String) -> Command? {
+        rig.model.results.first { $0.command.title == title && $0.command.source == .menuItem(bundleID: app.bundleID) }?
+            .command
+    }
+
+    private func filesContext() -> ContextValues {
+        ContextValues(selectedText: "hello", selectedFiles: [URL(fileURLWithPath: "/tmp")])
+    }
+
+    private func editorRig() -> Rig {
+        rig(installed: ["com.apple.Notes", "com.apple.mail", "com.apple.Preview", "com.example.editor"])
+    }
+
+    private func menuStepIDs(_ rig: Rig) -> [String] {
+        rig.center.steps.flatMap { step -> [String] in
+            if case .uiSteps(let backend) = step.kind { backend.steps.map(\.id) } else { [] }
+        }
+    }
+
+    @Test func aDraftOfDifferentKindsOfStepsValidates() throws {
+        let rig = editorRig()
+        feed(rig, filesContext())
+        #expect(rig.model.addToSequence(try #require(menuRow(rig, "New Folder"))) == .added(steps: 1))
+        #expect(add(rig, "ctx:files.copy-path") == .added(steps: 2))
+        #expect(rig.model.addToSequence(try #require(menuRow(rig, "Show Preview"))) == .added(steps: 3))
+        let ids = rig.center.steps.map(\.id)
+        #expect(Set(ids).count == ids.count)
+        #expect(SequenceValidator.issues(in: SequenceBackend(steps: rig.center.steps)).isEmpty)
+        #expect(rig.center.plan().refusal == nil)
+    }
+
+    @Test func menuItemsThatJoinOneMenuStepKeepDistinctInnerIds() throws {
+        let rig = editorRig()
+        feed(rig, filesContext())
+        rig.model.addToSequence(try #require(menuRow(rig, "New Folder")))
+        rig.model.addToSequence(try #require(menuRow(rig, "Show Preview")))
+        rig.model.addToSequence(try #require(menuRow(rig, "Show Path Bar")))
+        #expect(rig.center.steps.count == 1)
+        let ids = menuStepIDs(rig)
+        #expect(ids.count == 3 && Set(ids).count == 3)
+        #expect(SequenceValidator.issues(in: SequenceBackend(steps: rig.center.steps)).isEmpty)
+        #expect(rig.center.plan().refusal == nil)
+    }
+
+    @Test func removingAStepBetweenTwoMenuStepsStillValidates() throws {
+        let rig = editorRig()
+        feed(rig, filesContext())
+        rig.model.addToSequence(try #require(menuRow(rig, "New Folder")))
+        add(rig, "ctx:files.copy-path")
+        rig.model.addToSequence(try #require(menuRow(rig, "Show Preview")))
+        rig.center.delete(stepID: rig.center.steps[1].id)
+        rig.model.addToSequence(try #require(menuRow(rig, "Show Path Bar")))
+        #expect(SequenceValidator.issues(in: SequenceBackend(steps: rig.center.steps)).isEmpty)
+        #expect(rig.center.plan().refusal == nil)
+    }
+
+    @Test func deletingAndReAddingNeverReusesAnId() throws {
+        let rig = editorRig()
+        feed(rig, filesContext())
+        var seen = Set<String>()
+        for _ in 0..<4 {
+            add(rig, "ctx:text.upper")
+            let id = try #require(rig.center.steps.last?.id)
+            #expect(seen.insert(id).inserted)
+            rig.center.delete(stepID: id)
+        }
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.upper")
+        let ids = rig.center.steps.map(\.id)
+        #expect(Set(ids).count == 2 && Set(ids).isDisjoint(with: seen))
+    }
+
+    @Test func aDiscardedDraftDoesNotReuseIdsEither() {
+        let rig = editorRig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        let first = rig.center.steps[0].id
+        rig.center.discard()
+        add(rig, "ctx:text.upper")
+        #expect(rig.center.steps[0].id != first)
+    }
+
     @Test func theGenericSendRowCannotBeAdded() throws {
         let rig = rig()
         feed(rig)

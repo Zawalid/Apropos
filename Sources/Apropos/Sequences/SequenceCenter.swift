@@ -234,7 +234,7 @@ public final class SequenceCenter {
             if case .uiSteps(let added) = step.kind, let last = steps.last, case .uiSteps(let before) = last.kind,
                 before.steps.count + added.steps.count <= UIStepsValidator.maxSteps
             {
-                steps[steps.count - 1].kind = .uiSteps(UIStepsBackend(steps: before.steps + added.steps))
+                steps[steps.count - 1].kind = .uiSteps(Self.joined(before, added))
             } else {
                 steps.append(step)
             }
@@ -264,6 +264,14 @@ public final class SequenceCenter {
         rechain()
         rebuild()
         return .added(steps: steps.count)
+    }
+
+    /// Two menu steps become one. Every menu step of a backend must have its own id, and each one was numbered from
+    /// "s1" when it was built, so the added steps get fresh ids whenever theirs are already taken.
+    private static func joined(_ before: UIStepsBackend, _ added: UIStepsBackend) -> UIStepsBackend {
+        var builder = StepSequenceBuilder(steps: before.steps)
+        for step in added.steps { builder.append(step) }
+        return builder.backend
     }
 
     public func delete(stepID: String) {
