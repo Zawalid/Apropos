@@ -309,3 +309,29 @@ struct UserCommandPaletteTests {
         #expect(stored.contains("user:") && !stored.contains("quiet"))
     }
 }
+
+@Suite @MainActor struct FirstRunConfirmationTests {
+    private func store() -> UserCommandStore {
+        UserCommandStore(directory: FileManager.default.temporaryDirectory.appendingPathComponent("fr-\(UUID().uuidString)"))
+    }
+
+    @Test func confirmationIsRememberedAndResetByAChangedBackend() throws {
+        let store = store()
+        let made = try store.create(
+            UserCommand(
+                title: "Careful", backend: .shell(ShellBackend(executable: "/usr/bin/true", arguments: [])), output: .none,
+                needsConfirmation: true))
+        #expect(made.action.needsConfirmation)
+        try store.markPanelConfirmed(made.id)
+        let confirmed = try #require(store.command(withID: made.id))
+        #expect(confirmed.panelConfirmed && !confirmed.action.needsConfirmation)
+        // Survives the file.
+        let again = UserCommandStore(directory: store.directory)
+        #expect(again.command(withID: made.id)?.panelConfirmed == true)
+        // A different program is a different command: ask again.
+        var edited = confirmed
+        edited.backend = .shell(ShellBackend(executable: "/usr/bin/false", arguments: []))
+        let updated = try store.update(edited)
+        #expect(!updated.panelConfirmed && updated.action.needsConfirmation)
+    }
+}

@@ -406,7 +406,10 @@ public final class SequenceCenter {
         } catch {
             return .failure(.init("That menu item cannot be added."))
         }
-        return .success(SequenceStep(id: newID(), label: command.displayTitle, kind: .uiSteps(builder.backend)))
+        // Choosing a menu item of another app brings that app forward first, or its window would open behind the others.
+        var backend = builder.backend
+        for index in backend.steps.indices { backend.steps[index].activates = true }
+        return .success(SequenceStep(id: newID(), label: command.displayTitle, kind: .uiSteps(backend)))
     }
 
     private func actionStep(for command: Command, id: ActionID) -> Result<SequenceStep, SequenceAddRefusal> {

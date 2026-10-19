@@ -84,6 +84,7 @@ public enum CommandExchange {
             var file = UserCommandFile(command)
             file.allowFromURL = nil
             file.urlConfirmed = nil
+            file.panelConfirmed = nil
             file.review = nil
             file.hotkey = nil
             return file

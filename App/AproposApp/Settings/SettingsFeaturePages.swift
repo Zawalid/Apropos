@@ -456,6 +456,7 @@ private struct CommandDetailSheet: View {
 
     @State private var read = false
     @State private var asks: Bool
+    @State private var everyTime: Bool
     @State private var problem: String?
 
     init(command: UserCommand, store: UserCommandStore, usage: UsageStore, onClose: @escaping () -> Void) {
@@ -464,6 +465,7 @@ private struct CommandDetailSheet: View {
         self.usage = usage
         self.onClose = onClose
         _asks = State(initialValue: command.needsConfirmation)
+        _everyTime = State(initialValue: command.asksEveryTime)
     }
 
     var body: some View {
@@ -508,14 +510,31 @@ private struct CommandDetailSheet: View {
                 }
             }
             HStack {
-                Text("Ask before it runs").font(.system(size: 13)).foregroundStyle(Brand.text)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Ask before it runs").font(.system(size: 13)).foregroundStyle(Brand.text)
+                    Text(asks && !everyTime ? "Only the first time, then it remembers." : "")
+                        .font(.system(size: 11.5)).foregroundStyle(Brand.text3)
+                }
                 Spacer()
                 AproposToggle(title: "Ask before it runs", isOn: $asks)
                     .onChange(of: asks) { _, value in
                         var edited = command
                         edited.needsConfirmation = value
+                        edited.panelConfirmed = false
                         do { _ = try store.update(edited) } catch { problem = "\(error)" }
                     }
+            }
+            if asks {
+                HStack {
+                    Text("Ask every time").font(.system(size: 13)).foregroundStyle(Brand.text)
+                    Spacer()
+                    AproposToggle(title: "Ask every time", isOn: $everyTime)
+                        .onChange(of: everyTime) { _, value in
+                            var edited = command
+                            edited.asksEveryTime = value
+                            do { _ = try store.update(edited) } catch { problem = "\(error)" }
+                        }
+                }
             }
             if !command.isRunnable {
                 Toggle("I have read what it does and want it to run", isOn: $read)

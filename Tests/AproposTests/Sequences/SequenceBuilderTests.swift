@@ -66,6 +66,18 @@ struct SequenceBuilderTests {
 
     private func titles(_ rig: Rig) -> [String] { rig.model.results.map(\.command.title) }
 
+    @Test func aMenuStepBringsItsAppForwardBeforeChoosingTheItem() throws {
+        let r = rig()
+        let menu = try #require(r.model.results.first { $0.command.source == .menuItem(bundleID: app.bundleID) })
+        add(r, menu.command.id)
+        let step = try #require(r.center.steps.first)
+        guard case .uiSteps(let backend) = step.kind else {
+            Issue.record("not a menu step")
+            return
+        }
+        #expect(backend.steps.allSatisfy { $0.activates })
+    }
+
     @Test func reopeningSoonKeepsTheDraftLevelOpenButForgetsTheSelection() async {
         let r = rig()
         feed(r)

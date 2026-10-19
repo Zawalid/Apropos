@@ -60,6 +60,9 @@ public final class ContextActionCenter {
 
     /// The person's own commands. Pending (not yet approved) ones are ignored. They are listed under "Your commands",
     /// ahead of the built-in actions, and the ones that need no context are listed even before a snapshot arrives.
+    /// Called after a run the person confirmed went through, with the action's id.
+    public var onConfirmedRun: (@MainActor (ActionID) -> Void)?
+
     public func setUserCommands(_ commands: [UserCommand]) {
         userCommands = commands.filter(\.isRunnable)
         rebuild()
@@ -133,7 +136,13 @@ public final class ContextActionCenter {
         _ command: Command, target: TargetApp?, confirmed: Bool = false
     ) async -> Result<ActionOutcome, ActionError> {
         guard let action = byCommandID[command.id] else { return .failure(.notApplicable) }
-        return await engine.run(action, values: values, target: target, confirmed: confirmed)
+        // A command the person already confirmed once, and did not set to ask every time, goes through its own inner
+        // question (a sequence's list of things it will do) as answered.
+        let answeredBefore = userCommands.contains { $0.id == action.id && $0.panelConfirmed && !$0.asksEveryTime }
+        let result = await engine.run(action, values: values, target: target, confirmed: confirmed || answeredBefore)
+        // A command that asks only the first time is remembered as confirmed once a confirmed run went through.
+        if confirmed, command.needsConfirmation, case .success = result { onConfirmedRun?(action.id) }
+        return result
     }
 
     /// Runs a user command without the panel: from its global shortcut, a URL or Shortcuts. Context comes from `values`

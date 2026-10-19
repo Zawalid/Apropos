@@ -114,6 +114,35 @@ struct ContextActionIntegrationTests {
         #expect(rig.model.results.first { $0.command.title == "Zebra files" }?.command.isEnabled == true)
     }
 
+    @Test func aCommandThatAsksOnlyAsksUntilTheFirstConfirmedRunWentThrough() async throws {
+        let rig = rig(target: app)
+        var mine = UserCommand(
+            title: "Careful", aliases: ["care"],
+            backend: .shell(ShellBackend(executable: "/usr/bin/true", arguments: [])), output: .none,
+            needsConfirmation: true)
+        rig.center.setUserCommands([mine])
+        var confirmedIDs: [ActionID] = []
+        rig.center.onConfirmedRun = { confirmedIDs.append($0) }
+        rig.center.update(with: snapshot(ContextValues(selectedText: "x")))
+        rig.model.query = "careful"
+        #expect(await rig.model.runSelected() == false)
+        #expect(rig.model.pendingConfirmation?.title == "Careful")
+        #expect(await rig.model.confirmPending())
+        #expect(confirmedIDs == [mine.id])
+        // The store would now record it; the center then lists the command as no longer asking.
+        mine.panelConfirmed = true
+        rig.center.setUserCommands([mine])
+        rig.center.update(with: snapshot(ContextValues(selectedText: "x"), at: Date().addingTimeInterval(1)))
+        rig.model.query = "careful"
+        #expect(rig.model.results.first { $0.command.title == "Careful" }?.command.needsConfirmation == false)
+        // Unless it was set to ask every time.
+        mine.asksEveryTime = true
+        rig.center.setUserCommands([mine])
+        rig.center.update(with: snapshot(ContextValues(selectedText: "x"), at: Date().addingTimeInterval(2)))
+        rig.model.query = "careful"
+        #expect(rig.model.results.first { $0.command.title == "Careful" }?.command.needsConfirmation == true)
+    }
+
     @Test func searchFindsActionsByTitleAndKeyword() {
         let rig = rig(target: app)
         rig.center.update(with: snapshot(ContextValues(selectedText: "hello")))

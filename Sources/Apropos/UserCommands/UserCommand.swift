@@ -28,7 +28,12 @@ public struct UserCommand: Identifiable, Equatable, Sendable {
     public var conditions: Set<ActionCondition>
     public var backend: ActionBackend
     public var output: ActionOutput
+    /// Ask before it runs. By default only until the person has confirmed one run; see `asksEveryTime`.
     public var needsConfirmation: Bool
+    /// Ask on every run, not only the first.
+    public var asksEveryTime: Bool
+    /// Set once the person confirmed a run in the panel. Cleared when the backend changes.
+    public var panelConfirmed: Bool
     public var keywords: [String]
     public var timeout: TimeInterval
     /// A global shortcut that runs the command on the context of the app in front.
@@ -45,7 +50,7 @@ public struct UserCommand: Identifiable, Equatable, Sendable {
         conditions: Set<ActionCondition> = [], backend: ActionBackend, output: ActionOutput = .clipboard,
         needsConfirmation: Bool = false, keywords: [String] = [], timeout: TimeInterval = 10,
         hotkey: HotKeyCombo? = nil, allowFromURL: Bool = false, urlConfirmed: Bool = false,
-        review: CommandReview = .approved
+        review: CommandReview = .approved, asksEveryTime: Bool = false, panelConfirmed: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -63,6 +68,8 @@ public struct UserCommand: Identifiable, Equatable, Sendable {
         self.hotkey = hotkey
         self.allowFromURL = allowFromURL
         self.urlConfirmed = urlConfirmed
+        self.asksEveryTime = asksEveryTime
+        self.panelConfirmed = panelConfirmed
         self.review = review
     }
 
@@ -84,7 +91,8 @@ public struct UserCommand: Identifiable, Equatable, Sendable {
     public var action: ContextAction {
         ContextAction(
             id: id, title: title, subtitle: subtitle, symbol: symbol, requires: requires, conditions: conditions,
-            apps: apps, backend: backend, output: output, needsConfirmation: needsConfirmation, keywords: keywords,
+            apps: apps, backend: backend, output: output,
+            needsConfirmation: needsConfirmation && (asksEveryTime || !panelConfirmed), keywords: keywords,
             group: .yourCommands, timeout: timeout)
     }
 }
@@ -107,11 +115,13 @@ struct UserCommandFile: Codable {
     var aliases: [String]?
     var allowFromURL: Bool?
     var urlConfirmed: Bool?
+    var asksEveryTime: Bool?
+    var panelConfirmed: Bool?
     var review: CommandReview?
     var hotkey: JSONValue?
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, command, aliases, allowFromURL, urlConfirmed, review, hotkey
+        case schemaVersion, command, aliases, allowFromURL, urlConfirmed, asksEveryTime, panelConfirmed, review, hotkey
     }
 
     /// An entry inside a pack file may leave `schemaVersion` out; the pack carries it.
@@ -122,6 +132,8 @@ struct UserCommandFile: Codable {
         aliases = try container.decodeIfPresent([String].self, forKey: .aliases)
         allowFromURL = try container.decodeIfPresent(Bool.self, forKey: .allowFromURL)
         urlConfirmed = try container.decodeIfPresent(Bool.self, forKey: .urlConfirmed)
+        asksEveryTime = try container.decodeIfPresent(Bool.self, forKey: .asksEveryTime)
+        panelConfirmed = try container.decodeIfPresent(Bool.self, forKey: .panelConfirmed)
         review = try container.decodeIfPresent(CommandReview.self, forKey: .review)
         hotkey = try container.decodeIfPresent(JSONValue.self, forKey: .hotkey)
     }
@@ -133,6 +145,8 @@ struct UserCommandFile: Codable {
         aliases = source.aliases
         allowFromURL = source.allowFromURL
         urlConfirmed = source.urlConfirmed
+        asksEveryTime = source.asksEveryTime ? true : nil
+        panelConfirmed = source.panelConfirmed ? true : nil
         review = source.review
         hotkey = source.hotkey.map { SettingsDocument.json(from: .hotkey($0)) }
     }
@@ -154,7 +168,8 @@ struct UserCommandFile: Codable {
             aliases: aliases ?? [], apps: action.apps, requires: action.requires, conditions: action.conditions,
             backend: action.backend, output: action.output, needsConfirmation: action.needsConfirmation,
             keywords: action.keywords, timeout: action.timeout, hotkey: combo, allowFromURL: allowFromURL ?? false,
-            urlConfirmed: urlConfirmed ?? false, review: review ?? .approved)
+            urlConfirmed: urlConfirmed ?? false, review: review ?? .approved, asksEveryTime: asksEveryTime ?? false,
+            panelConfirmed: panelConfirmed ?? false)
     }
 }
 

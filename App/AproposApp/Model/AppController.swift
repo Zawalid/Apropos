@@ -117,6 +117,10 @@ final class AppController {
                     base: actionServices, functions: actionLibrary.functions, send: sendServices, source: source,
                     privacy: { ContextPrivacy.load() })))
         actions.attach(to: palette)
+        actions.onConfirmedRun = { [weak self] id in
+            guard let self, id.rawValue.hasPrefix("user:") else { return }
+            try? self.userCommands.markPanelConfirmed(id)
+        }
         // Send to: the same snapshots become payloads, and the usage store ranks the destinations.
         let send = SendToCenter(
             library: .bundled(plus: DestinationLibrary.userDirectory), services: sendServices,

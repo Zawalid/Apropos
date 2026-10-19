@@ -95,7 +95,10 @@ public final class UserCommandStore {
         guard let existing = command(withID: edited.id) else { throw UserCommandError.notFound }
         var checked = try check(edited)
         // A different backend is a different command as far as outside callers go: ask again before the next run.
-        if checked.backend != existing.backend { checked.urlConfirmed = false }
+        if checked.backend != existing.backend {
+            checked.urlConfirmed = false
+            checked.panelConfirmed = false
+        }
         // A pending command stays pending until `approve`, whatever an edit says.
         if existing.review == .pending { checked.review = .pending }
         try write(checked)
@@ -153,6 +156,15 @@ public final class UserCommandStore {
     public func markURLConfirmed(_ id: ActionID) throws {
         guard var command = command(withID: id) else { throw UserCommandError.notFound }
         command.urlConfirmed = true
+        try write(command)
+        insert(command)
+    }
+
+    /// Records that the person confirmed a run in the panel, so a command that only asks the first time stops asking.
+    public func markPanelConfirmed(_ id: ActionID) throws {
+        guard var command = command(withID: id) else { throw UserCommandError.notFound }
+        guard !command.panelConfirmed else { return }
+        command.panelConfirmed = true
         try write(command)
         insert(command)
     }
