@@ -10,10 +10,10 @@ struct ContextPage: View {
     @State private var apps: [AppEntry] = []
     @State private var filter = ""
 
-    struct AppEntry: Identifiable {
+    struct AppEntry: Identifiable, Sendable {
         let bundleID: String
         let name: String
-        let icon: NSImage?
+        let path: String
         var id: String { bundleID }
     }
 
@@ -63,7 +63,8 @@ struct ContextPage: View {
             ForEach(visibleApps) { app in
                 SettingsRow(
                     title: app.name,
-                    leading: AnyView(AppIconImage(icon: app.icon, size: 22))
+                    detail: protectedByDefault(app) ? "Protected by default" : nil,
+                    leading: AnyView(AppIconImage(icon: NSWorkspace.shared.icon(forFile: app.path), size: 22))
                 ) {
                     ValueMenu(
                         options: SettingsModel.AppReading.allCases.map { ($0, $0.title) },
@@ -76,7 +77,7 @@ struct ContextPage: View {
         .settingsAnchor(SettingID.contextDisabledApps.rawValue)
         .opacity(settings.contextSensing ? 1 : 0.5)
         .disabled(!settings.contextSensing)
-        Color.clear.frame(height: 0).onAppear { apps = loadApps() }
+        Color.clear.frame(height: 0).task { apps = await Self.scan(including: settings) }
     }
 
     private var visibleApps: [AppEntry] {
@@ -95,28 +96,46 @@ struct ContextPage: View {
         .overlay(alignment: .bottom) { Rectangle().fill(Brand.line).frame(height: 1).padding(.leading, 16) }
     }
 
-    /// Running apps, plus every app already named in one of the lists, plus anything added by hand.
-    private func loadApps() -> [AppEntry] {
-        var seen = Set<String>()
-        var list: [AppEntry] = []
-        let running = NSWorkspace.shared.runningApplications.filter {
-            $0.activationPolicy == .regular && $0.bundleIdentifier != Bundle.main.bundleIdentifier
-        }
-        for app in running {
-            guard let id = app.bundleIdentifier, seen.insert(id).inserted else { continue }
-            list.append(AppEntry(bundleID: id, name: app.localizedName ?? id, icon: app.icon))
-        }
-        let named = settings.contextDisabledApps + settings.ignoreList + settings.contextSelectionBlockedApps
-        for id in named where seen.insert(id).inserted {
-            list.append(AppEntry(bundleID: id, name: appDisplayName(id), icon: icon(for: id)))
-        }
-        return list.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    private func protectedByDefault(_ app: AppEntry) -> Bool {
+        SettingsRegistry.defaultIgnoreList.contains(app.bundleID) && settings.reading(of: app.bundleID) == .off
     }
 
-    private func icon(for bundleID: String) -> NSImage? {
-        NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID).map {
-            NSWorkspace.shared.icon(forFile: $0.path)
+    /// Every app installed in the usual places, plus running ones from elsewhere. An id named in a list but not found on
+    /// this Mac is left out: the rule still applies if the app is installed later.
+    @MainActor
+    static func scan(including settings: SettingsModel) async -> [AppEntry] {
+        let running = NSWorkspace.shared.runningApplications.compactMap { app -> AppEntry? in
+            guard app.activationPolicy == .regular, let id = app.bundleIdentifier, let url = app.bundleURL else {
+                return nil
+            }
+            return AppEntry(bundleID: id, name: app.localizedName ?? id, path: url.path)
         }
+        let own = Bundle.main.bundleIdentifier
+        let installed = await Task.detached(priority: .userInitiated) { () -> [AppEntry] in
+            let fm = FileManager.default
+            let roots = [
+                "/Applications", "/Applications/Utilities", "/System/Applications",
+                "/System/Applications/Utilities", NSHomeDirectory() + "/Applications",
+            ]
+            var found: [AppEntry] = []
+            for root in roots {
+                for name in (try? fm.contentsOfDirectory(atPath: root)) ?? [] where name.hasSuffix(".app") {
+                    let path = root + "/" + name
+                    guard let id = Bundle(path: path)?.bundleIdentifier else { continue }
+                    found.append(
+                        AppEntry(
+                            bundleID: id, name: fm.displayName(atPath: path).replacingOccurrences(of: ".app", with: ""),
+                            path: path))
+                }
+            }
+            return found
+        }.value
+        var seen = Set<String>()
+        var list: [AppEntry] = []
+        for entry in running + installed where entry.bundleID != own && seen.insert(entry.bundleID).inserted {
+            list.append(entry)
+        }
+        return list.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
     private func addApp() {
@@ -126,7 +145,7 @@ struct ContextPage: View {
         panel.prompt = "Add"
         guard panel.runModal() == .OK, let url = panel.url, let id = Bundle(url: url)?.bundleIdentifier else { return }
         settings.setReading(.noSelection, of: id)
-        apps = loadApps()
+        Task { apps = await Self.scan(including: settings) }
     }
 }
 
