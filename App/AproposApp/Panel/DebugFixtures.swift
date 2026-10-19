@@ -164,6 +164,12 @@
                 for _ in 0..<(8 - command.offset * 2) { usage.store.recordRun(of: command.element) }
             }
             if commands.count > 3 { usage.store.setPinned(true, for: commands[3].stableID) }
+            // Two rows with a short name the person gave them, so the alias chip has something to show.
+            for index in [1, 4] where commands.count > index {
+                let initials = commands[index].displayTitle.split(separator: " ").compactMap(\.first).map(String.init)
+                    .joined().lowercased()
+                usage.store.setAliases([initials], for: commands[index].stableID)
+            }
             usage.refreshRanker()
         }
 

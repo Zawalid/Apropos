@@ -287,4 +287,15 @@ struct UsageStoreTests {
         let results = ranked(store, commands).rank(commands, query: "nw")
         #expect(results.first?.command.title == "New Folder")
     }
+
+    @Test func theAliasToShowIsTheOneBeingTypedOtherwiseTheFirst() {
+        let store = store(tempURL())
+        let item = command("New Folder")
+        store.setAliases(["nf", "folder"], for: item.stableID)
+        let ranker = ranked(store, [item])
+        #expect(ranker.alias(for: item, matching: "") == "nf")
+        #expect(ranker.alias(for: item, matching: "fol") == "folder")
+        #expect(ranker.alias(for: item, matching: "zzz") == "nf")
+        #expect(ranker.alias(for: command("Other"), matching: "nf") == nil)
+    }
 }

@@ -205,6 +205,13 @@ public final class PaletteModel {
     public static let suggestionLimit = 3
 
     /// Swaps the ranking rules, for example after a run, a pin or a hide changed what the usage store knows.
+    /// The alias to show on a command's row, and whether what is typed is exactly that alias.
+    public func alias(for command: Command) -> (text: String, isTyped: Bool)? {
+        guard let alias = ranker.alias(for: command, matching: query) else { return nil }
+        let typed = query.trimmingCharacters(in: .whitespaces)
+        return (alias, !typed.isEmpty && alias.caseInsensitiveCompare(typed) == .orderedSame)
+    }
+
     public func setRanker(_ ranker: CommandRanker) {
         self.ranker = ranker
         rankerRevision += 1

@@ -119,6 +119,16 @@ public struct CommandRanker: Sendable {
         return best
     }
 
+    /// The alias to show next to a command's row: the one the query is typing or has typed when there is one, else the
+    /// first. Nil when the command has none.
+    public func alias(for command: Command, matching query: String) -> String? {
+        var seen = Set<String>()
+        let all = (signal.aliases(for: command) + command.aliases).filter { seen.insert($0).inserted }
+        let typed = query.trimmingCharacters(in: .whitespaces).lowercased()
+        if !typed.isEmpty, let hit = all.first(where: { $0.lowercased().hasPrefix(typed) }) { return hit }
+        return all.first
+    }
+
     /// An alias counts like a title; typing it exactly puts the command first.
     private func aliasScore(_ query: String, _ command: Command) -> Int? {
         var best: Int?

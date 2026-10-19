@@ -14,6 +14,8 @@ struct CommandRow: View {
     var showsFullPath = true
     /// Why the row is under Usually next, shown in place of the menu path.
     var reason: String?
+    /// The short name the person gave the command, shown before its keys, and whether it is what they typed.
+    var alias: (text: String, isTyped: Bool)?
 
     var body: some View {
         let command = ranked.command
@@ -48,6 +50,7 @@ struct CommandRow: View {
             }
             Spacer(minLength: Theme.Spacing.sm)
             HStack(spacing: 4) {
+                if let alias { AliasChip(text: alias.text, isTyped: alias.isTyped).padding(.trailing, 4) }
                 if command.isChecked {
                     Image(systemName: "checkmark")
                         .font(.system(size: 11, weight: .semibold))
@@ -126,5 +129,22 @@ enum AppIconCache {
         let icon = NSWorkspace.shared.icon(forFile: url.path)
         icons[bundleID] = icon
         return icon
+    }
+}
+
+/// An alias beside a row's keys: a quiet pill, tinted when it is what was typed, so it reads as the way in.
+struct AliasChip: View {
+    let text: String
+    var isTyped = false
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 11.5, weight: .medium))
+            .foregroundStyle(isTyped ? Theme.accentText : Theme.text3)
+            .padding(.horizontal, 9)
+            .frame(height: 20)
+            .background(Capsule().fill(isTyped ? Theme.accentSoft : Theme.chip))
+            .overlay(Capsule().strokeBorder(isTyped ? Theme.accentText.opacity(0.35) : Theme.chipEdge, lineWidth: 1))
+            .accessibilityLabel("Alias \(text)")
     }
 }

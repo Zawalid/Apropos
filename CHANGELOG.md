@@ -16,6 +16,7 @@ work lands.
   choose Alias and shortcut; Settings opens on Shortcuts, Menu items, with the alias field ready. The alias finds the item
   first when you type it. The shortcut runs the item in its app while that app is in front, so one key can serve items of
   different apps. A key another of your commands, the panel or macOS already uses is refused or flagged.
+- A row that has an alias shows it as a small pill before its keys, tinted while you are typing exactly that alias.
 
 ### Added (settings, onboarding and the menu bar)
 - A new Settings window: a floating glass sidebar and rounded sections, with pages for General, Appearance, Commands,

@@ -59,7 +59,8 @@ struct ResultsList: View {
                                 CommandRow(
                                     ranked: ranked, symbol: symbols[ranked.id] ?? "command",
                                     appName: model.targetApp?.name, appPID: model.targetApp?.pid,
-                                    showsFullPath: fullPath, reason: model.predictionReason(forRowID: ranked.id)
+                                    showsFullPath: fullPath, reason: model.predictionReason(forRowID: ranked.id),
+                                    alias: model.alias(for: ranked.command)
                                 )
                                 .rowRise(index: index, entrance: entrance)
                                 .id(ranked.id)
