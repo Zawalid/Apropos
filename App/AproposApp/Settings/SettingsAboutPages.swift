@@ -173,6 +173,8 @@ struct AboutPage: View {
         VStack(spacing: 10) {
             if let image = Brand.image("HeroRing", file: "hero-ring.png") {
                 Image(nsImage: image).resizable().interpolation(.high).scaledToFit().frame(height: 150)
+                    .padding(.top, -44)
+                    .padding(.bottom, -32)
                     .accessibilityHidden(true)
             }
             Text("Apropos").font(.system(size: 22, weight: .semibold)).foregroundStyle(Brand.text)
