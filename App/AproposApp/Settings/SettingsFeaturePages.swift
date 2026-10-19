@@ -65,13 +65,16 @@ struct CommandsPage: View {
     @State private var deleting: UserCommand?
     @State private var filter = ""
     @State private var creating = false
+    @State private var group: CommandGroup = .all
+    @State private var detailed: UserCommand?
 
     private var store: UserCommandStore { controller.userCommands }
 
     private var visible: [UserCommand] {
+        let inGroup = group == .all ? store.commands : store.commands.filter { CommandGroup.of($0) == group }
         let words = filter.lowercased().split(separator: " ").map(String.init)
-        guard !words.isEmpty else { return store.commands }
-        return store.commands.filter { command in
+        guard !words.isEmpty else { return inGroup }
+        return inGroup.filter { command in
             let haystack = ([command.title, command.subtitle ?? ""] + command.aliases).joined(separator: " ").lowercased()
             return words.allSatisfy { haystack.contains($0) }
         }
@@ -79,6 +82,7 @@ struct CommandsPage: View {
 
     var body: some View {
         if store.commands.count > 4 { filterField }
+        if presentGroups.count > 2 { groupChips }
         SettingsSection(
             title: "Your commands",
             footer:
@@ -103,7 +107,8 @@ struct CommandsPage: View {
             }
             ForEach(visible) { command in
                 CommandRowView(
-                    command: command, store: store, onDelete: { deleting = command }, onError: { message = $0 })
+                    command: command, store: store, usage: controller.usage.store,
+                    onDetails: { detailed = command }, onDelete: { deleting = command }, onError: { message = $0 })
             }
         }
         examples
@@ -132,6 +137,9 @@ struct CommandsPage: View {
             Text(message).font(.system(size: 12)).foregroundStyle(Brand.danger)
         }
         Color.clear.frame(height: 0)
+            .sheet(item: $detailed) { command in
+                CommandDetailSheet(command: command, store: store, usage: controller.usage.store) { detailed = nil }
+            }
             .sheet(isPresented: $creating) {
                 NewCommandSheet(store: store) { creating = false }
             }
@@ -186,6 +194,35 @@ struct CommandsPage: View {
                     }
                 }
             }
+        }
+    }
+
+    /// The groups that have at least one command, with All first.
+    private var presentGroups: [CommandGroup] {
+        [.all]
+            + CommandGroup.allCases.filter { candidate in
+                candidate != .all && store.commands.contains { CommandGroup.of($0) == candidate }
+            }
+    }
+
+    private var groupChips: some View {
+        HStack(spacing: 6) {
+            ForEach(presentGroups) { item in
+                let selected = group == item
+                Button {
+                    group = item
+                } label: {
+                    Text(item.title)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(selected ? Brand.mintInk : Brand.text2)
+                        .padding(.horizontal, 11)
+                        .frame(height: 26)
+                        .background(Capsule().fill(selected ? Brand.mint : Brand.raised))
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+            Spacer(minLength: 0)
         }
     }
 
@@ -249,6 +286,8 @@ private struct CommandsIntro: View {
 private struct CommandRowView: View {
     let command: UserCommand
     let store: UserCommandStore
+    let usage: UsageStore
+    let onDetails: () -> Void
     let onDelete: () -> Void
     let onError: (String?) -> Void
 
@@ -257,8 +296,7 @@ private struct CommandRowView: View {
     var body: some View {
         SettingsRow(
             title: command.title,
-            detail: command.isRunnable
-                ? (command.subtitle ?? (command.runsScripts ? "Runs a script" : nil)) : "Needs approval before it can run",
+            detail: command.isRunnable ? detailLine : "Needs approval before it can run",
             leading: AnyView(
                 Image(systemName: command.symbol)
                     .font(.system(size: 14))
@@ -272,10 +310,11 @@ private struct CommandRowView: View {
                         combo: command.hotkey, placeholder: "Add shortcut", minWidth: 100,
                         onRecordingChange: { _ in }, onChange: setHotkey, onClear: { setHotkey(nil) })
                 } else {
-                    Button("Approve") { run { _ = try store.approve(command.id) } }
+                    Button("Review", action: onDetails)
                         .buttonStyle(SecondaryButtonStyle())
                 }
                 Menu {
+                    Button("Details") { onDetails() }
                     Button("Duplicate") { run { _ = try store.duplicate(command.id) } }
                     Button("Delete", role: .destructive, action: onDelete)
                 } label: {
@@ -291,7 +330,25 @@ private struct CommandRowView: View {
                 .accessibilityLabel("More for \(command.title)")
             }
         }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onDetails)
         .onAppear { alias = command.aliases.first ?? "" }
+    }
+
+    /// What it does, then how it has been used: "Runs a script, used 14 times, last 2 days ago".
+    private var detailLine: String {
+        let id = CommandID(rawValue: command.id.rawValue)
+        var parts = [command.subtitle ?? CommandGroup.of(command).blurb]
+        let runs = usage.runCount(id)
+        if runs > 0 {
+            parts.append("used \(runs) time\(runs == 1 ? "" : "s")")
+            if let last = usage.lastRun(id) {
+                parts.append("last " + last.formatted(.relative(presentation: .named, unitsStyle: .wide)))
+            }
+        } else {
+            parts.append("not used yet")
+        }
+        return parts.joined(separator: ", ")
     }
 
     private var aliasField: some View {
@@ -334,6 +391,145 @@ private struct CommandRowView: View {
         } catch {
             onError("That did not work: \(error)")
         }
+    }
+}
+
+/// The kinds of command, for the filter chips and the row summary.
+private enum CommandGroup: String, CaseIterable, Identifiable {
+    case all, sequences, scripts, links, shortcuts, other
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: "All"
+        case .sequences: "Sequences"
+        case .scripts: "Scripts"
+        case .links: "Links"
+        case .shortcuts: "Shortcuts"
+        case .other: "Other"
+        }
+    }
+
+    var blurb: String {
+        switch self {
+        case .all, .other: "A command"
+        case .sequences: "Runs several steps"
+        case .scripts: "Runs a script"
+        case .links: "Opens a link"
+        case .shortcuts: "Runs a Shortcut"
+        }
+    }
+
+    static func of(_ command: UserCommand) -> CommandGroup {
+        switch command.backend {
+        case .sequence: .sequences
+        case .shell, .appleScript: .scripts
+        case .urlScheme: .links
+        case .shortcut: .shortcuts
+        case .function, .keyPress, .uiSteps: .other
+        }
+    }
+}
+
+/// Everything about one command in plain words, and the place to approve one that waits.
+private struct CommandDetailSheet: View {
+    let command: UserCommand
+    let store: UserCommandStore
+    let usage: UsageStore
+    let onClose: () -> Void
+
+    @State private var read = false
+    @State private var asks: Bool
+    @State private var problem: String?
+
+    init(command: UserCommand, store: UserCommandStore, usage: UsageStore, onClose: @escaping () -> Void) {
+        self.command = command
+        self.store = store
+        self.usage = usage
+        self.onClose = onClose
+        _asks = State(initialValue: command.needsConfirmation)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                Image(systemName: command.symbol)
+                    .font(.system(size: 18))
+                    .foregroundStyle(Brand.text2)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(Brand.raised))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(command.title).font(.system(size: 18, weight: .semibold)).foregroundStyle(Brand.text)
+                    Text(command.isRunnable ? "Ready to use" : "Waiting for your approval")
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(command.isRunnable ? Brand.mint : Brand.danger)
+                }
+                Spacer()
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("What it does").font(.system(size: 12, weight: .medium)).foregroundStyle(Brand.text3)
+                ScrollView {
+                    Text(CommandSummary.lines(for: command).joined(separator: "\n"))
+                        .font(.system(size: 12.5, design: .monospaced))
+                        .foregroundStyle(Brand.text)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                }
+                .frame(maxHeight: 170)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Brand.raised))
+            }
+            let risks = CommandSummary.risks(for: command)
+            if !risks.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("What it can do to your Mac").font(.system(size: 12, weight: .medium)).foregroundStyle(Brand.text3)
+                    ForEach(risks, id: \.self) { risk in
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Circle().fill(risk.needsApproval ? Brand.danger : Brand.text3).frame(width: 5, height: 5)
+                            Text(risk.warning).font(.system(size: 12.5)).foregroundStyle(Brand.text2)
+                        }
+                    }
+                }
+            }
+            HStack {
+                Text("Ask before it runs").font(.system(size: 13)).foregroundStyle(Brand.text)
+                Spacer()
+                AproposToggle(title: "Ask before it runs", isOn: $asks)
+                    .onChange(of: asks) { _, value in
+                        var edited = command
+                        edited.needsConfirmation = value
+                        do { _ = try store.update(edited) } catch { problem = "\(error)" }
+                    }
+            }
+            if !command.isRunnable {
+                Toggle("I have read what it does and want it to run", isOn: $read)
+                    .toggleStyle(.checkbox)
+                    .font(.system(size: 12.5))
+            }
+            if let problem { Text(problem).font(.system(size: 12.5)).foregroundStyle(Brand.danger) }
+            HStack {
+                Spacer()
+                if !command.isRunnable {
+                    Button("Approve") {
+                        do {
+                            _ = try store.approve(command.id)
+                            onClose()
+                        } catch {
+                            problem = "\(error)"
+                        }
+                    }
+                    .buttonStyle(BrandButtonStyle(kind: .primary))
+                    .disabled(!read)
+                    .opacity(read ? 1 : 0.5)
+                }
+                Button("Done", action: onClose).buttonStyle(BrandButtonStyle(kind: .secondary))
+                    .keyboardShortcut(.cancelAction)
+            }
+        }
+        .padding(26)
+        .frame(width: 500)
+        .tint(Brand.mint)
     }
 }
 
