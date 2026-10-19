@@ -162,6 +162,18 @@
                     engine.recordRun(commit, title: "Commit", app: app, at: at.addingTimeInterval(45))
                 }
             })
+        static let settingsIntegrations = settings(
+            "settings-integrations", page: .integrations, prepare: { controller in
+                guard
+                    (try? controller.userCommands.create(
+                        UserCommand(
+                            title: "Shout selection", aliases: ["up"], requires: [.selectedText],
+                            backend: .shell(ShellBackend(executable: "/usr/bin/say", arguments: [], standardInput: .text)),
+                            output: .none, allowFromURL: true))) != nil
+                else { return }
+                controller.externalLog.record(action: "run", command: "Shout selection", result: .ran)
+                controller.externalLog.record(action: "open", result: .ran)
+            })
         static let settingsCommandsEmpty = settings("settings-commands-empty", page: .commands)
         static let settingsCommands = settings(
             "settings-commands", page: .commands, prepare: { controller in
@@ -205,7 +217,7 @@
             paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceConfirm, paletteSequenceAsk,
             paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaved, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,
-            settingsGeneral, settingsCommands, settingsCommandsEmpty, settingsPrediction, settingsDestinations, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
+            settingsGeneral, settingsCommands, settingsCommandsEmpty, settingsIntegrations, settingsPrediction, settingsDestinations, settingsAppearance, settingsContext, settingsPrivacy, settingsPrivacyAllowed,
             settingsUpdates, settingsAbout, settingsSearch, onboardingWelcome, onboardingPermission,
             onboardingPermissionHelp, onboardingPermissionAllowed, onboardingTry, onboardingTryHolding,
             onboardingTryNothingOpen, onboardingTryNoAccess, onboardingTryDone, onboardingDone,

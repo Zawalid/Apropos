@@ -38,12 +38,15 @@ public enum ExternalRejection: Error, Equatable, Sendable, CustomStringConvertib
     case notAvailable
     /// A parameter value does not fit the variable it is for (a url that is not http or https, a relative path).
     case badParameter(String)
+    /// The person turned off control from outside.
+    case turnedOff
 
     public var description: String {
         switch self {
         case .route(let error): error.description
         case .notAvailable: "No command like that is set up to run from links or Shortcuts."
         case .badParameter(let name): "The \(name) value cannot be used."
+        case .turnedOff: "Control from outside is turned off in the Apropos settings."
         }
     }
 }
@@ -153,6 +156,10 @@ public struct ExternalRun: Equatable, Sendable {
 public struct ExternalRunner {
     public let store: UserCommandStore
     public let center: ContextActionCenter
+    /// False when the person turned off control from outside: nothing resolves.
+    public var isEnabled = true
+    /// Ask before every outside run, not only the first.
+    public var alwaysConfirm = false
 
     public init(store: UserCommandStore, center: ContextActionCenter) {
         self.store = store
@@ -160,7 +167,7 @@ public struct ExternalRunner {
     }
 
     /// Commands an outside caller may run, by title.
-    public var available: [UserCommand] { store.runnable.filter(\.allowFromURL) }
+    public var available: [UserCommand] { isEnabled ? store.runnable.filter(\.allowFromURL) : [] }
 
     /// Available commands whose title, alias or id contains `text`.
     public func search(_ text: String) -> [UserCommand] {
@@ -175,6 +182,7 @@ public struct ExternalRunner {
     public func resolve(
         reference: String, parameters: [ActionVariable: String]
     ) -> Result<ExternalRun, ExternalRejection> {
+        guard isEnabled else { return .failure(.turnedOff) }
         guard let command = store.runnableCommand(matching: reference), command.allowFromURL else {
             return .failure(.notAvailable)
         }
@@ -187,7 +195,7 @@ public struct ExternalRunner {
         if limited.output == .replaceSelection { limited.output = .clipboard }
         return .success(
             ExternalRun(
-                command: limited, values: values, needsConfirmation: !command.urlConfirmed || command.needsConfirmation,
+                command: limited, values: values, needsConfirmation: alwaysConfirm || !command.urlConfirmed || command.needsConfirmation,
                 isFirstUse: !command.urlConfirmed))
     }
 

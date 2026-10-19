@@ -18,6 +18,7 @@ final class AppController {
     let actions: ContextActionCenter
     let send: SendToCenter
     let destinationToggles: DestinationToggles
+    let externalLog: ExternalActivityLog
     let sequences: SequenceCenter
     let userCommands: UserCommandStore
     let commandHotKeys = CommandHotKeyManager()
@@ -127,6 +128,10 @@ final class AppController {
                     "apropos-send-disabled-\(UUID().uuidString).json"))
         send.disabled = toggles.disabled
         self.destinationToggles = toggles
+        self.externalLog = ExternalActivityLog(
+            url: sendFoldersURL?.deletingLastPathComponent().appendingPathComponent("external-activity.json")
+                ?? FileManager.default.temporaryDirectory.appendingPathComponent(
+                    "apropos-external-\(UUID().uuidString).json"))
         send.frecency = { [weak usageStore] id in usageStore?.frecency(id) ?? 0 }
         send.chooseFolder = { move in await FolderChooser.choose(move: move) }
         palette.attachSend(send)
@@ -271,6 +276,22 @@ final class AppController {
     func showPanel(query: String?) {
         panel?.show()
         if let query { palette.query = query }
+    }
+
+    /// The runner for outside requests, set up from the person's choices.
+    func externalRunner() -> ExternalRunner {
+        var runner = ExternalRunner(store: userCommands, center: actions)
+        runner.isEnabled = settings.externalControl
+        runner.alwaysConfirm = settings.externalAlwaysConfirm
+        return runner
+    }
+
+    /// Notes an outside request in the activity list, if the person keeps one.
+    func recordExternal(
+        _ action: String, command: String? = nil, result: ExternalActivityEntry.Result
+    ) {
+        guard settings.externalLog else { return }
+        externalLog.record(action: action, command: command, result: result)
     }
 
     /// Links opened with the apropos scheme.

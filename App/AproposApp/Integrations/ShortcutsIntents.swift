@@ -50,7 +50,7 @@ struct CommandEntityQuery: EntityStringQuery {
     @MainActor
     private func runner() -> ExternalRunner? {
         guard let controller = IntegrationHub.controller else { return nil }
-        return ExternalRunner(store: controller.userCommands, center: controller.actions)
+        return controller.externalRunner()
     }
 
     @MainActor
@@ -87,14 +87,16 @@ struct RunAproposCommandIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         guard let controller = IntegrationHub.controller else { throw AproposIntentError.notRunning }
-        let runner = ExternalRunner(store: controller.userCommands, center: controller.actions)
+        let runner = controller.externalRunner()
         var parameters: [ActionVariable: String] = [:]
         if let text, !text.isEmpty { parameters[.text] = text }
         if let pageURL { parameters[.url] = pageURL.absoluteString }
 
         let request: ExternalRun
         switch runner.resolve(reference: command.id, parameters: parameters) {
-        case .failure(let rejection): throw AproposIntentError.refused(rejection.description)
+        case .failure(let rejection):
+            controller.recordExternal("run", result: rejection == .turnedOff ? .turnedOff : .refused)
+            throw AproposIntentError.refused(rejection.description)
         case .success(let resolved): request = resolved
         }
         var confirmed = !request.needsConfirmation
@@ -103,13 +105,18 @@ struct RunAproposCommandIntent: AppIntent {
                 request.isFirstUse
                 ? "A Shortcut wants to run this command for the first time. Allow it only if you started it."
                 : "This command asks for confirmation."
-            guard CommandConfirmation.ask(request.command, reason: reason) else { throw AproposIntentError.declined }
+            guard CommandConfirmation.ask(request.command, reason: reason) else {
+                controller.recordExternal("run", command: request.command.title, result: .declined)
+                throw AproposIntentError.declined
+            }
             confirmed = true
         }
         switch await runner.perform(request, confirmed: confirmed, target: controller.tracker.app) {
         case .success(let outcome):
+            controller.recordExternal("run", command: request.command.title, result: .ran)
             return .result(dialog: IntentDialog(stringLiteral: outcome.notice ?? "Done"))
         case .failure(let error):
+            controller.recordExternal("run", command: request.command.title, result: .failed)
             throw AproposIntentError.failed(error.message)
         }
     }
@@ -123,6 +130,11 @@ struct OpenAproposIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         guard let controller = IntegrationHub.controller else { throw AproposIntentError.notRunning }
+        guard controller.settings.externalControl else {
+            controller.recordExternal("open", result: .turnedOff)
+            throw AproposIntentError.refused(ExternalRejection.turnedOff.description)
+        }
+        controller.recordExternal("open", result: .ran)
         controller.showPanel(query: nil)
         return .result()
     }

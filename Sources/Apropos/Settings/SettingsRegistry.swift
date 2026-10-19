@@ -109,6 +109,9 @@ public struct SettingID: RawRepresentable, Hashable, Sendable, ExpressibleByStri
     public static let predictNextCommand: SettingID = "predictNextCommand"
     public static let showPredictionReasons: SettingID = "showPredictionReasons"
     public static let predictionSensitivity: SettingID = "predictionSensitivity"
+    public static let externalControl: SettingID = "externalControl"
+    public static let externalAlwaysConfirm: SettingID = "externalAlwaysConfirm"
+    public static let externalLog: SettingID = "externalLog"
     public static let predictionMaxRows: SettingID = "predictionMaxRows"
     public static let predictionKeepDays: SettingID = "predictionKeepDays"
     public static let predictionExcludedApps: SettingID = "predictionExcludedApps"
@@ -164,7 +167,7 @@ public struct SettingDefinition: Sendable, Identifiable {
 
 /// The list of every setting Apropos has. Add a setting here and it appears in the file, the store and the search.
 public enum SettingsRegistry {
-    public static let all: [SettingDefinition] = general + appearance + context + privacy + updates
+    public static let all: [SettingDefinition] = general + appearance + context + privacy + integrations + updates
 
     public static func definition(for id: SettingID) -> SettingDefinition? { byID[id] }
 
@@ -359,6 +362,24 @@ public enum SettingsRegistry {
             detail: "Bundle identifiers of apps where nothing is learned or suggested.",
             keywords: ["exclude", "per app", "bundle", "prediction"], page: .prediction, type: .stringList,
             defaultValue: .stringList([])),
+    ]
+
+    private static let integrations: [SettingDefinition] = [
+        SettingDefinition(
+            id: .externalControl, title: "Allow control from outside",
+            detail: "Let links, Raycast, Alfred, scripts and Shortcuts open Apropos and run the commands you allowed.",
+            keywords: ["links", "url", "shortcuts", "raycast", "alfred", "automation", "outside"],
+            page: .integrations, type: .bool, defaultValue: .bool(true)),
+        SettingDefinition(
+            id: .externalAlwaysConfirm, title: "Always ask before an outside run",
+            detail: "Ask every time, not only the first time a command is run from outside.",
+            keywords: ["confirm", "ask", "links", "shortcuts", "safe"], page: .integrations, type: .bool,
+            defaultValue: .bool(false)),
+        SettingDefinition(
+            id: .externalLog, title: "Keep a list of outside requests",
+            detail: "Remember the last 50: when, what and the result. Never what was passed in.",
+            keywords: ["activity", "log", "history", "links"], page: .integrations, type: .bool,
+            defaultValue: .bool(true)),
     ]
 
     private static let updates: [SettingDefinition] = [

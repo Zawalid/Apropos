@@ -18,8 +18,12 @@ final class ExternalRequestHandler {
         case .failure(let error):
             tell(error.description)
         case .success(.open):
+            guard controller.settings.externalControl else { return turnedOff("open") }
+            controller.recordExternal("open", result: .ran)
             controller.showPanel(query: nil)
         case .success(.search(let query)):
+            guard controller.settings.externalControl else { return turnedOff("search") }
+            controller.recordExternal("search", result: .ran)
             controller.showPanel(query: query)
         case .success(.run(let reference, let parameters)):
             run(reference: reference, parameters: parameters)
@@ -27,9 +31,10 @@ final class ExternalRequestHandler {
     }
 
     private func run(reference: String, parameters: [ActionVariable: String]) {
-        let runner = ExternalRunner(store: controller.userCommands, center: controller.actions)
+        let runner = controller.externalRunner()
         switch runner.resolve(reference: reference, parameters: parameters) {
         case .failure(let rejection):
+            controller.recordExternal("run", result: rejection == .turnedOff ? .turnedOff : .refused)
             tell(rejection.description)
         case .success(let request):
             var confirmed = !request.needsConfirmation
@@ -39,11 +44,25 @@ final class ExternalRequestHandler {
                     ? "A link or Shortcut wants to run this command for the first time. Allow it only if you started it."
                     : "This command asks for confirmation."
                 confirmed = CommandConfirmation.ask(request.command, reason: reason)
-                guard confirmed else { return }
+                guard confirmed else {
+                    controller.recordExternal("run", command: request.command.title, result: .declined)
+                    return
+                }
             }
             let target = controller.tracker.app
-            Task { _ = await runner.perform(request, confirmed: confirmed, target: target) }
+            let title = request.command.title
+            Task { [controller] in
+                switch await runner.perform(request, confirmed: confirmed, target: target) {
+                case .success: controller.recordExternal("run", command: title, result: .ran)
+                case .failure: controller.recordExternal("run", command: title, result: .failed)
+                }
+            }
         }
+    }
+
+    private func turnedOff(_ action: String) {
+        controller.recordExternal(action, result: .turnedOff)
+        tell(ExternalRejection.turnedOff.description)
     }
 
     /// A short notification: a link has no window to report in.

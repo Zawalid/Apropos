@@ -193,6 +193,21 @@ final class SettingsModel {
         set { write(.stringList(newValue), .predictionExcludedApps) }
     }
 
+    var externalControl: Bool {
+        get { store.bool(.externalControl) }
+        set { write(.bool(newValue), .externalControl) }
+    }
+
+    var externalAlwaysConfirm: Bool {
+        get { store.bool(.externalAlwaysConfirm) }
+        set { write(.bool(newValue), .externalAlwaysConfirm) }
+    }
+
+    var externalLog: Bool {
+        get { store.bool(.externalLog) }
+        set { write(.bool(newValue), .externalLog) }
+    }
+
     var ignoreList: [String] {
         get { store.stringList(.contextIgnoreList) }
         set { write(.stringList(newValue), .contextIgnoreList) }

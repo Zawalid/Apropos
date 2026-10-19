@@ -157,6 +157,14 @@ public final class UserCommandStore {
         insert(command)
     }
 
+    /// Forgets that the first outside run was confirmed, so the next one asks again.
+    public func resetURLConfirmation(_ id: ActionID) throws {
+        guard var command = command(withID: id) else { throw UserCommandError.notFound }
+        command.urlConfirmed = false
+        try write(command)
+        insert(command)
+    }
+
     /// Reads the folder again, for files edited by hand.
     public func reload() {
         var loaded: [UserCommand] = []
