@@ -102,6 +102,14 @@ public enum SequenceDraftResult: Equatable, Sendable {
     case failed
 }
 
+/// What the save form says about the command that will be made, in plain words and derived from the steps.
+public struct SequenceSaveSummary: Equatable, Sendable {
+    /// "4 steps: New Folder, Copy path, UPPERCASE and 1 more".
+    public let steps: String
+    /// "Offered when files are selected": when the command appears in the panel.
+    public let offered: String
+}
+
 /// What happened when a row was added to the draft.
 public enum SequenceAddResult: Equatable, Sendable {
     case added(steps: Int)
@@ -246,6 +254,8 @@ public final class SequenceCenter {
             result = sendStep(for: command, target: target)
         case .sequence:
             result = .failure(.init("That row is part of the draft."))
+        case .app:
+            result = .failure(.init("That row opens Apropos and cannot be a step."))
         }
         switch result {
         case .failure(let refusal):
@@ -643,6 +653,46 @@ public final class SequenceCenter {
     /// The symbols of the collapsed row: the suggestions, then common ones.
     public var quickSymbols: [String] { SymbolPicker.quickPicks(suggested: form.suggestedSymbols) }
 
+    /// What the collapsed row draws and the arrow keys walk. The chosen symbol is in it exactly once: where the
+    /// suggestions have it, or as the first tile when it came from the grid.
+    public var symbolRow: [String] {
+        let quick = quickSymbols
+        guard !quick.contains(form.symbol) else { return quick }
+        return [form.symbol] + quick.dropLast()
+    }
+
+    /// What will be saved: the steps and when the command is offered.
+    public var saveSummary: SequenceSaveSummary {
+        let titles = plan().steps.map(\.title)
+        let shown = titles.prefix(3).joined(separator: ", ")
+        let rest = titles.count - 3
+        let list = rest > 0 ? "\(shown) and \(rest) more" : shown
+        let count = "\(titles.count) step\(titles.count == 1 ? "" : "s")"
+        return SequenceSaveSummary(steps: titles.isEmpty ? count : "\(count): \(list)", offered: offeredLine())
+    }
+
+    /// "Offered when files are selected and a folder is open", from what the steps read from the context.
+    private func offeredLine() -> String {
+        var needs = Set<ContextRequirement>()
+        for step in steps {
+            for input in step.inputs {
+                if case .context = input.source { needs.insert(input.kind.requirement) }
+            }
+        }
+        let words = ContextRequirement.allCases.filter(needs.contains).map { requirement -> String in
+            switch requirement {
+            case .selectedText: "text is selected"
+            case .selectedFiles: "files are selected"
+            case .pageURL: "a web page is open"
+            case .folder: "a folder is open"
+            case .gitRepo: "a git repository is open"
+            case .document: "a document is open"
+            }
+        }
+        guard !words.isEmpty else { return "Offered in every app, with or without a selection" }
+        return "Offered when " + words.joined(separator: " and ")
+    }
+
     /// Opens the full searchable grid in place of the one line.
     public func expandSymbols() {
         guard !symbolExpanded else { return }
@@ -675,10 +725,10 @@ public final class SequenceCenter {
         }
         switch move {
         case .left, .right:
-            let quick = quickSymbols.map { PickerSymbol(name: $0, keywords: []) }
-            let row = [SymbolSection(title: "Quick", symbols: quick)]
+            let shown = symbolRow
+            let row = [SymbolSection(title: "Quick", symbols: shown.map { PickerSymbol(name: $0, keywords: []) })]
             if let next = SymbolPicker.neighbour(
-                of: form.symbol, move: move, in: row, columns: max(quickSymbols.count, 1))
+                of: form.symbol, move: move, in: row, columns: max(shown.count, 1))
             {
                 form.symbol = next
             }
@@ -918,6 +968,12 @@ public final class SequenceCenter {
         case nil:
             return false
         }
+    }
+
+    /// Clears the reason something did not happen and the "saved" note, once the panel has shown them long enough.
+    public func clearMessages() {
+        if failure != nil { failure = nil }
+        if notice != nil { notice = nil }
     }
 
     /// Drops a waiting confirmation without leaving the level (typing is a change of mind).

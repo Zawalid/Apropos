@@ -29,6 +29,7 @@ struct FloatingFooter: View {
                     .padding(.horizontal, 12)
                     .frame(height: 28)
                     .aproposGlass(in: Capsule())
+                    .transition(.opacity)
             }
             if content == .results || content == .sequenceSave { actionBar }
         }
@@ -39,6 +40,7 @@ struct FloatingFooter: View {
 
     /// What Return does for the highlighted row.
     private var primaryTitle: String {
+        if model.pendingDeletion != nil { return "Delete command" }
         if model.sendPending != nil { return "Confirm and send" }
         if model.sequencePending != nil { return "Confirm and run" }
         if model.sequenceAsking != nil { return "Continue" }
@@ -52,6 +54,7 @@ struct FloatingFooter: View {
             case .step: return "Edit with Actions"
             }
         }
+        if let command = model.selected?.command, case .app = command.source { return "Open in Settings" }
         guard let command = model.selected?.command, case .sendTo(let target) = command.source else {
             return "Run menu item"
         }

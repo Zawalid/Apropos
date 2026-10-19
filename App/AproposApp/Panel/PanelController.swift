@@ -14,7 +14,7 @@ final class PanelController: NSObject {
     private var lastHide = Date.distantPast
     private var lastQuery = ""
     private let model: PaletteModel
-    private let openSettings: () -> Void
+    private let openSettings: (SettingsRequest) -> Void
     private var resignObserver: NSObjectProtocol?
     private var clickMonitor: Any?
     private let positions: PanelPositionStore
@@ -28,7 +28,7 @@ final class PanelController: NSObject {
 
     init(
         model: PaletteModel, tracker: FrontmostAppTracker, permission: AccessibilityPermission,
-        settings: SettingsModel, context: ContextModel, usage: UsageController, openSettings: @escaping () -> Void,
+        settings: SettingsModel, context: ContextModel, usage: UsageController, openSettings: @escaping (SettingsRequest) -> Void,
         openGuide: @escaping () -> Void = {}, positions: PanelPositionStore
     ) {
         self.positions = positions
@@ -51,7 +51,7 @@ final class PanelController: NSObject {
                 toggleActions: { [weak self] in self?.toggleActions() },
                 openSettings: { [weak self] in
                     self?.hide(immediately: true)
-                    openSettings()
+                    openSettings(SettingsRequest())
                 },
                 retry: { [weak self] in self?.model.prepareForOpen() },
                 openGuide: { [weak self] in
@@ -67,6 +67,13 @@ final class PanelController: NSObject {
         hosting.frame = NSRect(origin: .zero, size: PanelPlacement.size)
         panel.contentView = hosting
         panel.setContentSize(PanelPlacement.size)
+        // The rows of Apropos itself open its Settings; the panel is already hidden when they run.
+        model.setAppCommandHandler { app in
+            switch app {
+            case .newCommand: openSettings(SettingsRequest(page: .commands, intent: .newCommand))
+            case .yourCommands: openSettings(SettingsRequest(page: .commands))
+            }
+        }
 
         #if DEBUG
             if AgentMode.isOn, let name = ProcessInfo.processInfo.environment["APROPOS_APPEARANCE"] {
@@ -273,7 +280,7 @@ final class PanelController: NSObject {
 
     private func actionsOpenSettings() {
         hide()
-        openSettings()
+        openSettings(SettingsRequest())
     }
 
     private func toggleActions() {
@@ -334,6 +341,15 @@ final class PanelController: NSObject {
         case .copyShortcut:
             PaletteAction.copy(command.shortcut?.display ?? "")
             hide()
+        case .editCommand:
+            if let id = PaletteModel.userCommandID(of: command), model.perform(.edit(id)) { hide(immediately: true) }
+        case .duplicateCommand:
+            if let id = PaletteModel.userCommandID(of: command) { model.perform(.duplicate(id)) }
+            closeActions(animated: true)
+        case .deleteCommand:
+            // Delete asks first: the confirmation row waits for a Return, Escape cancels.
+            model.requestDeletion(of: command)
+            closeActions(animated: true)
         case .addToSequence:
             // The panel stays open: a sequence is built one row after another, and a refusal says why.
             model.addToSequence(command)
@@ -361,6 +377,10 @@ final class PanelController: NSObject {
     private func runSelected() {
         if model.sendPending != nil {
             confirmSend()
+            return
+        }
+        if model.pendingDeletion != nil {
+            model.confirmDeletion()
             return
         }
         if model.sequenceAsking != nil || model.sequencePending != nil {

@@ -182,7 +182,9 @@ final class AppController {
         }
         let panel = PanelController(
             model: palette, tracker: tracker, permission: permission, settings: settings, context: context,
-            usage: usage, openSettings: { [weak self] in self?.showSettings() },
+            usage: usage, openSettings: { [weak self] request in
+                self?.showSettings(page: request.page, intent: request.intent)
+            },
             openGuide: { [weak self] in self?.showOnboarding(step: .permission) },
             positions: panelPositions)
         if AgentMode.isOn {
@@ -192,6 +194,7 @@ final class AppController {
             statusItem = StatusItemController(controller: self)
         }
         self.panel = panel
+        palette.setUserCommandHandler { [weak self] action in self?.perform(action) ?? .failed("Not available.") }
         sharePresenter.anchor = panel.anchorView
         #if DEBUG
             if let name = ProcessInfo.processInfo.environment["APROPOS_FIXTURE_COMMANDS"] {
@@ -333,10 +336,34 @@ final class AppController {
         }
     }
 
-    func showSettings(page: SettingPage? = nil) {
+    /// What the panel's Command-K list does to one of your commands. Settings and the store do the real work.
+    private func perform(_ action: UserCommandAction) -> UserCommandOutcome {
+        switch action {
+        case .edit(let id):
+            showSettings(page: .commands, intent: .editCommand(id.rawValue))
+            return .done(note: nil)
+        case .duplicate(let id):
+            do {
+                let copy = try userCommands.duplicate(id)
+                return .done(note: "Duplicated as \u{201C}\(copy.title)\u{201D}")
+            } catch {
+                return .failed("That command could not be duplicated.")
+            }
+        case .delete(let id):
+            let title = userCommands.command(withID: id)?.title ?? "the command"
+            do {
+                try userCommands.delete(id)
+                return .done(note: "Deleted \u{201C}\(title)\u{201D}")
+            } catch {
+                return .failed("That command could not be deleted.")
+            }
+        }
+    }
+
+    func showSettings(page: SettingPage? = nil, intent: SettingsIntent? = nil) {
         let controller = settingsController ?? SettingsWindowController(controller: self)
         settingsController = controller
-        controller.show(page: page)
+        controller.show(page: page, intent: intent)
     }
 
     var settingsWindow: NSWindow? { settingsController?.currentWindow }

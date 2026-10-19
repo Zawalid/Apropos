@@ -94,6 +94,8 @@ final class UsageController {
         query: String = ""
     ) {
         guard UsageStore.isRecordable(command) else { return }
+        // Rows of Apropos itself open Settings; they are not commands to learn or predict.
+        if case .app = command.source { return }
         store.recordRun(of: command, query: query)
         if SequenceLog.isRecordable(command) {
             prediction.recordRun(

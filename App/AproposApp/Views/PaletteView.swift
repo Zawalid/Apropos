@@ -71,6 +71,19 @@ struct PaletteView: View {
         .providesReduceMotion(settings.reduceMotion)
         .onChange(of: state.focusToken) { searchFocused = true }
         .onAppear { searchFocused = true }
+        .task(id: model.notice) { await fadeNotice() }
+    }
+
+    /// Every note at the foot of the panel goes away by itself after `NoticePolicy`'s time; typing, moving the
+    /// highlight and Escape clear it sooner. The task restarts whenever another note appears and ends with the view.
+    private func fadeNotice() async {
+        guard let shown = model.notice else { return }
+        do {
+            try await Task.sleep(for: .seconds(shown.lifetime))
+        } catch {
+            return
+        }
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) { model.expireNotice(shown) }
     }
 }
 

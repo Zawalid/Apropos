@@ -1,6 +1,25 @@
 import Apropos
 import SwiftUI
 
+/// Something the panel asks the Settings window to open once it is on the right page.
+enum SettingsIntent: Equatable {
+    /// The New command sheet on the Commands page.
+    case newCommand
+    /// The detail sheet of one command of yours, by its id.
+    case editCommand(String)
+}
+
+/// A request to show Settings: a page, and optionally something to open on it.
+struct SettingsRequest {
+    var page: SettingPage?
+    var intent: SettingsIntent?
+
+    init(page: SettingPage? = nil, intent: SettingsIntent? = nil) {
+        self.page = page
+        self.intent = intent
+    }
+}
+
 /// Where the settings window is, with history for the back and forward buttons, and what the search just revealed.
 @MainActor
 @Observable
@@ -14,6 +33,21 @@ final class SettingsNavigation {
     var scrollToken = 0
     /// The anchor whose label is pulsing right now.
     var flashing: String?
+    /// What the page that was just opened should open, once: a sheet asked for by the panel. `intentToken` changes with
+    /// every request so a page that is already showing notices it.
+    private(set) var intent: SettingsIntent?
+    private(set) var intentToken = 0
+
+    func request(_ intent: SettingsIntent) {
+        self.intent = intent
+        intentToken += 1
+    }
+
+    /// The pending intent, handed over once.
+    func takeIntent() -> SettingsIntent? {
+        defer { intent = nil }
+        return intent
+    }
 
     var canGoBack: Bool { !backStack.isEmpty }
     var canGoForward: Bool { !forwardStack.isEmpty }

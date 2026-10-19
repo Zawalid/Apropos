@@ -14,6 +14,27 @@ public enum PaletteContent: Equatable {
     case sequenceSave
 }
 
+/// A note shown at the foot of the panel for a while: where a saved command went, or why something did not happen.
+public struct PaletteNotice: Equatable, Sendable {
+    public let text: String
+    public let isFailure: Bool
+
+    /// Changes whenever another note is shown; the view restarts its timer on it.
+    public var signature: String { (isFailure ? "failure|" : "info|") + text }
+
+    /// How long the note stays before it fades: long enough to read, and longer for what went wrong.
+    public var lifetime: TimeInterval { NoticePolicy.lifetime(isFailure: isFailure) }
+}
+
+/// The one rule for how long footer notes stay. Every note of the panel (a run that failed, a send that failed, a
+/// sequence that stopped, a command that was saved) goes through it.
+public enum NoticePolicy {
+    public static let info: TimeInterval = 3
+    public static let failure: TimeInterval = 5
+
+    public static func lifetime(isFailure: Bool) -> TimeInterval { isFailure ? failure : info }
+}
+
 /// All the palette's behaviour: query, ranked results, selection and running a command. Views only render it.
 @MainActor
 @Observable
@@ -22,9 +43,11 @@ public final class PaletteModel {
         didSet {
             guard query != oldValue else { return }
             selectedID = nil
-            // Typing is a change of mind: a send waiting for its Return is dropped.
+            // Typing is a change of mind: a send waiting for its Return is dropped, and notes make way.
             sendCenter?.goBackFromPending()
             sequenceCenter?.dropConfirmation()
+            pendingDeletion = nil
+            if !keepsNotices { dismissNotices() }
         }
     }
     /// The ranked commands for the current query. Recomputed only when the query or the command list changes.
@@ -83,6 +106,10 @@ public final class PaletteModel {
     /// A context action waiting for the person to confirm it. The view asks, then calls `confirmPending()` or
     /// `cancelPending()`.
     public private(set) var pendingConfirmation: Command?
+    /// A delete of one of your commands, waiting for its confirming Return.
+    public private(set) var pendingDeletion: PendingDeletion?
+    /// A line about something that went well and needs no answer ("Duplicated Shout"). It fades like every note.
+    public private(set) var note: String?
     /// What the last send-to row did: "Sent to Notes". Cleared when a new command starts.
     public private(set) var lastSend: SendOutcome?
     /// Why the last send did not happen, in a sentence that names the destination and never the content. The payload
@@ -130,6 +157,10 @@ public final class PaletteModel {
     @ObservationIgnored private var queryBeforeSendLevel = ""
     @ObservationIgnored private var sequenceCenter: SequenceCenter?
     @ObservationIgnored private var queryBeforeSequenceLevel = ""
+    /// Set while the model itself puts the query back (after a save), which is not the person typing.
+    @ObservationIgnored private var keepsNotices = false
+    @ObservationIgnored private var appCommandHandler: (@MainActor (AppCommand) -> Void)?
+    @ObservationIgnored private var userCommandHandler: (@MainActor (UserCommandAction) -> UserCommandOutcome)?
     @ObservationIgnored private var draftRows = 0
     @ObservationIgnored private var contextRunner:
         (@MainActor (Command, TargetApp?, Bool) async -> Result<ActionOutcome, ActionError>)?
@@ -249,6 +280,32 @@ public final class PaletteModel {
     /// "Saved ... under Your commands", until the next thing the person does.
     public var sequenceNotice: String? { sequenceCenter?.notice }
 
+    /// The note the panel shows at its foot now, if any: a failed run or send, a stopped sequence, or a saved command.
+    /// A question or a confirmation that waits for an answer is not a note and never fades.
+    public var notice: PaletteNotice? {
+        if sendFailure == nil, let runError { return PaletteNotice(text: runError, isFailure: true) }
+        if let sendFailure { return PaletteNotice(text: sendFailure, isFailure: true) }
+        if sequencePending == nil, let failure = sequenceFailure { return PaletteNotice(text: failure, isFailure: true) }
+        if let notice = sequenceNotice { return PaletteNotice(text: notice, isFailure: false) }
+        if let note { return PaletteNotice(text: note, isFailure: false) }
+        return nil
+    }
+
+    /// Clears every note. Typing, moving the highlight and Escape call it, and so does the timer.
+    public func dismissNotices() {
+        if runError != nil { runError = nil }
+        if sendFailure != nil { sendFailure = nil }
+        if note != nil { note = nil }
+        sequenceCenter?.clearMessages()
+    }
+
+    /// The timer of the view ran out for `shown`. Clears the notes only when that note is still the one on screen, so a
+    /// newer note keeps its own full time.
+    public func expireNotice(_ shown: PaletteNotice) {
+        guard notice == shown else { return }
+        dismissNotices()
+    }
+
     /// The step highlighted in the draft level, or nil when another row is.
     public var selectedStepID: String? {
         guard sequenceCenter?.level == .steps, case .sequence(.step(let id))? = selected?.command.source else {
@@ -349,8 +406,11 @@ public final class PaletteModel {
         let searching = !query.trimmingCharacters(in: .whitespaces).isEmpty
         // The draft row heads the list. While searching it takes part like any other row, so typing "draft" finds it.
         let draft = sequenceCenter?.rootCommands ?? []
+        // Apropos's own rows ("New command", "Your commands") are found by typing, never listed in the empty list.
+        let own = searching ? AppCommand.allCases.map(\.command) : []
         let commands =
-            (searching ? draft : []) + listed(context: activeContextCommands, send: activeSendCommands) + (menuItemsOff ? [] : menus.commands)
+            (searching ? draft : []) + listed(context: activeContextCommands, send: activeSendCommands) + own
+            + (menuItemsOff ? [] : menus.commands)
         let base = ranker.rank(
             commands, query: query, priors: searching ? (priorsProvider?(commands.filter(\.isEnabled)) ?? [:]) : [:])
         guard !searching else {
@@ -426,6 +486,8 @@ public final class PaletteModel {
         runError = nil
         lastOutcome = nil
         pendingConfirmation = nil
+        pendingDeletion = nil
+        note = nil
         lastSend = nil
         lastSentCommand = nil
         sendFailure = nil
@@ -443,6 +505,7 @@ public final class PaletteModel {
     }
 
     public func moveSelection(by delta: Int) {
+        dismissNotices()
         let list = results
         guard !list.isEmpty else { return }
         let current = selected.flatMap { chosen in list.firstIndex { $0.id == chosen.id } } ?? 0
@@ -470,6 +533,7 @@ public final class PaletteModel {
     /// Runs the selected command. Returns true when the palette can close.
     @discardableResult
     public func runSelected() async -> Bool {
+        if pendingDeletion != nil { return confirmDeletion() }
         if sequenceAsking != nil { return await submitSequenceAnswer() }
         if sequencePending != nil { return await confirmPending() }
         guard let selected else { return false }
@@ -487,6 +551,14 @@ public final class PaletteModel {
         lastOutcome = nil
         lastSend = nil
         sendFailure = nil
+        if case .app(let own) = command.source {
+            guard let appCommandHandler else {
+                runError = "That is not available here."
+                return false
+            }
+            appCommandHandler(own)
+            return true
+        }
         if case .contextAction = command.source { return await runContextAction(command, confirmed: false) }
         if case .sendTo = command.source { return await runSend(command) }
         if case .sequence = command.source { return await runSequence(command) }
@@ -542,7 +614,7 @@ public final class PaletteModel {
 
     /// Whether something waits for the confirming Return (a context action, a send or a sequence run).
     public var hasPendingConfirmation: Bool {
-        pendingConfirmation != nil || sendCenter?.pending != nil || sequencePending != nil
+        pendingConfirmation != nil || sendCenter?.pending != nil || sequencePending != nil || pendingDeletion != nil
     }
 
     private func runSequence(_ command: Command) async -> Bool {
@@ -587,7 +659,10 @@ public final class PaletteModel {
     @discardableResult
     public func saveSequence() -> Bool {
         guard let center = sequenceCenter, center.save() else { return false }
+        // The "Saved ..." note comes from the save itself and must outlive the query being put back.
+        keepsNotices = true
         query = queryBeforeSequenceLevel
+        keepsNotices = false
         selectedID = nil
         return true
     }
@@ -621,6 +696,57 @@ public final class PaletteModel {
         }
     }
 
+    /// Connects the rows of Apropos itself: the app opens its Settings for them.
+    public func setAppCommandHandler(_ handler: @escaping @MainActor (AppCommand) -> Void) {
+        appCommandHandler = handler
+    }
+
+    /// Connects what the Command-K list does to one of your commands: the app owns the command store.
+    public func setUserCommandHandler(_ handler: @escaping @MainActor (UserCommandAction) -> UserCommandOutcome) {
+        userCommandHandler = handler
+    }
+
+    /// The id of the command when the row is one of your own commands (a context action whose id starts with "user:"),
+    /// so the list can offer Edit, Duplicate and Delete on it.
+    public static func userCommandID(of command: Command) -> ActionID? {
+        guard case .contextAction(let id) = command.source, id.rawValue.hasPrefix("user:") else { return nil }
+        return id
+    }
+
+    /// Edit or Duplicate on one of your commands. True when the panel should close (Edit opens Settings).
+    @discardableResult
+    public func perform(_ action: UserCommandAction) -> Bool {
+        guard let userCommandHandler else {
+            runError = "That is not available here."
+            return false
+        }
+        switch userCommandHandler(action) {
+        case .failed(let message):
+            runError = message
+            return false
+        case .done(let line):
+            note = line
+            if case .edit = action { return true }
+            return false
+        }
+    }
+
+    /// Asks before deleting the highlighted command of yours: the one confirmation row waits for its Return.
+    public func requestDeletion(of command: Command) {
+        guard let id = Self.userCommandID(of: command) else { return }
+        pendingDeletion = PendingDeletion(id: id, title: command.displayTitle)
+    }
+
+    /// The confirming Return of a delete. False always: the panel stays open to show the list without the command.
+    @discardableResult
+    public func confirmDeletion() -> Bool {
+        guard let pending = pendingDeletion else { return false }
+        pendingDeletion = nil
+        selectedID = nil
+        perform(.delete(pending.id))
+        return false
+    }
+
     /// Runs the action or send that was waiting for confirmation. Returns true when the palette can close.
     @discardableResult
     public func confirmPending() async -> Bool {
@@ -637,6 +763,7 @@ public final class PaletteModel {
 
     public func cancelPending() {
         pendingConfirmation = nil
+        pendingDeletion = nil
         sendCenter?.goBackFromPending()
         sequenceCenter?.dropConfirmation()
     }
@@ -645,10 +772,19 @@ public final class PaletteModel {
     /// and the caller should close the panel.
     @discardableResult
     public func goBack() -> Bool {
+        // A note on screen goes first: Escape dismisses it before it leaves anything or closes the panel.
+        let hadNotice = notice != nil
+        let moved = goBackOneLevel()
+        dismissNotices()
+        return moved || hadNotice
+    }
+
+    private func goBackOneLevel() -> Bool {
         runError = nil
         sendFailure = nil
-        if pendingConfirmation != nil {
+        if pendingConfirmation != nil || pendingDeletion != nil {
             pendingConfirmation = nil
+            pendingDeletion = nil
             return true
         }
         if let sequences = sequenceCenter, sequences.isInLevel || sequences.phase != nil {

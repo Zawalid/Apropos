@@ -79,6 +79,8 @@
         static let paletteXcode = palette("palette-xcode", PaletteOptions(app: "xcode"))
         static let paletteFresh = palette("palette-empty-search", PaletteOptions(learned: false))
         static let paletteMatches = palette("palette-search-matches", PaletteOptions(query: "new f"))
+        static let paletteAproposRows = palette(
+            "palette-apropos-rows", PaletteOptions(app: "safari", query: "command"))
 
         // Palette states
 
@@ -223,7 +225,7 @@
 
         /// Every scene, in the order the renderer writes them.
         static let all: [PreviewScene] = [
-            paletteFinder, paletteSafari, paletteXcode, paletteFresh, paletteMatches, paletteNoResults, paletteLoading,
+            paletteFinder, paletteSafari, paletteXcode, paletteFresh, paletteMatches, paletteAproposRows, paletteNoResults, paletteLoading,
             palettePermission, paletteReadFailed, paletteRunFailed, paletteActions, paletteChips, paletteUsuallyNext,
             paletteUsuallyNextOne,
             paletteUsuallyNextFresh, paletteSendRows, paletteSendList, paletteSendConfirm, paletteSendFailed,
@@ -314,6 +316,7 @@
 
     // MARK: Sequences
 
+    #Preview("Palette, Apropos rows when searching") { PairedPreview(PreviewCatalog.paletteAproposRows) }
     #Preview("Palette, sequence draft row") { PairedPreview(PreviewCatalog.paletteSequenceRow) }
     #Preview("Palette, sequence draft level") { PairedPreview(PreviewCatalog.paletteSequenceDraft) }
     #Preview("Palette, sequence draft, menu items") { PairedPreview(PreviewCatalog.paletteSequenceMenus) }

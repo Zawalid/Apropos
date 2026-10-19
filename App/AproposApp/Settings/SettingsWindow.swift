@@ -99,8 +99,9 @@ final class SettingsWindowController {
 
     var currentWindow: NSWindow? { window }
 
-    func show(page: SettingPage? = nil) {
+    func show(page: SettingPage? = nil, intent: SettingsIntent? = nil) {
         if let page { navigation.select(page) }
+        if let intent { navigation.request(intent) }
         let window = window ?? makeWindow()
         self.window = window
         NSApp.activate()

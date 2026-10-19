@@ -67,8 +67,20 @@ struct CommandsPage: View {
     @State private var creating = false
     @State private var group: CommandGroup = .all
     @State private var detailed: UserCommand?
+    @Environment(SettingsNavigation.self) private var navigation
 
     private var store: UserCommandStore { controller.userCommands }
+
+    /// Opens what the panel asked for: the New command sheet, or the detail sheet of one command.
+    private func openRequested() {
+        guard let intent = navigation.takeIntent() else { return }
+        switch intent {
+        case .newCommand:
+            creating = true
+        case .editCommand(let id):
+            detailed = store.commands.first { $0.id.rawValue == id }
+        }
+    }
 
     private var visible: [UserCommand] {
         let inGroup = group == .all ? store.commands : store.commands.filter { CommandGroup.of($0) == group }
@@ -137,6 +149,8 @@ struct CommandsPage: View {
             Text(message).font(.system(size: 12)).foregroundStyle(Brand.danger)
         }
         Color.clear.frame(height: 0)
+            .onAppear { openRequested() }
+            .onChange(of: navigation.intentToken) { openRequested() }
             .sheet(item: $detailed) { command in
                 CommandDetailSheet(command: command, store: store, usage: controller.usage.store) { detailed = nil }
             }

@@ -86,6 +86,7 @@ struct SequenceBanner: View {
         .aproposGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
         .accessibilityElement(children: .combine)
+        .transition(.opacity)
     }
 }
 
@@ -129,18 +130,13 @@ struct SequenceSaveView: View {
     // MARK: Symbol
 
     private func symbolPicker(search: Binding<String>) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Text("Symbol")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Theme.text2)
-                Spacer(minLength: 0)
-                Text(center.form.symbol)
-                    .font(.system(size: 11.5, design: .monospaced))
-                    .foregroundStyle(Theme.text3)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
+        VStack(alignment: .leading, spacing: 8) {
+            // The chosen symbol's name rides in the label, quiet, so it is there for who wants it and nowhere else.
+            (Text("Symbol").font(.system(size: 12, weight: .medium)).foregroundColor(Theme.text2)
+                + Text("   \(center.form.symbol)").font(.system(size: 11.5)).foregroundColor(Theme.text3))
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .accessibilityLabel("Symbol, \(center.form.symbol)")
             if center.symbolExpanded {
                 HStack(spacing: 10) {
                     searchField(search)
@@ -149,17 +145,18 @@ struct SequenceSaveView: View {
                 grid
             } else {
                 quickRow
+                summary
+                    .padding(.top, 10)
             }
         }
         .frame(maxHeight: center.symbolExpanded ? .infinity : nil, alignment: .top)
     }
 
-    /// The collapsed picker: the chosen symbol, one line of suggestions and a More button that opens the grid.
+    /// The collapsed picker: one line of symbols with the chosen one ringed, and a More button that opens the grid.
     private var quickRow: some View {
         HStack(spacing: 8) {
-            symbolPreview
             HStack(spacing: 2) {
-                ForEach(center.quickSymbols, id: \.self) { name in
+                ForEach(center.symbolRow, id: \.self) { name in
                     SymbolCell(name: name, isChosen: name == center.form.symbol) {
                         center.form.symbol = name
                         state.formField = 2
@@ -192,6 +189,32 @@ struct SequenceSaveView: View {
             .buttonStyle(.plain)
             .help("Search all symbols (Down)")
             .accessibilityLabel("More symbols")
+        }
+    }
+
+    /// What will be saved, read-only: the steps, and when the command shows up in the panel.
+    private var summary: some View {
+        let summary = center.saveSummary
+        return VStack(alignment: .leading, spacing: 8) {
+            summaryLine("list.number", summary.steps)
+            summaryLine("scope", summary.offered)
+            summaryLine("magnifyingglass", "Listed under Your commands. Type its name or alias to find it.")
+        }
+        .padding(.horizontal, 2)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func summaryLine(_ symbol: String, _ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: symbol)
+                .font(.system(size: 11.5, weight: .medium))
+                .foregroundStyle(Theme.text3)
+                .frame(width: 16)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(.system(size: 12.5))
+                .foregroundStyle(Theme.text2)
+                .lineLimit(2)
         }
     }
 

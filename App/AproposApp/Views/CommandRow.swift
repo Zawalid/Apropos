@@ -62,6 +62,7 @@ struct CommandRow: View {
         if let reason { return reason }
         // Rows of the sequence draft say where a step's input comes from, or how its run went.
         if case .sequence = command.source, let detail = command.detail { return detail }
+        if case .app = command.source, let detail = command.detail { return detail }
         if showsFullPath { return command.displaySubtitle(appName: appName) }
         return command.path.dropFirst().joined(separator: " > ")
     }

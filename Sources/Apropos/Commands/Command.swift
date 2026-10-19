@@ -56,6 +56,8 @@ public enum CommandSource: Sendable, Hashable {
     case sendTo(SendTarget)
     /// A row of the sequence draft: its top row, its actions and its steps.
     case sequence(SequenceTarget)
+    /// A row of Apropos itself ("New command", "Your commands"), listed only while searching.
+    case app(AppCommand)
 }
 
 /// An Option-key variant of a menu item, such as Empty Trash Securely next to Empty Trash. It is a second way to run
@@ -132,6 +134,8 @@ public struct Command: Identifiable, Sendable {
                 self.stableID = target.commandID
             case .sequence(let target):
                 self.stableID = target.commandID
+            case .app(let command):
+                self.stableID = command.commandID
             }
         }
     }

@@ -32,7 +32,11 @@ struct SendBanner: View {
     let model: PaletteModel
 
     var body: some View {
-        if let pending = model.sendPending {
+        if let deletion = model.pendingDeletion {
+            Banner(
+                symbol: "trash", tint: Theme.cautionText, title: deletion.heading, detail: deletion.detail,
+                keys: [("\u{21A9}", "Delete"), ("esc", "Cancel")])
+        } else if let pending = model.sendPending {
             Banner(
                 symbol: "paperplane", tint: Theme.text2, title: pending.heading, detail: pending.detail,
                 keys: [("\u{21A9}", "Send"), ("esc", "Cancel")])
@@ -85,5 +89,6 @@ private struct Banner: View {
         .aproposGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
         .accessibilityElement(children: .combine)
+        .transition(.opacity)
     }
 }

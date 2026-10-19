@@ -13,6 +13,10 @@ struct PaletteAction: Identifiable {
         case copyPath
         case copyShortcut
         case addToSequence
+        /// Open Settings on one of your commands.
+        case editCommand
+        case duplicateCommand
+        case deleteCommand
         case moveStep(Int)
         case deleteStep
         /// Ask for the step's text when the sequence runs (true), or go back to the chain (false).
@@ -39,6 +43,12 @@ struct PaletteAction: Identifiable {
         guard let command else { return [] }
         if case .sequence(let target) = command.source { return sequenceActions(for: target, sequence: sequence) }
         var list = [PaletteAction(kind: .run, title: "Run", symbol: "play", keys: ["↩"])]
+        if case .app = command.source { return list }
+        if PaletteModel.userCommandID(of: command) != nil {
+            list.append(PaletteAction(kind: .editCommand, title: "Edit command", symbol: "slider.horizontal.3", keys: []))
+            list.append(PaletteAction(kind: .duplicateCommand, title: "Duplicate", symbol: "plus.square.on.square", keys: []))
+            list.append(PaletteAction(kind: .deleteCommand, title: "Delete", symbol: "trash", keys: []))
+        }
         if canJoinSequence(command) {
             list.append(
                 PaletteAction(
@@ -79,7 +89,7 @@ struct PaletteAction: Identifiable {
         case .sendTo(let target):
             guard case .destination = target else { return false }
             return command.isEnabled
-        case .sequence:
+        case .sequence, .app:
             return false
         }
     }

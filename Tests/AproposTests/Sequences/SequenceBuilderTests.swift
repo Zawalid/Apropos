@@ -859,6 +859,49 @@ struct SequenceBuilderTests {
         #expect(rig.store.commands.first?.symbol == first)
     }
 
+    @Test func theChosenSymbolIsInTheRowExactlyOnce() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        try await openSaveForm(rig)
+        #expect(rig.center.symbolRow.count == SymbolPicker.quickCount)
+        #expect(rig.center.symbolRow.filter { $0 == rig.center.form.symbol }.count == 1)
+        // From the suggestions, the row keeps its order when the choice moves.
+        let before = rig.center.symbolRow
+        rig.center.symbolKey(.right)
+        #expect(rig.center.symbolRow == before)
+        // From the grid: the chosen symbol leads the row, once, and the row keeps its length.
+        rig.center.expandSymbols()
+        rig.center.form.symbolQuery = "bug"
+        rig.center.collapseSymbols()
+        #expect(rig.center.symbolRow.first == "ladybug")
+        #expect(rig.center.symbolRow.filter { $0 == "ladybug" }.count == 1)
+        #expect(rig.center.symbolRow.count == SymbolPicker.quickCount)
+    }
+
+    @Test func theFormSaysWhatWillBeSaved() async throws {
+        let rig = editorRig()
+        feed(rig, filesContext())
+        rig.model.addToSequence(try #require(menuRow(rig, "New Folder")))
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:files.copy-path")
+        rig.model.addToSequence(try #require(menuRow(rig, "Show Preview")))
+        try await openSaveForm(rig)
+        let summary = rig.center.saveSummary
+        #expect(summary.steps.hasPrefix("4 steps: ") && summary.steps.hasSuffix("and 1 more"))
+        #expect(summary.steps.contains("Copy path"))
+        #expect(summary.offered == "Offered when text is selected and files are selected")
+    }
+
+    @Test func aDraftThatReadsNothingIsOfferedEverywhere() async throws {
+        let rig = editorRig()
+        feed(rig)
+        rig.model.addToSequence(try #require(menuRow(rig, "New Folder")))
+        try await openSaveForm(rig)
+        #expect(rig.center.saveSummary.steps.hasPrefix("1 step: "))
+        #expect(rig.center.saveSummary.offered == "Offered in every app, with or without a selection")
+    }
+
     @Test func arrowKeysWalkTheGridAndStopAtItsEdges() async throws {
         let rig = rig()
         feed(rig)
