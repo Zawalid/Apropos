@@ -107,6 +107,21 @@ struct AppearancePage: View {
             }
         }
         .settingsAnchor(SettingID.theme.rawValue)
+        SettingsSection(title: "Under the search field", footer: detail(.contextChips)) {
+            FlowLayout(spacing: 8) {
+                ForEach(SettingsRegistry.contextChipOptions, id: \.value) { option in
+                    if let kind = ContextKind(rawValue: option.value) {
+                        ChipToggle(
+                            title: option.title,
+                            isOn: Binding(
+                                get: { settings.isChipShown(kind) }, set: { settings.setChip(kind, shown: $0) }))
+                    }
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .settingsAnchor(SettingID.contextChips.rawValue)
         SettingsSection(title: "Panel") {
             SettingsRow(title: title(.interfaceSize), detail: detail(.interfaceSize), settingID: .interfaceSize) {
                 SizePicker(selection: $settings.interfaceSize)
@@ -158,79 +173,6 @@ private struct SizePicker: View {
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
-    }
-}
-
-// MARK: Context
-
-struct ContextPage: View {
-    let settings: SettingsModel
-
-    @State private var apps: [AppEntry] = []
-
-    struct AppEntry: Identifiable {
-        let bundleID: String
-        let name: String
-        let icon: NSImage?
-        var id: String { bundleID }
-    }
-
-    var body: some View {
-        @Bindable var settings = settings
-        SettingsSection(footer: "Everything Apropos reads stays on this Mac.") {
-            SettingToggleRow(id: .contextSensing, isOn: $settings.contextSensing)
-        }
-        SettingsSection(title: title(.contextChips), footer: detail(.contextChips)) {
-            FlowLayout(spacing: 8) {
-                ForEach(SettingsRegistry.contextChipOptions, id: \.value) { option in
-                    if let kind = ContextKind(rawValue: option.value) {
-                        ChipToggle(
-                            title: option.title,
-                            isOn: Binding(
-                                get: { settings.isChipShown(kind) }, set: { settings.setChip(kind, shown: $0) }))
-                    }
-                }
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .settingsAnchor(SettingID.contextChips.rawValue)
-        .opacity(settings.contextSensing ? 1 : 0.5)
-        .disabled(!settings.contextSensing)
-        SettingsSection(title: "Apps", footer: "Turn an app off and Apropos reads nothing from it beyond the menu.") {
-            if apps.isEmpty {
-                SettingsRow(title: "No apps to list") { EmptyView() }
-            }
-            ForEach(apps) { app in
-                SettingsRow(title: app.name, leading: AnyView(AppIconImage(icon: app.icon, size: 20))) {
-                    AproposToggle(
-                        title: app.name,
-                        isOn: Binding(
-                            get: { settings.isSensingEnabled(for: app.bundleID) },
-                            set: { settings.setSensing($0, for: app.bundleID) }))
-                }
-            }
-        }
-        .settingsAnchor(SettingID.contextDisabledApps.rawValue)
-        .opacity(settings.contextSensing ? 1 : 0.5)
-        .disabled(!settings.contextSensing)
-        Color.clear.frame(height: 0).onAppear { apps = loadApps() }
-    }
-
-    private func loadApps() -> [AppEntry] {
-        var seen = Set<String>()
-        var list: [AppEntry] = []
-        let running = NSWorkspace.shared.runningApplications.filter {
-            $0.activationPolicy == .regular && $0.bundleIdentifier != Bundle.main.bundleIdentifier
-        }
-        for app in running {
-            guard let id = app.bundleIdentifier, seen.insert(id).inserted else { continue }
-            list.append(AppEntry(bundleID: id, name: app.localizedName ?? id, icon: app.icon))
-        }
-        for id in settings.contextDisabledApps where seen.insert(id).inserted {
-            list.append(AppEntry(bundleID: id, name: appDisplayName(id), icon: nil))
-        }
-        return list.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 }
 

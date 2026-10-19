@@ -228,7 +228,9 @@ final class AppController {
     private func runFromShortcut(_ command: UserCommand) {
         var sensing = ContextService()
         sensing.privacy = settings.contextPrivacy
-        if !settings.contextSensing { sensing = ContextService(isTrusted: { false }, makeRoot: { _ in nil }) }
+        if !settings.contextSensing || context.isPaused {
+            sensing = ContextService(isTrusted: { false }, makeRoot: { _ in nil })
+        }
         let target = tracker.app
         Task { [actions] in
             await actions.runWithLiveContext(

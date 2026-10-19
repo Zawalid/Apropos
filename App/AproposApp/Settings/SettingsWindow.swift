@@ -441,7 +441,7 @@ struct SettingsRoot: View {
         case .destinations: DestinationsPage(controller: controller)
         case .prediction: PredictionPage(controller: controller, settings: settings)
         case .integrations: IntegrationsPage(controller: controller)
-        case .context: ContextPage(settings: settings)
+        case .context: ContextPage(controller: controller, settings: settings)
         case .privacyAndData: PrivacyPage(controller: controller, settings: settings)
         case .updates: UpdatesPage(settings: settings)
         case .about: AboutPage(controller: controller, settings: settings)

@@ -21,6 +21,21 @@ final class ContextModel {
     /// Called when the kinds of context found differ from the last snapshot, so predictions can be asked again.
     @ObservationIgnored var onKindsChange: (() -> Void)?
     @ObservationIgnored private let settings: SettingsModel
+    /// While set to a future time, nothing is read at all: for sharing a screen or presenting.
+    private(set) var pausedUntil: Date?
+
+    var isPaused: Bool { pausedUntil.map { $0 > Date() } ?? false }
+
+    func pause(for interval: TimeInterval) {
+        pausedUntil = Date().addingTimeInterval(interval)
+        task?.cancel()
+        items = []
+        senseKinds = []
+        itemsPID = nil
+        onChange?()
+    }
+
+    func resume() { pausedUntil = nil }
 
     init(settings: SettingsModel, service: ContextService = ContextService()) {
         self.settings = settings
@@ -36,7 +51,7 @@ final class ContextModel {
 
     func refresh(for app: TargetApp?) {
         task?.cancel()
-        guard let app, settings.contextSensing else {
+        guard let app, settings.contextSensing, !isPaused else {
             items = []
             senseKinds = []
             itemsPID = nil

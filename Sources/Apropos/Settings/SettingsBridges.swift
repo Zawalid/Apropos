@@ -6,7 +6,11 @@ extension SettingsStore {
     /// by callers checking `bool(.contextSensing)` before asking for a snapshot; this only maps the lists.
     public func contextPrivacy() -> ContextPrivacy {
         let disabled = Set(stringList(.contextDisabledApps)).union(stringList(.contextIgnoreList))
-        return ContextPrivacy(disabledBundleIDs: disabled)
+        let allowed = Set(stringList(.contextSources))
+        let off = Set(SettingsRegistry.contextSourceOptions.map(\.value)).subtracting(allowed)
+        return ContextPrivacy(
+            disabledBundleIDs: disabled, selectionBlockedBundleIDs: Set(stringList(.contextSelectionBlockedApps)),
+            disabledKinds: Set(off.compactMap(ContextKind.init(rawValue:))))
     }
 
     /// The chips to show, in display order, as context kinds.

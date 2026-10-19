@@ -131,6 +131,48 @@ final class SettingsModel {
         set { write(.bool(newValue), .showPredictionReasons) }
     }
 
+    /// The kinds of context Apropos may read.
+    var contextSources: Set<String> {
+        get { Set(store.stringList(.contextSources)) }
+        set { write(.stringList(SettingsRegistry.contextSourceOptions.map(\.value).filter(newValue.contains)), .contextSources) }
+    }
+
+    var contextSelectionBlockedApps: [String] {
+        get { store.stringList(.contextSelectionBlockedApps) }
+        set { write(.stringList(newValue), .contextSelectionBlockedApps) }
+    }
+
+    /// How much Apropos reads in one app: everything, everything but the selected text, or nothing.
+    enum AppReading: String, CaseIterable {
+        case full, noSelection, off
+
+        var title: String {
+            switch self {
+            case .full: "Everything"
+            case .noSelection: "Not the selection"
+            case .off: "Nothing"
+            }
+        }
+    }
+
+    func reading(of bundleID: String) -> AppReading {
+        if contextDisabledApps.contains(bundleID) || ignoreList.contains(bundleID) { return .off }
+        if contextSelectionBlockedApps.contains(bundleID) { return .noSelection }
+        return .full
+    }
+
+    func setReading(_ reading: AppReading, of bundleID: String) {
+        ignoreList = ignoreList.filter { $0 != bundleID }
+        _ = store.set(.stringList(contextDisabledApps.filter { $0 != bundleID }), for: .contextDisabledApps)
+        contextSelectionBlockedApps = contextSelectionBlockedApps.filter { $0 != bundleID }
+        switch reading {
+        case .full: break
+        case .noSelection: contextSelectionBlockedApps.append(bundleID)
+        case .off: _ = store.set(.stringList(contextDisabledApps + [bundleID]), for: .contextDisabledApps)
+        }
+        write(.stringList(store.stringList(.contextDisabledApps)), .contextDisabledApps)
+    }
+
     var ignoreList: [String] {
         get { store.stringList(.contextIgnoreList) }
         set { write(.stringList(newValue), .contextIgnoreList) }

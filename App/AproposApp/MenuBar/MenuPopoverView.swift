@@ -12,6 +12,7 @@ struct MenuPopoverActions {
     var settings: () -> Void = {}
     var welcomeGuide: () -> Void = {}
     var checkForUpdates: () -> Void = {}
+    var togglePause: () -> Void = {}
     var quit: () -> Void = {}
 }
 
@@ -23,6 +24,7 @@ struct MenuPopoverView: View {
     let hotKey: HotKeyCombo
     let hasAccess: Bool
     var pendingCommands = 0
+    var contextPaused = false
     let actions: MenuPopoverActions
 
     static let width: CGFloat = 320
@@ -32,6 +34,7 @@ struct MenuPopoverView: View {
             contextCard
                 .padding(.horizontal, 10)
                 .padding(.top, 10)
+            pauseRow
             openButton
                 .padding(.horizontal, 10)
                 .padding(.top, 8)
@@ -75,6 +78,22 @@ struct MenuPopoverView: View {
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Brand.section))
         .accessibilityElement(children: .combine)
+    }
+
+    /// One quiet line under the card: stop reading for an hour, for screen sharing or a talk.
+    private var pauseRow: some View {
+        Button(action: actions.togglePause) {
+            HStack(spacing: 6) {
+                Image(systemName: contextPaused ? "play.circle" : "pause.circle").font(.system(size: 12))
+                Text(contextPaused ? "Context paused. Resume" : "Pause context for an hour")
+                    .font(.system(size: 12))
+            }
+            .foregroundStyle(contextPaused ? Brand.pearl : Brand.text3)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+        }
+        .buttonStyle(.plain)
     }
 
     private var openButton: some View {

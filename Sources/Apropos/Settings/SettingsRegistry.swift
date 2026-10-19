@@ -102,6 +102,8 @@ public struct SettingID: RawRepresentable, Hashable, Sendable, ExpressibleByStri
     public static let contextSensing: SettingID = "contextSensing"
     public static let contextDisabledApps: SettingID = "contextDisabledApps"
     public static let contextChips: SettingID = "contextChips"
+    public static let contextSources: SettingID = "contextSources"
+    public static let contextSelectionBlockedApps: SettingID = "contextSelectionBlockedApps"
     public static let contextIgnoreList: SettingID = "contextIgnoreList"
     public static let checkForUpdates: SettingID = "checkForUpdates"
     public static let predictNextCommand: SettingID = "predictNextCommand"
@@ -191,6 +193,12 @@ public enum SettingsRegistry {
     ]
     public static let rowIconOptions = [
         SettingOption("glyph", "Glyph"), SettingOption("appLogo", "App logo"), SettingOption("none", "None"),
+    ]
+    /// What Apropos may read from the app in front. Turning one off drops it before anything uses it.
+    public static let contextSourceOptions = [
+        SettingOption("document", "Document"), SettingOption("url", "Web address"),
+        SettingOption("folder", "Folder and files"), SettingOption("branch", "Git branch"),
+        SettingOption("selection", "Selected text"),
     ]
     public static let contextChipOptions = [
         SettingOption("document", "Document"), SettingOption("url", "URL"), SettingOption("folder", "Folder"),
@@ -287,10 +295,21 @@ public enum SettingsRegistry {
             keywords: ["per app", "disable", "exclude", "bundle"], page: .context, type: .stringList,
             defaultValue: .stringList([])),
         SettingDefinition(
-            id: .contextChips, title: "Context chips",
-            detail: "Which pieces of context appear under the search field. Off by default until context drives actions.",
-            keywords: ["chips", "document", "url", "branch", "folder", "selection"], page: .context,
+            id: .contextChips, title: "Context under the search field",
+            detail: "Which pieces of what Apropos read appear as small chips under the search field.",
+            keywords: ["chips", "document", "url", "branch", "folder", "selection", "show"], page: .appearance,
             type: .multiChoice(contextChipOptions), defaultValue: .stringList([])),
+        SettingDefinition(
+            id: .contextSources, title: "What Apropos reads",
+            detail: "Each kind of context it may read from the app in front.",
+            keywords: ["read", "document", "address", "url", "folder", "files", "branch", "git", "selection", "text"],
+            page: .context, type: .multiChoice(contextSourceOptions),
+            defaultValue: .stringList(contextSourceOptions.map(\.value))),
+        SettingDefinition(
+            id: .contextSelectionBlockedApps, title: "Apps where selected text is never read",
+            detail: "Bundle identifiers of apps where Apropos reads context but never the selected text.",
+            keywords: ["per app", "selection", "text", "secret", "bundle"], page: .context, type: .stringList,
+            defaultValue: .stringList(ContextPrivacy.defaultSelectionBlocked.sorted())),
     ]
 
     private static let privacy: [SettingDefinition] = [

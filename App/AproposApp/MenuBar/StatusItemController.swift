@@ -87,11 +87,14 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSPopoverDelegate {
             settings: close { controller.showSettings() },
             welcomeGuide: close { controller.showOnboarding() },
             checkForUpdates: close { controller.settings.checkForUpdatesNow() },
+            togglePause: close {
+                if controller.context.isPaused { controller.context.resume() } else { controller.context.pause(for: 3600) }
+            },
             quit: close { NSApp.terminate(nil) })
         let view = MenuPopoverView(
             header: header, recents: controller.usage.recents, hotKey: controller.combo,
             hasAccess: controller.permission.isTrusted, pendingCommands: controller.userCommands.pending.count,
-            actions: actions)
+            contextPaused: controller.context.isPaused, actions: actions)
         let host = NSHostingController(rootView: view)
         host.sizingOptions = [.preferredContentSize]
         popover.contentViewController = host

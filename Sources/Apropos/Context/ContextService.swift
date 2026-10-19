@@ -70,8 +70,9 @@ public struct ContextService: Sendable {
         let gitPath = fields.folderPath ?? fields.documentPath
         let lookup = git
         let timeout = gitTimeout
+        let readsBranch = !privacy.disabledKinds.contains(.branch)
         async let gitResult = TimedWork.run(timeout: timeout * 2 + 0.03) { () -> (String?, String?) in
-            guard let gitPath else { return (nil, nil) }
+            guard readsBranch, let gitPath else { return (nil, nil) }
             return (
                 lookup.branch(forFolder: gitPath, timeout: timeout),
                 lookup.repoRoot(forFolder: gitPath, timeout: timeout)
@@ -86,6 +87,7 @@ public struct ContextService: Sendable {
             fields.repoRoot = root
         }
         if let files = await filesResult, !files.isEmpty { fields.selectedFilePaths = files }
+        privacy.filter(&fields)
 
         snapshot.fields = fields
         snapshot.values = ContextValues(fields: fields)
