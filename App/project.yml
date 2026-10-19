@@ -20,6 +20,8 @@ targets:
     platform: macOS
     sources:
       - AproposApp
+      - path: ../CHANGELOG.md
+        buildPhase: resources
     dependencies:
       - package: Apropos
         product: Apropos

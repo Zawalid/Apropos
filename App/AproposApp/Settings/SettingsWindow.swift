@@ -393,7 +393,7 @@ struct SettingsRoot: View {
         case .integrations: "apropos:// links"
         case .context: settings.contextSensing ? "Sensing is on" : "Sensing is off"
         case .privacyAndData: controller.permission.isTrusted ? "Accessibility allowed" : "Needs Accessibility"
-        case .updates: settings.checkForUpdates ? "Checks automatically" : "Checks when you ask"
+        case .updates: "Early access"
         case .about:
             (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String).map { "Version \($0)" }
         }
