@@ -72,3 +72,19 @@ Still in Finder with the two files selected.
 ## What to send me
 A list like: `8: only 1 step shown`, `14: Google it missing`, `17: Command-Space gave no note`. Anything that felt slow or
 looked wrong, even if it is not in this list.
+
+## Part 5. What still needs the real app
+Rendered screens (panel, sequence draft, confirm and save forms, every Settings page, menu bar popover, light and dark)
+were checked from images and look right. Only behaviour is left, and it needs the real app on screen. Keep this list
+short: write the step number and one line for anything that is off.
+
+1. Option-Space opens the panel over Finder with two files selected, with a "Selected files" group (steps 1 and 3).
+2. Typing `nf`, `shwo`, `clo` orders results as described (step 2).
+3. Dragging the panel snaps to the guides and remembers where you let go (steps 3 and 4).
+4. The sequence in Part 2 runs for real: Finder > Settings opens Settings in front, and step numbers and Escape-after-
+   the-last-delete behave as written (steps 5 to 10).
+5. A command that asks first shows its question in the panel, asks only the first time, then runs (steps 11 and 14).
+6. Global shortcuts run a command from any app, and Command-Space shows the Spotlight note (step 17).
+7. Context chips and the toggles change what the panel offers (step 18).
+8. An `apropos://run` link from Terminal asks once, and is refused when outside control is off (step 21).
+9. Quit and reopen: settings and panel position stay, the draft is gone (step 26).
