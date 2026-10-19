@@ -69,7 +69,7 @@ public enum FolderDestinations {
 public final class SendFolderStore: @unchecked Sendable {
     public static let limit = 5
 
-    private let url: URL
+    public let url: URL
     private let lock = NSLock()
     private var paths: [String]
 

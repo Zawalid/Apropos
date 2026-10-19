@@ -48,7 +48,7 @@ public struct ExternalActivityEntry: Codable, Equatable, Sendable, Identifiable 
 public final class ExternalActivityLog: @unchecked Sendable {
     public static let limit = 50
 
-    private let url: URL
+    public let url: URL
     private let lock = NSLock()
     private var stored: [ExternalActivityEntry]
 

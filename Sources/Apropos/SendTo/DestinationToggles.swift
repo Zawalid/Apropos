@@ -2,7 +2,7 @@ import Foundation
 
 /// Which destinations the person turned off, kept in a small file next to the remembered folders.
 public final class DestinationToggles: @unchecked Sendable {
-    private let url: URL
+    public let url: URL
     private let lock = NSLock()
     private var ids: Set<String>
 
