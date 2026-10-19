@@ -383,6 +383,10 @@ final class PanelController: NSObject {
             model.confirmDeletion()
             return
         }
+        if let waiting = model.pendingConfirmation {
+            confirmContextAction(waiting)
+            return
+        }
         if model.sequenceAsking != nil || model.sequencePending != nil {
             // A question in the search field, or the combined confirmation: Return answers or confirms.
             Task { [weak self] in
@@ -415,6 +419,25 @@ final class PanelController: NSObject {
         }
     }
 
+    /// Return on the banner of a command that asked first: close the panel, then run it with the question answered.
+    private func confirmContextAction(_ command: Command) {
+        let appName = model.targetApp?.name
+        let appBundleID = model.targetApp?.bundleID
+        let kinds = context.senseKinds
+        let typed = model.query
+        hide(immediately: true)
+        Task { [weak self] in
+            guard let self else { return }
+            let closed = await self.model.confirmPending()
+            if closed {
+                self.usage.recordRun(
+                    command, appName: appName, appBundleID: appBundleID, contextKinds: kinds, query: typed)
+            } else {
+                self.reopenWithError()
+            }
+        }
+    }
+
     private func confirmSend() {
         Task { [weak self] in
             guard let self else { return }
@@ -442,6 +465,11 @@ final class PanelController: NSObject {
     private func run(_ command: Command) {
         if model.isSendRow(command) || model.isSequenceRow(command) {
             runSend(command)
+            return
+        }
+        // A command that asks first keeps the panel open to ask: the banner shows, Return confirms, Escape cancels.
+        if command.needsConfirmation, case .contextAction = command.source {
+            Task { [weak self] in _ = await self?.model.run(command) }
             return
         }
         hide(immediately: true)

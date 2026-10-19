@@ -41,6 +41,7 @@ struct FloatingFooter: View {
     /// What Return does for the highlighted row.
     private var primaryTitle: String {
         if model.pendingDeletion != nil { return "Delete command" }
+        if model.pendingConfirmation != nil { return "Confirm and run" }
         if model.sendPending != nil { return "Confirm and send" }
         if model.sequencePending != nil { return "Confirm and run" }
         if model.sequenceAsking != nil { return "Continue" }

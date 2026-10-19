@@ -36,6 +36,11 @@ struct SendBanner: View {
             Banner(
                 symbol: "trash", tint: Theme.cautionText, title: deletion.heading, detail: deletion.detail,
                 keys: [("\u{21A9}", "Delete"), ("esc", "Cancel")])
+        } else if let waiting = model.pendingConfirmation {
+            Banner(
+                symbol: "questionmark.circle", tint: Theme.text2, title: "Run \(waiting.displayTitle)?",
+                detail: waiting.detail ?? "It asks before it runs.",
+                keys: [("\u{21A9}", "Run"), ("esc", "Cancel")])
         } else if let pending = model.sendPending {
             Banner(
                 symbol: "paperplane", tint: Theme.text2, title: pending.heading, detail: pending.detail,
