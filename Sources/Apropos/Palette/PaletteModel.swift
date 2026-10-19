@@ -32,7 +32,7 @@ public final class PaletteModel {
         let key = CacheKey(
             revision: menus.revision, query: query, rankerRevision: rankerRevision, contextRevision: contextRevision,
             predictionRevision: predictionRevision, targetPID: tracker.app?.pid, sendRevision: sendCenter?.revision ?? 0,
-            sequenceRevision: sequenceCenter?.revision ?? 0, sourcesRevision: sourcesRevision
+            sequenceRevision: sequenceCenter?.revision ?? 0, sourcesRevision: sourcesRevision, menuOffRevision: menuOffRevision
         )
         if key != cacheKey {
             computeResults()
@@ -96,6 +96,15 @@ public final class PaletteModel {
     @ObservationIgnored private var ranker: CommandRanker
     @ObservationIgnored private var rankerRevision = 0
     @ObservationIgnored private var sourcesRevision = 0
+    @ObservationIgnored private var menuOffRevision = 0
+
+    /// Apps whose menu items are not listed. Everything else still is.
+    public var menuDisabledApps: Set<String> = [] {
+        didSet { if menuDisabledApps != oldValue { menuOffRevision += 1 } }
+    }
+
+    /// True when the person turned menu items off for the app in front.
+    public var menuItemsOff: Bool { tracker.app?.bundleID.map(menuDisabledApps.contains) ?? false }
 
     /// Which sources besides the front app's menu the list draws from. All on by default.
     public struct Sources: Sendable, Equatable {
@@ -146,6 +155,7 @@ public final class PaletteModel {
         let sendRevision: Int
         let sequenceRevision: Int
         let sourcesRevision: Int
+        let menuOffRevision: Int
     }
 
     public init(
@@ -326,7 +336,7 @@ public final class PaletteModel {
         // The draft row heads the list. While searching it takes part like any other row, so typing "draft" finds it.
         let draft = sequenceCenter?.rootCommands ?? []
         let commands =
-            (searching ? draft : []) + listed(context: activeContextCommands, send: activeSendCommands) + menus.commands
+            (searching ? draft : []) + listed(context: activeContextCommands, send: activeSendCommands) + (menuItemsOff ? [] : menus.commands)
         let base = ranker.rank(commands, query: query)
         guard !searching else {
             cachedResults = base

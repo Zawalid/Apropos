@@ -92,6 +92,7 @@ final class AppController {
         self.usage = UsageController(store: usageStore, palette: palette, defaults: defaults)
         usage.prediction.configure(from: settings.store)
         palette.sources = settings.paletteSources
+        palette.menuDisabledApps = Set(settings.menuDisabledApps)
         self.combo = settings.hotKey
         // Sequences find actions, your commands and destinations through this, once everything below exists.
         let source = SequenceCatalogueSource()
@@ -258,6 +259,7 @@ final class AppController {
     private func settingsChanged() {
         if menus.showAlternates != settings.showAlternates { menus.showAlternates = settings.showAlternates }
         palette.sources = settings.paletteSources
+        palette.menuDisabledApps = Set(settings.menuDisabledApps)
         usage.applyPredictionSettings(settings.store)
         if !settings.contextSensing {
             actions.clear()

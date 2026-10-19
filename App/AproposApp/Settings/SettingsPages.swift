@@ -90,6 +90,7 @@ struct GeneralPage: View {
             SettingToggleRow(id: .includeSendTo, isOn: $settings.includeSendTo)
             SettingToggleRow(id: .showAlternateCommands, isOn: $settings.showAlternates)
         }
+        MenuOffApps(settings: settings)
     }
 
     /// The presets, plus the stored value when someone edited the file to something else.
@@ -238,5 +239,55 @@ private struct ChipToggle: View {
         .accessibilityLabel(title)
         .accessibilityValue(isOn ? "On" : "Off")
         .accessibilityAddTraits(.isToggle)
+    }
+}
+
+/// Apps where the panel lists no menu items, for the ones whose menus only get in the way.
+struct MenuOffApps: View {
+    let settings: SettingsModel
+
+    @State private var apps: [ContextPage.AppEntry] = []
+    @State private var picking = false
+
+    private var named: [ContextPage.AppEntry] {
+        apps.filter { settings.menuDisabledApps.contains($0.bundleID) }
+    }
+
+    var body: some View {
+        SettingsSection(
+            title: "Apps without menu items",
+            footer: "The panel still lists actions, your commands and Send to in these apps, just not their menu.",
+            accessory: AnyView(PillButton(title: "Add app", symbol: "plus") { picking = true })
+        ) {
+            if named.isEmpty {
+                EmptyRows(title: "Menu items show in every app", detail: "Add an app to hide its menu from the panel.")
+            }
+            ForEach(named) { app in
+                SettingsRow(
+                    title: app.name,
+                    leading: AnyView(AppIconImage(icon: NSWorkspace.shared.icon(forFile: app.path), size: 22))
+                ) {
+                    Button {
+                        settings.menuDisabledApps.removeAll { $0 == app.bundleID }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill").font(.system(size: 14)).foregroundStyle(Brand.text3)
+                    }
+                    .buttonStyle(.plain)
+                    .help("List this app's menu items again")
+                    .accessibilityLabel("List \(app.name) menu items again")
+                }
+            }
+        }
+        .settingsAnchor(SettingID.menuDisabledApps.rawValue)
+        .task { apps = await ContextPage.scan(including: settings) }
+        .sheet(isPresented: $picking) {
+            AppPickerSheet(
+                apps: apps.filter { !settings.menuDisabledApps.contains($0.bundleID) },
+                note: "The panel will not list menu items in the app you choose."
+            ) { chosen in
+                settings.menuDisabledApps.append(chosen.bundleID)
+                picking = false
+            } onCancel: { picking = false }
+        }
     }
 }

@@ -63,6 +63,11 @@ final class SettingsModel {
         set { write(.string(newValue), .panelPosition) }
     }
 
+    var menuDisabledApps: [String] {
+        get { store.stringList(.menuDisabledApps) }
+        set { write(.stringList(newValue), .menuDisabledApps) }
+    }
+
     var includeContextActions: Bool {
         get { store.bool(.includeContextActions) }
         set { write(.bool(newValue), .includeContextActions) }

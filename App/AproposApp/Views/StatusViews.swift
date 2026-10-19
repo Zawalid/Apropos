@@ -1,5 +1,40 @@
 import SwiftUI
 
+/// The brand ring, open at the top right, with a small symbol inside and the pearl waiting in the gap: the picture every
+/// empty, missing or failed state shares. A failure drops the pearl and takes the caution colour.
+struct EmptyRing: View {
+    let symbol: String
+    var tint: Color = Theme.text2
+
+    private let size: CGFloat = 76
+    private let line: CGFloat = 3.5
+
+    var body: some View {
+        let isCaution = tint != Theme.text2
+        ZStack {
+            Circle()
+                .trim(from: 0, to: 304.0 / 360.0)
+                .rotation(.degrees(-12))
+                .stroke(
+                    isCaution ? tint.opacity(0.7) : Theme.accent.opacity(0.55),
+                    style: StrokeStyle(lineWidth: line, lineCap: .round)
+                )
+                .frame(width: size - line, height: size - line)
+            Image(systemName: symbol)
+                .font(.system(size: 24, weight: .light))
+                .foregroundStyle(tint)
+            if !isCaution {
+                Circle()
+                    .fill(Color(red: 1, green: 0.54, blue: 0.3))
+                    .frame(width: 10, height: 10)
+                    .shadow(color: Color(red: 1, green: 0.54, blue: 0.3).opacity(0.5), radius: 5)
+                    .offset(x: cos(Angle.degrees(320).radians) * (size - line) / 2, y: sin(Angle.degrees(320).radians) * (size - line) / 2)
+            }
+        }
+        .frame(width: size, height: size)
+    }
+}
+
 /// A centered message for the palette's non-list states.
 struct StatusView: View {
     let symbol: String
@@ -11,12 +46,8 @@ struct StatusView: View {
 
     var body: some View {
         VStack(spacing: Theme.Spacing.sm) {
-            Image(systemName: symbol)
-                .font(.system(size: 20, weight: .regular))
-                .foregroundStyle(tint)
-                .frame(width: 44, height: 44)
-                .background(Circle().fill(Theme.tile))
-                .padding(.bottom, 4)
+            EmptyRing(symbol: symbol, tint: tint)
+                .padding(.bottom, 6)
                 .accessibilityHidden(true)
             Text(title)
                 .font(.system(size: 15, weight: .semibold))

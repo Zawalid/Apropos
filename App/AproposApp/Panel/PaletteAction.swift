@@ -7,6 +7,7 @@ struct PaletteAction: Identifiable {
         case run
         case notNow
         case runAlternate(Int)
+        case showMenu
         case pin(Bool)
         case hide
         case copyPath
@@ -42,6 +43,9 @@ struct PaletteAction: Identifiable {
             list.append(
                 PaletteAction(
                     kind: .addToSequence, title: "Add to sequence", symbol: "plus.square.on.square", keys: []))
+        }
+        if command.target is MenuRevealing {
+            list.append(PaletteAction(kind: .showMenu, title: "Show menu", symbol: "menubar.rectangle", keys: ["⇧", "↩"]))
         }
         if isPredicted {
             list.append(PaletteAction(kind: .notNow, title: "Not now", symbol: "moon.zzz", keys: []))

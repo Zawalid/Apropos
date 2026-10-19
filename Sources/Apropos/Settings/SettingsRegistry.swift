@@ -93,6 +93,7 @@ public struct SettingID: RawRepresentable, Hashable, Sendable, ExpressibleByStri
     public static let resetQueryAfterSeconds: SettingID = "resetQueryAfterSeconds"
     public static let showAlternateCommands: SettingID = "showAlternateCommands"
     public static let panelPosition: SettingID = "panelPosition"
+    public static let menuDisabledApps: SettingID = "menuDisabledApps"
     public static let includeContextActions: SettingID = "includeContextActions"
     public static let includeUserCommands: SettingID = "includeUserCommands"
     public static let includeSendTo: SettingID = "includeSendTo"
@@ -262,6 +263,11 @@ public enum SettingsRegistry {
             keywords: ["move", "drag", "place", "screen", "center", "menu bar", "remember"], page: .general,
             type: .choice(PanelPlacement.Mode.allCases.map { SettingOption($0.rawValue, $0.title) }),
             defaultValue: .string("remember")),
+        SettingDefinition(
+            id: .menuDisabledApps, title: "Apps without menu items",
+            detail: "Bundle identifiers of apps whose menu items are not listed in the panel. Other rows still show.",
+            keywords: ["menu", "disable", "per app", "exclude", "bundle", "hide"], page: .general, type: .stringList,
+            defaultValue: .stringList([])),
         SettingDefinition(
             id: .includeContextActions, title: "Context actions",
             detail: "Actions for what you have selected, the page, the folder or the files.",

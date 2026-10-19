@@ -2,6 +2,13 @@
 
 Ideas decided or noted, not yet scheduled. Newest first.
 
+## An alias and a shortcut for any menu item (Walid, 2026-10-19)
+Raycast's Search Menu Items lets you give the whole extension an alias and a hotkey. Apropos can give any single menu item
+of any app its own: "Close other tabs" in a browser, a shortcut for an item that has none. This is the strongest answer to
+"I could just set a shortcut for the extension". Needs a per-item store keyed by the stable command id, the same alias
+and hotkey rules as user commands, and a global hotkey that presses the item in the front app. Also on the list from the
+same review: a timing comparison for five tasks against Raycast, once the live check is clean.
+
 ## Fallback commands (Walid, 2026-10-19)
 Raycast shows fallbacks (Google Search, Define Word) when a query matches nothing, and lets you choose and order them
 in Settings, Customize Search. Apropos sits next to Raycast, so the useful version is different: when nothing matches,

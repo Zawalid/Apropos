@@ -192,6 +192,9 @@ final class PanelController: NSObject {
             run(command)
         case .actions: toggleActions()
         case .settings: actionsOpenSettings()
+        case .showMenu:
+            guard let command = model.selected?.command, command.target is MenuRevealing else { return false }
+            showMenu(of: command)
         case .move(let delta):
             if model.content == .sequenceSave {
                 // In the save form the arrows and Tab move between its fields.
@@ -230,7 +233,7 @@ final class PanelController: NSObject {
         case .last: state.actionIndex = max(items.count - 1, 0)
         case .run:
             if items.indices.contains(state.actionIndex) { perform(items[state.actionIndex]) }
-        case .runPrediction, .deleteStep, .moveStep: break
+        case .runPrediction, .deleteStep, .moveStep, .showMenu: break
         }
         return true
     }
@@ -266,6 +269,16 @@ final class PanelController: NSObject {
         }
     }
 
+    /// Closes the panel and opens the real menu the command lives in, so the person sees where it is.
+    private func showMenu(of command: Command) {
+        guard let target = command.target as? MenuRevealing else { return }
+        hide()
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(60))
+            try? target.showMenu()
+        }
+    }
+
     private func perform(_ action: PaletteAction) {
         guard let command = model.selected?.command else { return }
         switch action.kind {
@@ -279,6 +292,8 @@ final class PanelController: NSObject {
                     id: command.id, title: alternate.title, path: command.path, shortcut: alternate.shortcut,
                     isEnabled: alternate.isEnabled, isChecked: false, source: command.source, target: alternate.target,
                     stableID: alternate.stableID))
+        case .showMenu:
+            showMenu(of: command)
         case .notNow:
             usage.dismissPrediction(command)
             closeActions(animated: true)

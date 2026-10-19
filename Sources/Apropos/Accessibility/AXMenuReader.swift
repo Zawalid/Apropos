@@ -53,6 +53,36 @@ public struct AXPressTarget: CommandTarget, @unchecked Sendable {
     }
 }
 
+/// A command that can open the real menu it lives in, so the person sees where it is.
+public protocol MenuRevealing: CommandTarget {
+    func showMenu() throws
+}
+
+extension AXPressTarget: MenuRevealing {
+    /// Opens the menu bar item that holds this item, then any submenus on the way down. The item itself is not pressed.
+    public func showMenu() throws {
+        var chain: [AXUIElement] = []
+        var current = element
+        for _ in 0..<12 {
+            var value: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(current, kAXParentAttribute as CFString, &value) == .success,
+                let value, let parent = AXMenuReader.element(value)
+            else { break }
+            var role: CFTypeRef?
+            AXUIElementCopyAttributeValue(parent, kAXRoleAttribute as CFString, &role)
+            let name = role as? String ?? ""
+            if name == kAXMenuBarItemRole as String || name == kAXMenuItemRole as String { chain.append(parent) }
+            if name == kAXMenuBarRole as String { break }
+            current = parent
+        }
+        guard !chain.isEmpty else { throw CommandRunError.unavailable }
+        for item in chain.reversed() {
+            let status = AXUIElementPerformAction(item, kAXPressAction as CFString)
+            if status == .invalidUIElement { throw CommandRunError.unavailable }
+        }
+    }
+}
+
 /// Reads an app's whole menu bar through the Accessibility API into plain snapshots.
 public struct AXMenuReader: Sendable {
     static let attributes: [String] = [

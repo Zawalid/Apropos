@@ -4,12 +4,12 @@ import SwiftUI
 /// One line of the list: a section header or a command. Heights are fixed so the selection highlight can be placed by
 /// arithmetic, which is what lets a single highlight slide between rows.
 private enum ListEntry: Identifiable {
-    case section(id: String, title: String, keys: [String])
+    case section(id: String, title: String, keys: [String], count: Int? = nil)
     case row(RankedCommand, index: Int, fullPath: Bool)
 
     var id: String {
         switch self {
-        case .section(let id, _, _): "section-\(id)"
+        case .section(let id, _, _, _): "section-\(id)"
         case .row(let ranked, _, _): ranked.id
         }
     }
@@ -53,8 +53,8 @@ struct ResultsList: View {
                     LazyVStack(spacing: 0) {
                         ForEach(entries) { entry in
                             switch entry {
-                            case .section(_, let title, let keys):
-                                SectionHeader(title: title, height: metrics.section, keys: keys)
+                            case .section(_, let title, let keys, let count):
+                                SectionHeader(title: title, height: metrics.section, keys: keys, count: count)
                             case .row(let ranked, let index, let fullPath):
                                 CommandRow(
                                     ranked: ranked, symbol: symbols[ranked.id] ?? "command",
@@ -116,6 +116,11 @@ struct ResultsList: View {
         var currentGroup: String?
         // The sequence draft row heads the list, ahead of the pinned rows, under its own header.
         let draftRows = grouped ? model.draftRowCount : 0
+        // How many rows each menu group holds, for the number beside its header.
+        var groupSizes: [String: Int] = [:]
+        for ranked in results.dropFirst(draftRows + leadingCount) {
+            groupSizes[ranked.command.path.first ?? "Menu", default: 0] += 1
+        }
         for (position, ranked) in results.enumerated() {
             var fullPath = true
             if position < draftRows {
@@ -124,19 +129,22 @@ struct ResultsList: View {
                 continue
             }
             let index = position - draftRows
+            if !grouped && index == 0 {
+                entries.append(.section(id: "results", title: "Results", keys: [], count: results.count - draftRows))
+            }
             if grouped {
                 if index == 0 && leading.pinned > 0 {
-                    entries.append(.section(id: "pinned", title: "Pinned", keys: []))
+                    entries.append(.section(id: "pinned", title: "Pinned", keys: [], count: leading.pinned))
                 } else if index == leading.pinned && predicted > 0 {
-                    entries.append(.section(id: "predicted", title: "Usually next", keys: ["⌘", "↩"]))
+                    entries.append(.section(id: "predicted", title: "Usually next", keys: ["⌘", "↩"], count: nil))
                 } else if index == leading.pinned + predicted && leading.suggested > 0 {
-                    entries.append(.section(id: "suggested", title: "Suggested for this moment", keys: []))
+                    entries.append(.section(id: "suggested", title: "Suggested for this moment", keys: [], count: nil))
                 }
                 if index >= leadingCount {
                     let group = ranked.command.path.first ?? "Menu"
                     if group != currentGroup {
                         currentGroup = group
-                        entries.append(.section(id: "\(index)-\(group)", title: group, keys: []))
+                        entries.append(.section(id: "\(index)-\(group)", title: group, keys: [], count: groupSizes[group]))
                     }
                     fullPath =
                         CommandDisplay.isAmbiguous(title: ranked.command.title)
@@ -165,12 +173,19 @@ private struct SectionHeader: View {
     let height: CGFloat
     /// Key caps at the trailing edge, for a group that has its own shortcut.
     var keys: [String] = []
+    /// How many rows sit under the header, shown beside its name.
+    var count: Int?
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
             Text(title)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Theme.text3)
+            if let count {
+                Text("\(count) \(count == 1 ? "item" : "items")")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Theme.text3.opacity(0.7))
+            }
             Spacer(minLength: 0)
             ForEach(keys, id: \.self) { KeyCap(text: $0, small: true) }
         }

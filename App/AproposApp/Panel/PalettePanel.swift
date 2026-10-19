@@ -11,6 +11,8 @@ enum PaletteKey {
     case last
     case actions
     case settings
+    /// Shift-Return: open the real menu the highlighted item lives in.
+    case showMenu
     /// Backspace (query empty) or Command-Backspace: delete the highlighted step of the sequence draft.
     case deleteStep(command: Bool)
     /// Option-Up or Option-Down: move the highlighted step of the sequence draft.
@@ -108,6 +110,7 @@ final class PalettePanel: NSPanel {
         let onlyControl = flags == .control
         switch event.keyCode {
         case 53 where flags.isEmpty: return .close
+        case 36 where flags == .shift: return .showMenu
         case 36 where flags == .command, 76 where flags == .command: return .runPrediction
         case 36,
             76 where flags.isEmpty:

@@ -87,10 +87,16 @@ private struct SearchHeader: View {
         let others = chips.filter { !$0.isApp }
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 17, weight: .regular))
-                    .foregroundStyle(Theme.text2)
-                    .accessibilityHidden(true)
+                // The app you are in, like Raycast's header, so it reads as a command center and not as Spotlight.
+                if let app = model.targetApp {
+                    AppIcon(pid: app.pid, size: 26)
+                        .accessibilityHidden(true)
+                } else {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 17, weight: .regular))
+                        .foregroundStyle(Theme.text2)
+                        .accessibilityHidden(true)
+                }
                 if let level = model.sendLevel {
                     BreadcrumbChip(title: level.title, action: actions.back)
                 }
@@ -231,12 +237,19 @@ private struct PaletteContentView: View {
         case .sequenceSave:
             if let center = model.sequences { SequenceSaveView(center: center, state: state) }
         case .noMatches(let query):
-            StatusView(
-                symbol: "magnifyingglass",
-                title: query.isEmpty ? "Nothing to show" : "No commands for \"\(query)\"",
-                detail: query.isEmpty
-                    ? "This app has no commands to list."
-                    : "Nothing in \(model.targetApp?.name ?? "this app") matches. Try fewer letters.")
+            if query.isEmpty {
+                StatusView(
+                    symbol: model.menuItemsOff ? "eye.slash" : "tray",
+                    title: model.menuItemsOff ? "Menu items are off here" : "Nothing to show",
+                    detail: model.menuItemsOff
+                        ? "You chose not to list \(model.targetApp?.name ?? "this app")'s menu. Change it in Settings, General."
+                        : "This app has no commands to list.")
+            } else {
+                StatusView(
+                    symbol: "magnifyingglass", title: "Nothing for \u{201C}\(query)\u{201D}",
+                    detail: "Nothing in \(model.targetApp?.name ?? "this app") matches. Try fewer letters.",
+                    actionTitle: "Clear search", action: { model.query = "" })
+            }
         }
     }
 }
