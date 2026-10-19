@@ -166,6 +166,45 @@ struct SequenceBuilderTests {
         #expect(kinds == ["uiSteps", "contextAction", "destination"])
     }
 
+    // MARK: Icons and warnings in the draft
+
+    private func stepRowsOfLevel(_ rig: Rig) -> [Command] {
+        rig.center.levelCommands.filter { if case .sequence(.step) = $0.source { true } else { false } }
+    }
+
+    @Test func stepRowsCarryTheAppTheyActInForTheirIcon() async throws {
+        let rig = editorRig()
+        feed(rig, filesContext())
+        #expect(rig.model.addToSequence(try #require(menuRow(rig, "New Folder"))) == .added(steps: 1))
+        #expect(add(rig, "ctx:files.copy-path") == .added(steps: 2))
+        let generic = try #require(row(rig, "send:text"))
+        _ = await rig.model.run(generic)
+        let notes = try #require(row(rig, "send:text>dest:notes"))
+        #expect(rig.model.addToSequence(notes) == .added(steps: 3))
+        _ = await rig.center.perform(rig.center.rootCommands[0])
+        let rows = stepRowsOfLevel(rig)
+        #expect(rows.map(\.iconBundleID) == ["com.example.editor", nil, "com.apple.Notes"])
+    }
+
+    @Test func aStepThatNeedsFilesWarnsOnceTheReadingShowsNone() async throws {
+        let rig = editorRig()
+        feed(rig, filesContext())
+        #expect(add(rig, "ctx:files.copy-path") == .added(steps: 1))
+        // A new opening forgets the reading: nothing is claimed missing before the new one arrives.
+        rig.model.prepareForOpen()
+        _ = await rig.center.perform(rig.center.rootCommands[0])
+        #expect(stepRowsOfLevel(rig).first?.detail?.hasPrefix("Needs") != true)
+
+        feed(rig, ContextValues(selectedText: "hello"))
+        let detail = try #require(stepRowsOfLevel(rig).first?.detail)
+        #expect(detail == "Needs selected files, none are selected")
+        let run = try #require(rig.center.levelCommands.first { $0.source == .sequence(.run) })
+        #expect(run.detail == "Step 1 needs selected files")
+
+        feed(rig, filesContext())
+        #expect(stepRowsOfLevel(rig).first?.detail?.hasPrefix("Needs") != true)
+    }
+
     // MARK: Step ids
 
     private func menuRow(_ rig: Rig, _ title: String) -> Command? {

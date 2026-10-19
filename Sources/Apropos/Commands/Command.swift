@@ -100,6 +100,8 @@ public struct Command: Identifiable, Sendable {
     public internal(set) var alternateOf: CommandID?
     /// An SF Symbol the command brings along (context actions do). Used before any rule of the symbol resolver.
     public internal(set) var symbolName: String?
+    /// The app whose icon the row shows in place of its symbol (rows of the sequence draft, for the app a step acts in).
+    public internal(set) var iconBundleID: String?
     /// Extra words the search matches, below the title.
     public internal(set) var keywords: [String] = []
     /// Names the person gave the command; typing one ranks the command first.

@@ -20,6 +20,8 @@
         case saved
         /// The draft level with four steps: two menu items, the second one added twice, then an action.
         case menus
+        /// The same draft after the selection went away: the step that reads text says so.
+        case menusMissing
         /// The form with the symbol row collapsed, the keyboard on it and the choice moved one place on.
         case saveQuick
         /// The form with the symbol search holding "mail" and the choice moved one place on.
@@ -44,19 +46,25 @@
             guard let sequences = model.sequences else { return }
             func row(_ id: String) -> Command? { model.results.first { $0.command.id == id }?.command }
 
-            if scene == .menus {
+            if scene == .menus || scene == .menusMissing {
                 // The preview menu has no real app behind it, so the menu steps are added the way the recorder hands
                 // them over: one step each, the second one twice.
                 func menu(_ path: [String]) -> UIStep {
                     UIStep(
                         app: "com.apple.Safari", locators: [.menuPath(path)],
-                        description: "Choose \(path.joined(separator: " > "))")
+                        description: "Choose \(path.joined(separator: " > ")) in Safari")
                 }
-                sequences.add(uiSteps: [menu(["File", "New Window"])], label: "Choose File > New Window")
-                sequences.add(uiSteps: [menu(["View", "Show Sidebar"])], label: "Choose View > Show Sidebar")
-                sequences.add(uiSteps: [menu(["View", "Show Sidebar"])], label: "Choose View > Show Sidebar")
+                sequences.add(uiSteps: [menu(["File", "New Window"])], label: "New Window")
+                sequences.add(uiSteps: [menu(["View", "Show Sidebar"])], label: "Show Sidebar")
+                sequences.add(uiSteps: [menu(["View", "Show Sidebar"])], label: "Show Sidebar")
                 if let upper = row("ctx:text.upper") { model.addToSequence(upper) }
                 if let top = model.results.first?.command { _ = await model.run(top) }
+                if scene == .menusMissing {
+                    sequences.update(
+                        with: ContextSnapshot(
+                            appName: "Safari", bundleID: "com.apple.Safari", pid: 0,
+                            capturedAt: Date().addingTimeInterval(5), values: ContextValues()))
+                }
                 return
             }
             guard let upper = row("ctx:text.upper") else { return }

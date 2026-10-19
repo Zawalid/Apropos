@@ -182,6 +182,8 @@ public final class SequenceCenter {
         guard snapshot.capturedAt >= capturedAt else { return }
         capturedAt = snapshot.capturedAt
         values = snapshot.values
+        // Steps that read the selection show whether it is there now.
+        if hasDraft { rebuild() }
     }
 
     /// Forgets the context: sensing was turned off.
@@ -531,7 +533,12 @@ public final class SequenceCenter {
             row.detail = detail
             rows.append(row)
         }
-        action(.run, "Run sequence", "play.fill", plan.requiresConfirmation ? "Asks once before it starts" : nil)
+        let lacking = plan.steps.first { !missingContext(of: $0.step).isEmpty }
+        let runNote =
+            lacking.flatMap { planned in
+                missingContext(of: planned.step).first.map { "Step \(planned.index + 1) needs \(Self.needed($0))" }
+            } ?? (plan.requiresConfirmation ? "Asks once before it starts" : nil)
+        action(.run, "Run sequence", "play.fill", runNote)
         action(.save, "Save as command...", "square.and.arrow.down", "Name it, give it an alias and a symbol")
         action(.discard, "Discard draft", "trash", nil)
         for planned in plan.steps {
@@ -540,6 +547,7 @@ public final class SequenceCenter {
                 title: "\(planned.index + 1). \(planned.title)", path: ["Steps"],
                 source: .sequence(.step(planned.step.id)))
             row.symbolName = Self.symbol(for: planned)
+            row.iconBundleID = Self.appBundleID(for: planned)
             row.detail = detail(for: planned, in: plan)
             rows.append(row)
         }
@@ -557,6 +565,7 @@ public final class SequenceCenter {
             }
         }
         if let problem = planned.problems.first { return "Cannot run: \(problem.message)" }
+        if let kind = missingContext(of: planned.step).first { return "Needs \(Self.needed(kind)), \(Self.absent(kind))" }
         var parts: [String] = []
         for input in planned.step.inputs {
             switch input.source {
@@ -571,6 +580,44 @@ public final class SequenceCenter {
         if planned.step.continueOnFailure { parts.append("goes on if it fails") }
         let flow = parts.joined(separator: ", ")
         return flow.prefix(1).uppercased() + flow.dropFirst()
+    }
+
+    /// The inputs a step reads from what the front app shows, which that app does not show right now. Empty until the
+    /// first reading of this opening has arrived, so nothing is claimed missing before it is known.
+    private func missingContext(of step: SequenceStep) -> [SequenceValueKind] {
+        guard capturedAt != .distantPast else { return [] }
+        return step.inputs.compactMap { input in
+            guard case .context = input.source, !values.has(input.kind.requirement) else { return nil }
+            return input.kind
+        }
+    }
+
+    private static func needed(_ kind: SequenceValueKind) -> String {
+        switch kind {
+        case .text: "selected text"
+        case .url: "a page address"
+        case .page: "a web page"
+        case .files: "selected files"
+        case .folder: "a folder"
+        case .document: "a document"
+        case .repo: "a repository"
+        }
+    }
+
+    private static func absent(_ kind: SequenceValueKind) -> String {
+        switch kind {
+        case .text: "nothing is selected"
+        case .files: "none are selected"
+        case .url, .page: "none is open here"
+        case .folder, .document, .repo: "none is open here"
+        }
+    }
+
+    /// The app a step acts in, for the icon of its row: the app of a menu step, or the app a destination sends to.
+    private static func appBundleID(for planned: PlannedStep) -> String? {
+        if case .uiSteps(let backend) = planned.step.kind { return backend.apps.first }
+        if case .destination(let destination)? = planned.target { return destination.appBundleID }
+        return nil
     }
 
     private static func contextWord(_ kind: SequenceValueKind) -> String {

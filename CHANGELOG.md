@@ -6,6 +6,11 @@ work lands.
 
 ## [Unreleased]
 
+### Changed (sequence draft)
+- Each step of the draft shows the icon of the app it acts in, so a sequence across Finder, Notes and Mail reads at a
+  glance. A step that reads the selection, files or page now says "Needs selected files, none are selected" when the app in
+  front has none, and the Run sequence row names the first such step.
+
 ### Added (aliases and shortcuts for menu items)
 - Any menu item of any app can have its own alias and its own global shortcut. In the panel press Command-K on an item and
   choose Alias and shortcut; Settings opens on Shortcuts, Menu items, with the alias field ready. The alias finds the item

@@ -116,6 +116,8 @@
             "palette-sequence-draft", PaletteOptions(app: "safari", sequence: .level))
         static let paletteSequenceMenus = palette(
             "palette-sequence-menus", PaletteOptions(app: "safari", sequence: .menus))
+        static let paletteSequenceMissing = palette(
+            "palette-sequence-missing", PaletteOptions(app: "safari", sequence: .menusMissing))
         static let paletteSequenceConfirm = palette(
             "palette-sequence-confirm", PaletteOptions(app: "safari", sequence: .confirm))
         static let paletteSequenceAsk = palette(
@@ -241,7 +243,7 @@
             palettePermission, paletteReadFailed, paletteRunFailed, paletteActions, paletteChips, paletteUsuallyNext,
             paletteUsuallyNextOne,
             paletteUsuallyNextFresh, paletteSendRows, paletteSendList, paletteSendConfirm, paletteSendFailed,
-            paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceMenus, paletteSequenceConfirm, paletteSequenceAsk,
+            paletteSendFiles, paletteSequenceRow, paletteSequenceDraft, paletteSequenceMenus, paletteSequenceMissing, paletteSequenceConfirm, paletteSequenceAsk,
             paletteSequenceFailed, paletteSequenceSave, paletteSequenceSaveQuick, paletteSequenceSaveSearch,
             paletteSequenceSaveCustom, paletteSequenceSaveNoMatch, paletteSequenceSaveGrid, paletteSequenceSaved, paletteCompact,
             paletteDefault, paletteLarge, paletteGlyphs, paletteAppLogo, paletteNoIcons, menuBar, menuBarFresh,

@@ -1,3 +1,4 @@
+import AppKit
 import Apropos
 import SwiftUI
 
@@ -19,9 +20,17 @@ struct CommandRow: View {
         HStack(spacing: 12) {
             switch settings.rowIcons {
             case .glyph:
-                IconTile(symbol: symbol, isEnabled: command.isEnabled)
+                if let bundleID = command.iconBundleID {
+                    AppIconImage(icon: AppIconCache.icon(forBundleID: bundleID), size: metrics.tile)
+                        .opacity(command.isEnabled ? 1 : 0.4)
+                } else {
+                    IconTile(symbol: symbol, isEnabled: command.isEnabled)
+                }
             case .appLogo:
-                if let appPID { AppIcon(pid: appPID, size: metrics.tile).opacity(command.isEnabled ? 1 : 0.4) }
+                if let bundleID = command.iconBundleID {
+                    AppIconImage(icon: AppIconCache.icon(forBundleID: bundleID), size: metrics.tile)
+                        .opacity(command.isEnabled ? 1 : 0.4)
+                } else if let appPID { AppIcon(pid: appPID, size: metrics.tile).opacity(command.isEnabled ? 1 : 0.4) }
             case .none:
                 EmptyView()
             }
@@ -103,5 +112,19 @@ struct IconTile: View {
                     .fill(accented ? Theme.accentSoft : Theme.tile)
             )
             .accessibilityHidden(true)
+    }
+}
+
+/// Icons of apps by bundle identifier, looked up once: a row asks again on every redraw.
+@MainActor
+enum AppIconCache {
+    private static var icons: [String: NSImage] = [:]
+
+    static func icon(forBundleID bundleID: String) -> NSImage? {
+        if let cached = icons[bundleID] { return cached }
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return nil }
+        let icon = NSWorkspace.shared.icon(forFile: url.path)
+        icons[bundleID] = icon
+        return icon
     }
 }
