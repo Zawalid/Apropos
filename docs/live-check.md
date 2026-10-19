@@ -1,44 +1,74 @@
-# Live check
+# Live check: a walkthrough
 
-Things that have only been checked in renders and tests, never in the running app. Try them in this order, tick what
-works, and note what is off in a line each. Settings is Command-comma.
+Follow it top to bottom, about 40 minutes. Each step says what to do, what you should see, and what to tell me if it is
+off. Write down only the step number and one line ("3b: the chip says Draft 0"). You need: Finder, Safari, Notes, and a
+text file or note with a few words in it. Settings is Command-comma.
 
-## Panel and chains
-1. Open the panel in Finder with a folder selected. Do menu commands and context actions both list?
-2. Add a row to a sequence draft, add a second, run it. Does each step run, and does a failure stop it?
-3. Save a draft as a command. Does it appear on the Commands page, with an alias and a shortcut you can set?
-4. Press Escape and Back in the draft level. Do the panel keys behave?
+Before you start: quit and reopen Apropos once, so you test the current build. Grant Accessibility if asked.
 
-## Settings, General and Appearance
-5. Record a new global shortcut. Does the recorder take it, and does the new key open the panel?
-6. Turn "Context actions", "Your commands" and "Send to" off in turn. Does the panel list change each time?
-7. Change Theme, Interface size and Row icons. Does the preview under Appearance match the real panel?
+---
 
-## Commands
-8. Add the "Speak the selection" example. Select text, open the panel, run it.
-9. Create a command with New command (link). Does it show up in the panel at once?
-10. Click a command row. Does the detail sheet show what it does and its risks?
-11. Import a command file. Is it pending, and can you approve it only after ticking "I have read it"?
+## Part 1. The panel in Finder (5 min)
+Open Finder, make a folder called `Test`, put two files in it, open it, select both files.
 
-## Destinations
-12. Turn a destination off. Does it vanish from Send to in the panel? On again?
-13. In a destination's details, press "Send Hello from Apropos" for Notes. Does a note appear?
-14. Add a folder, then send selected files to it from the panel.
-15. Create a destination with New destination (link to an app you have). Does it appear in Send to?
+1. Press Option-Space.
+   - See: the search field has the Apropos ring on the left and a Finder chip on the right. Under it: Usually next (maybe
+     empty), a group "Selected files" with Send file to, Copy path, Copy name, Reveal in Finder, then Finder's menus with
+     counts like "File 63 items".
+   - Off if: the ring is missing, no counts, selected-file actions missing.
+2. Type `nf`. See: New Folder first. Clear it, type `shwo`. See: Show... items (a slip still finds things). Clear it,
+   type `clo`. See: Close before Close Other Tabs or longer ones.
+3. Press Escape. Drag the panel by the very top strip (not the text). See: three dashed blue guides stay visible while you
+   drag, it snaps to them with a tick on a trackpad, and where you let go is where it opens next time.
+4. Settings, General, Position: choose Centered, close, reopen the panel. See: it is just above the middle of the screen.
+   Choose Where you left it again.
 
-## Context, Prediction, Integrations, Privacy
-16. On Context, press "Read again" with another app in front. Do the chips look right?
-17. Turn "Selected text" off. Select text and open the panel: do text actions disappear?
-18. Add an app under "Apps that are not read". Does Apropos read nothing there? Remove it again.
-19. Menu bar popover: Pause context, then Resume. Does Context say "Paused"?
-20. Run a few commands. Does "What it has learned" count them, and does a habit appear after three repeats?
-21. Allow one command from outside, copy its link, open it in Terminal with `open`. Does it ask the first time?
-22. Turn "Allow control from outside" off and repeat. Is it refused, and does Recent requests say so?
-23. Privacy: do the sizes look right? Press Export all my data and open the folder it makes.
+## Part 2. A sequence (8 min) — the bug you hit
+Still in Finder with the two files selected.
 
-## Windows and the rest
-24. Welcome guide from the popover: do all steps work, and does the ring animate?
-25. About: does the ring sit right, and does Copy support info paste something sensible?
-26. Quit and reopen. Is every setting you changed still there?
+5. Open the panel, type `new folder`, press Command-K, choose Add to sequence. See: "Draft · 1" chip appears.
+6. Back in the list (Escape if needed), type `copy path`, Command-K, Add to sequence. See: "Draft · 2".
+7. Type `settings`, Command-K, Add to sequence (that is Finder > Settings). Then add the same Copy path again.
+   See: "Draft · 4".
+8. Click the Draft chip (or choose the Sequence draft row). See: Steps 4 items, numbered 1, 2, 3, 4, with the right names,
+   and Copy path twice. **Off if** any step is missing or all say "1."
+9. Choose Run sequence. See: "Allow these 4 things?" with steps numbered 1 to 4. Press Escape to cancel (do not run it).
+10. Select a step with the arrow keys, press Backspace, repeat until none are left. See: after the last one the panel
+    returns to the normal list. **Off if** it stays on an empty draft.
+11. Add two steps again, choose Save as command. See: Name, Alias, Symbol on one short form; the Symbol row is one line of
+    suggestions plus More. Type name `Test seq`, alias `ts`, pick a symbol, press Return.
+12. Open Settings, Commands. See: Test seq with alias ts, its symbol, used 0 times.
 
-Light mode: repeat 7, 16 and 25 with the system in light mode.
+## Part 3. Settings, page by page (15 min)
+13. **Commands:** click New command. See: a form with Symbol as a small tile (click it: popover with search and grid) and
+    the hint line above the buttons. Make a link command: address `https://www.google.com/search?q={text}`, name `Google it`,
+    Offered: When text is selected, add it.
+14. Select some words in Notes, open the panel, type `google`. See: Google it in the list. Press Return: Safari opens a
+    search.
+15. **Commands:** click Google it. See: a detail sheet with what it does and risks. Close. Add the example Speak the
+    selection, select text, run it from the panel: it reads aloud.
+16. **Destinations:** turn Bear off. Select text in Notes, open the panel, choose Send selection to... See: Bear not
+    listed. Turn it on again. Click Notes, press "Send Hello from Apropos": a note appears.
+17. **Shortcuts:** click the field next to Google it, press Control-Option-G. See: it shows the keys. Click a field and press
+    Command-Space. See: a note that macOS uses it for Spotlight. Clear it. Select text anywhere, press Control-Option-G.
+    See: Google search runs.
+18. **Context:** click Read again with Notes in front. See: chips for what was read. Turn off Selected text, select text,
+    open the panel. See: text actions gone. Turn it back on. Under Apps that are not read, add an app and remove it.
+19. **Menu bar icon:** click it. See: Open Apropos button, two buttons Pause context / Pause learning. Click Pause context
+    then check Settings, Context says Paused; click Resume.
+20. **Prediction:** run a few commands, open Settings, Prediction. See: runs counted under What it has learned. (Habits
+    appear after three repeats of the same pair.)
+21. **Integrations:** Google it, More, allow it from outside is off by default; click Allow on a command, Copy link. In
+    Terminal run `open "<the link>"`. See: a confirmation the first time. Turn Allow control from outside off, repeat:
+    refused, and Recent requests says so.
+22. **Privacy and data:** sizes look sensible; click Export all my data and open the folder it makes.
+23. **About:** the ring sits well under the title; Copy support info pastes a short report.
+
+## Part 4. Welcome guide and light mode (5 min)
+24. Menu bar icon, the sparkle button. See: the welcome guide opens; step through it; the ring draws as you go.
+25. Switch macOS to light mode. Open the panel, Settings, Appearance, About. See: nothing gray or unreadable.
+26. Quit Apropos and reopen. See: every setting you changed is still there, including panel position and Draft is gone.
+
+## What to send me
+A list like: `8: only 1 step shown`, `14: Google it missing`, `17: Command-Space gave no note`. Anything that felt slow or
+looked wrong, even if it is not in this list.
