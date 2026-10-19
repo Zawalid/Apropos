@@ -206,9 +206,24 @@ struct BrandGlyph: View {
 
 // MARK: Materials
 
-/// A frosted backdrop for a whole window: the desktop shows through, softened. The renderer, which has no desktop, shows
-/// the tint alone.
-struct WindowBackdrop: NSViewRepresentable {
+/// A frosted backdrop for a whole window: the desktop shows through, softened. In light mode a pale veil keeps it from
+/// turning gray over a dark desktop. The renderer, which has no desktop, shows the tint alone.
+struct WindowBackdrop: View {
+    private static let veil = Color(
+        nsColor: NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                ? .clear : NSColor(srgbRed: 0.96, green: 0.96, blue: 0.97, alpha: 0.82)
+        })
+
+    var body: some View {
+        ZStack {
+            FrostedView()
+            Self.veil
+        }
+    }
+}
+
+private struct FrostedView: NSViewRepresentable {
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.material = .popover
