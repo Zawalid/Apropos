@@ -249,29 +249,42 @@ struct SettingsRoot: View {
         }
     }
 
-    /// Access and the version, always in view: whether Apropos works, then which one this is.
+    /// Whether Apropos works, always in view: ready with its shortcut, or what is missing with one click to fix it.
     private var sidebarFooter: some View {
         let trusted = controller.permission.isTrusted
-        return VStack(spacing: 10) {
-            Rectangle().fill(Brand.line).frame(height: 1)
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(trusted ? Brand.mint : Brand.danger)
-                    .frame(width: 7, height: 7)
-                Text(trusted ? "Accessibility on" : "Needs Accessibility")
-                    .font(.system(size: 12.5, weight: .medium))
-                    .foregroundStyle(trusted ? Brand.text2 : Brand.text)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-                if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
-                    Text(version)
-                        .font(.system(size: 11.5).monospacedDigit())
-                        .foregroundStyle(Brand.text3)
+        return Button {
+            navigation.reveal(page: .privacyAndData, anchor: trusted ? nil : "accessibility")
+        } label: {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle().fill(trusted ? Brand.mint.opacity(0.16) : Brand.danger.opacity(0.16))
+                    if trusted {
+                        BrandGlyph().foregroundStyle(Brand.mint).frame(width: 15, height: 15)
+                    } else {
+                        Image(systemName: "exclamationmark").font(.system(size: 12, weight: .bold)).foregroundStyle(Brand.danger)
+                    }
                 }
+                .frame(width: 30, height: 30)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(trusted ? "Ready" : "Allow access")
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundStyle(Brand.text)
+                        .lineLimit(1)
+                    Text(trusted ? "\(controller.combo.display) opens it" : "Accessibility is off")
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Brand.text3)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold)).foregroundStyle(Brand.text3)
             }
-            .padding(.horizontal, 6)
+            .padding(.horizontal, 10)
+            .frame(height: 50)
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Brand.raised))
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 4)
+        .buttonStyle(.plain)
+        .accessibilityLabel(trusted ? "Apropos is ready" : "Apropos needs Accessibility")
     }
 
     private var hits: [SettingsHit] { SettingsCatalog.search(trimmedQuery) }
