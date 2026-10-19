@@ -95,6 +95,7 @@ public struct SettingID: RawRepresentable, Hashable, Sendable, ExpressibleByStri
     public static let closeOnFocusLoss: SettingID = "closeOnFocusLoss"
     public static let resetQueryAfterSeconds: SettingID = "resetQueryAfterSeconds"
     public static let showAlternateCommands: SettingID = "showAlternateCommands"
+    public static let shortcutTips: SettingID = "shortcutTips"
     public static let panelPosition: SettingID = "panelPosition"
     public static let menuDisabledApps: SettingID = "menuDisabledApps"
     public static let includeContextActions: SettingID = "includeContextActions"
@@ -260,6 +261,11 @@ public enum SettingsRegistry {
             detail: "Option-key variants, such as Empty Trash Securely, as their own rows.",
             keywords: ["option", "hidden", "variants", "secure"], page: .general, type: .bool,
             defaultValue: .bool(false)),
+        SettingDefinition(
+            id: .shortcutTips, title: "Shortcut tips",
+            detail: "When you often run a menu item from the panel and it has a keyboard shortcut, the footer reminds you of the keys.",
+            keywords: ["coach", "remind", "keys", "learn", "hint"], page: .general, type: .bool,
+            defaultValue: .bool(true)),
         SettingDefinition(
             id: .panelPosition, title: "Position",
             detail: "Where the panel opens. Drag it by the top of the search bar; it snaps to its home place and remembers where you leave it.",

@@ -48,10 +48,31 @@ struct CommandPreference: Codable, Equatable {
     /// How to name the item in Settings when its app is not open: the item's title and its app's name. Present while
     /// the person keeps the item in their list of customized menu items.
     var label: MenuItemLabel?
+    /// The person asked not to be reminded of this item's keyboard shortcut.
+    var tipMuted = false
 
     var isEmpty: Bool {
-        pinnedAt == nil && !isHidden && aliases.isEmpty && symbol == nil && hotkey == nil && label == nil
+        pinnedAt == nil && !isHidden && aliases.isEmpty && symbol == nil && hotkey == nil && label == nil && !tipMuted
     }
+}
+
+/// "You ran this 8 times. The shortcut is Shift-Command-N."
+public struct ShortcutTip: Equatable, Sendable {
+    /// How many panel runs it takes before the reminder appears.
+    public static let minimumRuns = 5
+    /// A month: an item not run since is not a habit any more.
+    public static let recency: TimeInterval = 30 * 86_400
+
+    public let runs: Int
+    public let shortcut: KeyShortcut
+
+    public init(runs: Int, shortcut: KeyShortcut) {
+        self.runs = runs
+        self.shortcut = shortcut
+    }
+
+    /// The words, without the keys: "Run 8 times from here. Try".
+    public var lead: String { "Run \(runs) times from here. Try" }
 }
 
 /// The words Settings shows for a menu item the person gave an alias or a shortcut.
@@ -225,6 +246,26 @@ public final class UsageStore {
         let cleaned = aliases.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
             .filter { !$0.isEmpty && $0.count <= 32 && seen.insert($0).inserted }
         update(id) { $0.aliases = cleaned }
+    }
+
+    // MARK: Shortcut tips
+
+    /// A reminder that a menu item has a keyboard shortcut, for an item run often from the panel. Nil when the item has
+    /// no shortcut, was run fewer than `ShortcutTip.minimumRuns` times, was not run in the last month, already has a
+    /// global shortcut of its own, or the person muted it.
+    public func shortcutTip(for command: Command, now: Date = Date()) -> ShortcutTip? {
+        guard case .menuItem = command.source, let shortcut = command.shortcut, command.isEnabled else { return nil }
+        let id = command.stableID
+        guard !(file.preferences[id]?.tipMuted ?? false), file.preferences[id]?.hotkey == nil else { return nil }
+        let runs = runCount(id)
+        guard runs >= ShortcutTip.minimumRuns, let last = lastRun(id),
+            now.timeIntervalSince(last) <= ShortcutTip.recency
+        else { return nil }
+        return ShortcutTip(runs: runs, shortcut: shortcut)
+    }
+
+    public func setTipMuted(_ muted: Bool, for id: CommandID) {
+        update(id) { $0.tipMuted = muted }
     }
 
     // MARK: Customized menu items

@@ -126,6 +126,11 @@ final class UsageController {
         refreshRanker()
     }
 
+    /// Stops the footer reminding of this item's keyboard shortcut.
+    func muteTip(for command: Command) {
+        store.setTipMuted(true, for: command.stableID)
+    }
+
     /// Called after the shortcut of a menu item changed, so the keys registered with the system follow.
     var onItemShortcutsChanged: (() -> Void)?
 

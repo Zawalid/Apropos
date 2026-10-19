@@ -205,6 +205,19 @@ public final class PaletteModel {
     public static let suggestionLimit = 3
 
     /// Swaps the ranking rules, for example after a run, a pin or a hide changed what the usage store knows.
+    @ObservationIgnored private var tipProvider: (@MainActor (Command) -> ShortcutTip?)?
+
+    /// Connects the source of shortcut reminders (the usage store, behind the person's setting).
+    public func setTipProvider(_ provider: @escaping @MainActor (Command) -> ShortcutTip?) {
+        tipProvider = provider
+    }
+
+    /// The reminder for the highlighted row, when it has one.
+    public var selectedTip: ShortcutTip? {
+        guard let command = selected?.command else { return nil }
+        return tipProvider?(command)
+    }
+
     /// The alias to show on a command's row, and whether what is typed is exactly that alias.
     public func alias(for command: Command) -> (text: String, isTyped: Bool)? {
         guard let alias = ranker.alias(for: command, matching: query) else { return nil }

@@ -298,4 +298,49 @@ struct UsageStoreTests {
         #expect(ranker.alias(for: item, matching: "zzz") == "nf")
         #expect(ranker.alias(for: command("Other"), matching: "nf") == nil)
     }
+
+    // MARK: Shortcut tips
+
+    private func shortcutCommand(_ title: String = "New Folder") -> Command {
+        Command(
+            id: title, title: title, path: ["File"], shortcut: KeyShortcut(key: "N", modifiers: [.command, .shift]),
+            source: .menuItem(bundleID: "app.test"))
+    }
+
+    @Test func anItemRunOftenFromThePanelGetsAShortcutTip() {
+        let store = store(tempURL())
+        let item = shortcutCommand()
+        for _ in 0..<(ShortcutTip.minimumRuns - 1) { store.recordRun(of: item, at: now - day) }
+        #expect(store.shortcutTip(for: item, now: now) == nil)
+        store.recordRun(of: item, at: now - day)
+        let tip = store.shortcutTip(for: item, now: now)
+        #expect(tip?.runs == ShortcutTip.minimumRuns)
+        #expect(tip?.shortcut.display == "⇧⌘N")
+    }
+
+    @Test func noTipWithoutAShortcutAfterAMonthOrWhenMutedOrWhenAGlobalKeyExists() {
+        let store = store(tempURL())
+        let item = shortcutCommand()
+        for _ in 0..<6 { store.recordRun(of: item, at: now - day) }
+        #expect(store.shortcutTip(for: item, now: now) != nil)
+        #expect(store.shortcutTip(for: item, now: now + 40 * day) == nil)
+        let bare = command("Save")
+        for _ in 0..<6 { store.recordRun(of: bare, at: now - day) }
+        #expect(store.shortcutTip(for: bare, now: now) == nil)
+        store.setTipMuted(true, for: item.stableID)
+        #expect(store.shortcutTip(for: item, now: now) == nil)
+        store.setTipMuted(false, for: item.stableID)
+        store.setHotKey(HotKeyCombo(keyCode: 0, modifiers: [.control, .option]), for: item.stableID)
+        #expect(store.shortcutTip(for: item, now: now) == nil)
+    }
+
+    @Test func aMutedTipSurvivesResettingWhatWasLearned() {
+        let store = store(tempURL())
+        let item = shortcutCommand()
+        for _ in 0..<6 { store.recordRun(of: item, at: now - day) }
+        store.setTipMuted(true, for: item.stableID)
+        store.resetLearnedRanking()
+        for _ in 0..<6 { store.recordRun(of: item, at: now - day) }
+        #expect(store.shortcutTip(for: item, now: now) == nil)
+    }
 }

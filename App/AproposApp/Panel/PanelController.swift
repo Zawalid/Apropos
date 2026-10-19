@@ -275,7 +275,7 @@ final class PanelController: NSObject {
             for: model.selected?.command, appName: model.targetApp?.name,
             isPinned: model.selected.map { usage.isPinned($0.command) } ?? false,
             isPredicted: model.selected.map { model.isPredicted(rowID: $0.id) } ?? false,
-            sequence: model.sequences)
+            hasTip: model.selectedTip != nil, sequence: model.sequences)
     }
 
     private func actionsOpenSettings() {
@@ -341,6 +341,9 @@ final class PanelController: NSObject {
         case .copyShortcut:
             PaletteAction.copy(command.shortcut?.display ?? "")
             hide()
+        case .muteTip:
+            usage.muteTip(for: command)
+            closeActions(animated: true)
         case .customizeItem:
             usage.listForCustomizing(command, appName: model.targetApp?.name)
             hide(immediately: true)

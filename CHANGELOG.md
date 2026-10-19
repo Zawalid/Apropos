@@ -6,6 +6,11 @@ work lands.
 
 ## [Unreleased]
 
+### Added (shortcut tips)
+- When you run a menu item from the panel five times or more and it has a keyboard shortcut, the footer shows "Run 8 times
+  from here. Try" with the keys while that row is highlighted. Command-K has "Stop reminding me of the keys" for one item,
+  and General has a Shortcut tips switch. Nothing leaves your Mac.
+
 ### Changed (sequence draft)
 - Each step of the draft shows the icon of the app it acts in, so a sequence across Finder, Notes and Mail reads at a
   glance. A step that reads the selection, files or page now says "Needs selected files, none are selected" when the app in

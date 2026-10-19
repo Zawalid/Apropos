@@ -93,6 +93,11 @@ final class SettingsModel {
         set { write(.bool(newValue), .showAlternateCommands) }
     }
 
+    var shortcutTips: Bool {
+        get { store.bool(.shortcutTips) }
+        set { write(.bool(newValue), .shortcutTips) }
+    }
+
     var hotKey: HotKeyCombo {
         get { store.hotkey(.openHotKey) }
         set { write(.hotkey(newValue), .openHotKey) }

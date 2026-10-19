@@ -14,6 +14,8 @@ struct PaletteAction: Identifiable {
         case copyShortcut
         /// Open Settings to give this menu item an alias and a shortcut of its own.
         case customizeItem
+        /// Stop reminding of this item's keyboard shortcut.
+        case muteTip
         case addToSequence
         /// Open Settings on one of your commands.
         case editCommand
@@ -40,7 +42,7 @@ struct PaletteAction: Identifiable {
     @MainActor
     static func available(
         for command: Command?, appName: String?, isPinned: Bool, isPredicted: Bool = false,
-        sequence: SequenceCenter? = nil
+        hasTip: Bool = false, sequence: SequenceCenter? = nil
     ) -> [PaletteAction] {
         guard let command else { return [] }
         if case .sequence(let target) = command.source { return sequenceActions(for: target, sequence: sequence) }
@@ -77,6 +79,10 @@ struct PaletteAction: Identifiable {
         if case .menuItem = command.source {
             list.append(
                 PaletteAction(kind: .customizeItem, title: "Alias and shortcut...", symbol: "keyboard", keys: []))
+        }
+        if hasTip {
+            list.append(
+                PaletteAction(kind: .muteTip, title: "Stop reminding me of the keys", symbol: "bell.slash", keys: []))
         }
         list.append(PaletteAction(kind: .copyPath, title: "Copy menu path", symbol: "link", keys: []))
         if let shortcut = command.shortcut {

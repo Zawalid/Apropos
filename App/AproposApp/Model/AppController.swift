@@ -181,6 +181,10 @@ final class AppController {
         userCommands.reservedHotKeys = { [weak self] in self.map { [$0.combo] } ?? [] }
         userCommands.onChange = { [weak self] in self?.userCommandsChanged() }
         usage.onItemShortcutsChanged = { [weak self] in self?.itemShortcutsChanged() }
+        palette.setTipProvider { [weak self] command in
+            guard let self, self.settings.shortcutTips else { return nil }
+            return self.usage.store.shortcutTip(for: command)
+        }
         userCommands.reload()
         IntegrationHub.controller = self
         permission.startMonitoring()

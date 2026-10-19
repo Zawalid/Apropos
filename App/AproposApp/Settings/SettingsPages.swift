@@ -89,6 +89,7 @@ struct GeneralPage: View {
             SettingToggleRow(id: .includeUserCommands, isOn: $settings.includeUserCommands)
             SettingToggleRow(id: .includeSendTo, isOn: $settings.includeSendTo)
             SettingToggleRow(id: .showAlternateCommands, isOn: $settings.showAlternates)
+            SettingToggleRow(id: .shortcutTips, isOn: $settings.shortcutTips)
         }
         MenuOffApps(settings: settings)
     }

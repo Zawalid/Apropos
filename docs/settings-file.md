@@ -33,6 +33,7 @@ page, type, default and search keywords.
 | `closeOnFocusLoss` | General | bool | true |
 | `resetQueryAfterSeconds` | General | number 0...3600 | 60 (0 clears every time) |
 | `showAlternateCommands` | General | bool | false |
+| `shortcutTips` | General | bool, remind the keys of a menu item you run often from the panel | true |
 | `includeContextActions` | General | bool, list context actions in the panel | true |
 | `includeUserCommands` | General | bool, list your commands and sequences | true |
 | `includeSendTo` | General | bool, list Send to rows | true |

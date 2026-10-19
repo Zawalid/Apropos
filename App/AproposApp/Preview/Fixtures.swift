@@ -144,6 +144,8 @@
             let target = DebugFixtures.targetApp(named: options.app)
             tracker.pin(target)
             if options.learned { DebugFixtures.seedUsage(usage, commands: commands) }
+            let tipStore = usage.store
+            model.setTipProvider { tipStore.shortcutTip(for: $0) }
             if options.chips { context.seed(Self.chipItems(for: options.app), pid: target.pid) }
             if options.predicted > 0 {
                 let after = commands.dropFirst(7).first?.displayTitle ?? "that"

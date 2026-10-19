@@ -31,11 +31,33 @@ struct FloatingFooter: View {
                     .aproposGlass(in: Capsule())
                     .transition(.opacity)
             }
+            if model.runError == nil, content == .results, let tip = model.selectedTip { tipNote(tip) }
             if content == .results || content == .sequenceSave { actionBar }
         }
         .padding(.horizontal, 14)
         .padding(.bottom, 14)
         .frame(maxHeight: .infinity, alignment: .bottom)
+    }
+
+    /// "Run 8 times from here. Try [shift][cmd][N]": a quiet reminder next to the primary action, only for the row that
+    /// is highlighted. Muting it is an action in the Command-K list.
+    private func tipNote(_ tip: ShortcutTip) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "keyboard")
+                .font(.system(size: 11.5, weight: .medium))
+                .foregroundStyle(Theme.text3)
+            Text(tip.lead)
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.text2)
+                .lineLimit(1)
+            ForEach(Array(tip.shortcut.caps.enumerated()), id: \.offset) { KeyCap(text: $0.element, small: true) }
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 28)
+        .aproposGlass(in: Capsule())
+        .transition(.opacity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(tip.lead) \(tip.shortcut.display)")
     }
 
     /// What Return does for the highlighted row.
