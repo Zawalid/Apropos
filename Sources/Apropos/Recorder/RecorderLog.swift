@@ -22,7 +22,7 @@ public struct RecorderLog: Sendable {
     func resumed() { sink("recorder resumed") }
     func ended(_ state: RecordingState) { sink("recorder ended: \(Self.word(state))") }
 
-    static func word(_ state: RecordingState) -> String {
+    public static func word(_ state: RecordingState) -> String {
         switch state {
         case .idle: "idle"
         case .armed: "armed"

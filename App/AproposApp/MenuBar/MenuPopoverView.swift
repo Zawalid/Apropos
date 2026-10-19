@@ -15,6 +15,9 @@ struct MenuPopoverActions {
     var togglePause: () -> Void = {}
     var toggleLearning: () -> Void = {}
     var quit: () -> Void = {}
+    /// A debug-only test row (the recorder's live proof). Nil in release builds, and the row is not drawn.
+    var probeTitle: String?
+    var probe: () -> Void = {}
 }
 
 /// The menu bar popover: the app in front and what Apropos sees in it, the way in, recent commands, and the app's own
@@ -49,6 +52,17 @@ struct MenuPopoverView: View {
                     actions.reviewCommands)
             }
             recentSection
+            if let title = actions.probeTitle {
+                Button(action: actions.probe) {
+                    Label(title, systemImage: "record.circle")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(Brand.text2)
+                        .frame(maxWidth: .infinity, minHeight: 30)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 10)
+                .padding(.bottom, 6)
+            }
             footer
         }
         .frame(width: Self.width)

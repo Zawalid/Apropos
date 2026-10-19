@@ -10,6 +10,9 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSPopoverDelegate {
     private let menu = NSMenu()
     private let header = ContextHeaderModel()
     private let popover = NSPopover()
+    #if DEBUG
+        private let recorderProbe = RecorderProbe()
+    #endif
     private var clickMonitor: Any?
     private var observer: NSObjectProtocol?
 
@@ -75,7 +78,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSPopoverDelegate {
             }
         }
         let controller = controller
-        let actions = MenuPopoverActions(
+        let baseActions = MenuPopoverActions(
             open: close { controller.togglePanel() },
             runRecent: { [weak self] recent in
                 self?.popover.performClose(nil)
@@ -95,6 +98,13 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSPopoverDelegate {
                 if engine.isLearningPaused { engine.resumeLearning() } else { engine.pauseLearning(for: 3600) }
             },
             quit: close { NSApp.terminate(nil) })
+        var actions = baseActions
+        #if DEBUG
+            if !AgentMode.isOn {
+                actions.probeTitle = recorderProbe.isRunning ? "Stop recording test" : "Record test (R0)"
+                actions.probe = close { [recorderProbe] in recorderProbe.toggle() }
+            }
+        #endif
         let view = MenuPopoverView(
             header: header, recents: controller.usage.recents, hotKey: controller.combo,
             hasAccess: controller.permission.isTrusted, pendingCommands: controller.userCommands.pending.count,
