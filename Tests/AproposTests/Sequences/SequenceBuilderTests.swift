@@ -337,6 +337,44 @@ struct SequenceBuilderTests {
         #expect(!titles(rig).contains { $0.hasPrefix("Sequence draft") })
     }
 
+    @Test func deletingStepsOneByOneEndsOnTheMainListWithTheOldQuery() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        add(rig, "ctx:text.lower")
+        add(rig, "ctx:text.trim")
+        rig.model.query = "seq"
+        await openDraft(rig)
+        #expect(rig.model.sequenceLevel == .steps && rig.model.query.isEmpty)
+        var deleted = 0
+        rig.model.moveSelection(by: 3)
+        // Backspace keeps working as long as a step is highlighted; it must be after every deletion.
+        while rig.model.sequenceLevel != nil {
+            let id = try #require(rig.model.selectedStepID)
+            rig.model.deleteSelectedStep()
+            #expect(!rig.center.steps.contains { $0.id == id })
+            deleted += 1
+            #expect(deleted <= 3)
+        }
+        #expect(deleted == 3)
+        #expect(rig.center.steps.isEmpty && !rig.center.isInLevel)
+        #expect(rig.model.sequenceLevel == nil && rig.model.draftStepCount == 0)
+        #expect(rig.model.query == "seq")
+        #expect(rig.model.content != .sequenceSave && rig.model.sequenceLevel == nil)
+        #expect(!titles(rig).contains { $0.hasPrefix("Sequence draft") || $0 == "Run sequence" })
+    }
+
+    @Test func deletingTheLastStepFromTheActionsAlsoLeaves() async {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        await openDraft(rig)
+        rig.model.moveSelection(by: 3)
+        rig.model.deleteSelectedStep()
+        #expect(rig.model.sequenceLevel == nil && rig.model.content == .results)
+        #expect(!rig.model.goBack())
+    }
+
     @Test func discardClearsTheDraftAndTheLevel() async throws {
         let rig = rig()
         feed(rig)

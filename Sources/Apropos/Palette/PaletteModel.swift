@@ -264,6 +264,11 @@ public final class PaletteModel {
         let neighbour = results.firstIndex { $0.id == selected?.id }
         sequenceCenter?.delete(stepID: id)
         selectedID = nil
+        // The last step gone: there is no draft to show, so go back to the list the person came from, like Escape.
+        guard sequenceCenter?.isInLevel == true else {
+            query = queryBeforeSequenceLevel
+            return
+        }
         if let neighbour, !results.isEmpty { selectedID = results[min(neighbour, results.count - 1)].id }
     }
 
