@@ -187,6 +187,23 @@ public enum SymbolPicker {
     private static let byName: [String: PickerSymbol] = Dictionary(
         all.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
 
+    // MARK: The short row
+
+    /// How many symbols the collapsed picker shows in its one line.
+    public static let quickCount = 11
+
+    /// Symbols that suit most commands, offered after the suggestions when the row has room.
+    private static let quickDefaults = [
+        "bolt", "star", "folder", "doc.text", "globe", "terminal", "envelope", "wand.and.stars", "gearshape",
+        "play.fill", "sparkles", "tray", "link", "text.alignleft",
+    ]
+
+    /// The one line of the collapsed picker: the suggestions first, then common symbols, without repeats.
+    public static func quickPicks(suggested: [String], limit: Int = quickCount) -> [String] {
+        let picks = (suggested + quickDefaults).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
+        return Array(picks.prefix(limit))
+    }
+
     // MARK: Finding
 
     /// What the grid shows. With no query: `Suggested` (when there are suggestions), then the groups. With a query: one

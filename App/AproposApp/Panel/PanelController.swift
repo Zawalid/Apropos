@@ -200,13 +200,11 @@ final class PanelController: NSObject {
             showMenu(of: command)
         case .move(let delta):
             if model.content == .sequenceSave {
-                if state.formField == Self.symbolField {
-                    // In the symbol grid the arrows walk the symbols. Up from the first row goes back to the fields.
-                    var moved = false
-                    for _ in 0..<(abs(delta) > 1 ? 3 : 1) {
-                        moved = model.sequences?.moveSymbol(delta > 0 ? .down : .up) ?? false
-                    }
-                    if !moved && delta < 0 { state.formField = Self.symbolField - 1 }
+                if state.formField == Self.symbolField, let sequences = model.sequences {
+                    // In the symbol field the arrows walk the symbols; down opens the grid, up leaves for the fields.
+                    var result = SequenceCenter.SymbolKeyResult.handled
+                    for _ in 0..<(abs(delta) > 1 ? 3 : 1) { result = sequences.symbolKey(delta > 0 ? .down : .up) }
+                    if result == .leave { state.formField = Self.symbolField - 1 }
                 } else {
                     // Elsewhere in the save form the arrows move between the fields.
                     state.formField = (state.formField + (delta > 0 ? 1 : 2)) % 3
@@ -217,7 +215,8 @@ final class PanelController: NSObject {
             model.moveSelection(by: delta)
         case .tab(let delta):
             if model.content == .sequenceSave {
-                // Tab and Shift-Tab always change field, the grid included.
+                // Tab and Shift-Tab always change field, the grid included, and close it.
+                model.sequences?.collapseSymbols()
                 state.formField = (state.formField + (delta > 0 ? 1 : 2)) % 3
                 return true
             }
@@ -225,7 +224,7 @@ final class PanelController: NSObject {
         case .sideways(let delta):
             // Left and right only walk the grid; in every text field they move the cursor as usual.
             guard model.content == .sequenceSave, state.formField == Self.symbolField else { return false }
-            model.sequences?.moveSymbol(delta > 0 ? .right : .left)
+            model.sequences?.symbolKey(delta > 0 ? .right : .left)
         case .first:
             model.cancelPending()
             model.selectFirst()
@@ -372,7 +371,12 @@ final class PanelController: NSObject {
             return
         }
         if model.content == .sequenceSave {
-            model.saveSequence()
+            // Return in the open symbol grid confirms the choice and closes the grid; the next Return saves.
+            if model.sequences?.symbolExpanded == true {
+                model.sequences?.collapseSymbols()
+            } else {
+                model.saveSequence()
+            }
             return
         }
         guard let command = model.selected?.command else { return }

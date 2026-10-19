@@ -20,6 +20,8 @@
         case saved
         /// The draft level with four steps: two menu items, the second one added twice, then an action.
         case menus
+        /// The form with the symbol row collapsed, the keyboard on it and the choice moved one place on.
+        case saveQuick
         /// The form with the symbol search holding "mail" and the choice moved one place on.
         case saveSearch
         /// The form with a symbol name typed that the curated list does not have.
@@ -30,7 +32,7 @@
         case saveGrid
 
         /// Whether the keyboard sits in the symbol field, so its ring is drawn.
-        var focusesSymbol: Bool { [.saveSearch, .saveCustom, .saveNoMatch, .saveGrid].contains(self) }
+        var focusesSymbol: Bool { [.saveQuick, .saveSearch, .saveCustom, .saveNoMatch, .saveGrid].contains(self) }
     }
 
     /// Debug builds only: puts the palette into one state of the sequence builder by doing what a person would do, through
@@ -74,7 +76,10 @@
             if scene == .level { return }
             if scene == .save || scene == .saved || scene.focusesSymbol {
                 if let save = row("seq:save") { _ = await model.run(save) }
+                // The grid scenes show the opened grid; the others show the one-line row.
+                if scene.focusesSymbol && scene != .saveQuick { sequences.expandSymbols() }
                 switch scene {
+                case .saveQuick: sequences.symbolKey(.right)
                 case .saveSearch:
                     sequences.form.symbolQuery = "mail"
                     sequences.moveSymbol(.right)

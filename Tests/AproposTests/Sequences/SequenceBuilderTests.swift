@@ -778,6 +778,74 @@ struct SequenceBuilderTests {
         #expect(!rig.center.moveSymbol(.right))
     }
 
+    @Test func theSymbolFieldStartsAsOneShortLine() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        try await openSaveForm(rig)
+        #expect(!rig.center.symbolExpanded)
+        let quick = rig.center.quickSymbols
+        #expect(quick.count == SymbolPicker.quickCount)
+        #expect(Set(quick).count == quick.count)
+        #expect(quick.prefix(2) == ["textformat.size.larger", "square.stack.3d.up"])
+        #expect(quick.contains(rig.center.form.symbol))
+    }
+
+    @Test func arrowsWalkTheLineDownOpensTheGridAndUpLeaves() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        try await openSaveForm(rig)
+        let quick = rig.center.quickSymbols
+        #expect(rig.center.symbolKey(.right) == .handled && rig.center.form.symbol == quick[1])
+        rig.center.symbolKey(.right)
+        rig.center.symbolKey(.left)
+        #expect(rig.center.form.symbol == quick[1])
+        // Left at the first symbol stays there; right at the last stays there.
+        for _ in 0..<20 { rig.center.symbolKey(.right) }
+        #expect(rig.center.form.symbol == quick.last)
+        #expect(rig.center.symbolKey(.up) == .leave && !rig.center.symbolExpanded)
+        #expect(rig.center.symbolKey(.down) == .handled && rig.center.symbolExpanded)
+        // Opened, the arrows walk the full grid; up from the first row collapses it and leaves.
+        var presses = 0
+        while rig.center.symbolExpanded, rig.center.symbolKey(.up) == .handled, presses < 100 { presses += 1 }
+        #expect(!rig.center.symbolExpanded && presses < 100)
+    }
+
+    @Test func escapeAndReturnCloseTheGridBeforeLeavingTheForm() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        try await openSaveForm(rig)
+        rig.center.expandSymbols()
+        rig.center.form.symbolQuery = "mail"
+        let chosen = rig.center.form.symbol
+        #expect(rig.model.goBack())
+        #expect(!rig.center.symbolExpanded && rig.center.form.symbolQuery.isEmpty)
+        #expect(rig.center.form.symbol == chosen && rig.model.sequenceLevel == .save)
+        // The next Escape leaves the form as before.
+        #expect(rig.model.goBack() && rig.model.sequenceLevel == .steps)
+    }
+
+    @Test func aSymbolChosenInTheGridStaysChosenWhenTheLineReturns() async throws {
+        let rig = rig()
+        feed(rig)
+        add(rig, "ctx:text.upper")
+        try await openSaveForm(rig)
+        rig.center.expandSymbols()
+        rig.center.form.symbolQuery = "bug"
+        #expect(rig.center.form.symbol == "ladybug")
+        rig.center.collapseSymbols()
+        #expect(rig.center.form.symbol == "ladybug")
+        // Not in the line: the arrows start again from its first symbol.
+        rig.center.symbolKey(.right)
+        let first = rig.center.quickSymbols[0]
+        #expect(rig.center.form.symbol == first)
+        rig.center.form.name = "Bug"
+        #expect(rig.model.saveSequence())
+        #expect(rig.store.commands.first?.symbol == first)
+    }
+
     @Test func arrowKeysWalkTheGridAndStopAtItsEdges() async throws {
         let rig = rig()
         feed(rig)

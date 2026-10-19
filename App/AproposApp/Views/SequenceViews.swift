@@ -112,10 +112,18 @@ struct SequenceSaveView: View {
         .padding(.horizontal, 22)
         .padding(.top, 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .onAppear { focus = Field(rawValue: state.formField) ?? .name }
-        .onChange(of: state.formField) { focus = Field(rawValue: state.formField) ?? .name }
+        .onAppear { syncFocus() }
+        .onChange(of: state.formField) { syncFocus() }
+        .onChange(of: center.symbolExpanded) { syncFocus() }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Save as command")
+    }
+
+    /// The keyboard follows the form field. The symbol field takes the text cursor only while the grid is open: closed,
+    /// it is a row of choices walked with the arrow keys.
+    private func syncFocus() {
+        let field = Field(rawValue: state.formField) ?? .name
+        focus = field == .symbol && !center.symbolExpanded ? nil : field
     }
 
     // MARK: Symbol
@@ -133,13 +141,58 @@ struct SequenceSaveView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
-            HStack(spacing: 10) {
-                searchField(search)
-                symbolPreview
+            if center.symbolExpanded {
+                HStack(spacing: 10) {
+                    searchField(search)
+                    symbolPreview
+                }
+                grid
+            } else {
+                quickRow
             }
-            grid
         }
-        .frame(maxHeight: .infinity, alignment: .top)
+        .frame(maxHeight: center.symbolExpanded ? .infinity : nil, alignment: .top)
+    }
+
+    /// The collapsed picker: the chosen symbol, one line of suggestions and a More button that opens the grid.
+    private var quickRow: some View {
+        HStack(spacing: 8) {
+            symbolPreview
+            HStack(spacing: 2) {
+                ForEach(center.quickSymbols, id: \.self) { name in
+                    SymbolCell(name: name, isChosen: name == center.form.symbol) {
+                        center.form.symbol = name
+                        state.formField = 2
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            Button {
+                state.formField = 2
+                center.expandSymbols()
+            } label: {
+                HStack(spacing: 5) {
+                    Text("More")
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Theme.text2)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(Theme.text3)
+                }
+                .padding(.horizontal, 10)
+                .frame(height: 32)
+                .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Theme.chip))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .strokeBorder(
+                            state.formField == 2 ? Theme.accentText.opacity(0.6) : Theme.chipEdge, lineWidth: 1)
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .help("Search all symbols (Down)")
+            .accessibilityLabel("More symbols")
+        }
     }
 
     private func searchField(_ text: Binding<String>) -> some View {

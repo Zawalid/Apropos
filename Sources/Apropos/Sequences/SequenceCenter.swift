@@ -127,6 +127,8 @@ public final class SequenceCenter {
     public private(set) var phase: SequenceRunPhase?
     public private(set) var stepStates: [String: SequenceStepState] = [:]
     /// Why something did not happen: a refused step, a refused run, a save that failed. Names steps, never values.
+    /// Whether the save form shows the full symbol grid. Collapsed, it shows one line of suggestions.
+    public private(set) var symbolExpanded = false
     public private(set) var failure: String?
     /// "Saved Shout and note under Your commands", until the next thing the person does.
     public private(set) var notice: String?
@@ -187,6 +189,7 @@ public final class SequenceCenter {
         values = ContextValues()
         target = app
         level = nil
+        symbolExpanded = false
         phase = nil
         stepStates = [:]
         failure = nil
@@ -596,6 +599,7 @@ public final class SequenceCenter {
             form.name = suggestedName()
             form.suggestedSymbols = suggestedSymbols()
             form.symbol = form.suggestedSymbols.first ?? SymbolPicker.defaultSymbol
+            symbolExpanded = false
             level = .save
             rebuild()
             return .enteredLevel
@@ -630,6 +634,57 @@ public final class SequenceCenter {
         let command = Command(
             id: "seq:suggest", title: title, path: Array((path ?? []).dropLast()), source: .sequence(.draft))
         return SymbolResolver().symbol(for: command)
+    }
+
+    /// The symbols of the collapsed row: the suggestions, then common ones.
+    public var quickSymbols: [String] { SymbolPicker.quickPicks(suggested: form.suggestedSymbols) }
+
+    /// Opens the full searchable grid in place of the one line.
+    public func expandSymbols() {
+        guard !symbolExpanded else { return }
+        symbolExpanded = true
+    }
+
+    /// Back to the one line. The search is cleared and the choice kept.
+    public func collapseSymbols() {
+        guard symbolExpanded else { return }
+        symbolExpanded = false
+        form.symbolQuery = ""
+    }
+
+    /// What an arrow key did in the symbol field.
+    public enum SymbolKeyResult: Sendable {
+        case handled
+        /// Up from the top: the keyboard goes back to the fields above, and the grid is collapsed.
+        case leave
+    }
+
+    /// An arrow key in the symbol field. Collapsed: left and right walk the suggestions, down opens the grid, up leaves.
+    /// Expanded: the arrows walk the grid, and up from its first row collapses it and leaves.
+    @discardableResult
+    public func symbolKey(_ move: SymbolMove) -> SymbolKeyResult {
+        if symbolExpanded {
+            if moveSymbol(move) { return .handled }
+            guard move == .up else { return .handled }
+            collapseSymbols()
+            return .leave
+        }
+        switch move {
+        case .left, .right:
+            let quick = quickSymbols.map { PickerSymbol(name: $0, keywords: []) }
+            let row = [SymbolSection(title: "Quick", symbols: quick)]
+            if let next = SymbolPicker.neighbour(
+                of: form.symbol, move: move, in: row, columns: max(quickSymbols.count, 1))
+            {
+                form.symbol = next
+            }
+            return .handled
+        case .down:
+            expandSymbols()
+            return .handled
+        case .up:
+            return .leave
+        }
     }
 
     /// What the grid shows now: the suggestions and groups, or the matches for what is typed.
@@ -819,6 +874,7 @@ public final class SequenceCenter {
         stepStates = [:]
         failure = nil
         form = SequenceSaveForm()
+        symbolExpanded = false
         rebuild()
         notice = saved
         return true
@@ -831,6 +887,11 @@ public final class SequenceCenter {
     @discardableResult
     public func goBack() -> Bool {
         failure = nil
+        // An open symbol grid closes first; the form stays.
+        if level == .save, symbolExpanded {
+            collapseSymbols()
+            return true
+        }
         if isRunning {
             cancelRun()
             return true
