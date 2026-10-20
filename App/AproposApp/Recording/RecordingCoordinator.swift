@@ -194,8 +194,10 @@ final class RecordingCoordinator {
     private func showReview() {
         guard let review = model.review else { return }
         let window = reviewWindow ?? makeReviewWindow()
-        window.contentView = NSHostingView(
+        let controller = NSHostingController(
             rootView: RecordingReviewView(review: review, actions: actions, shortcutRecording: shortcutRecording))
+        controller.sizingOptions = [.preferredContentSize]
+        window.contentViewController = controller
         reviewWindow = window
         if !window.isVisible {
             if !AgentMode.isOn { NSApp.activate() }
@@ -237,7 +239,9 @@ final class RecordingCoordinator {
 
     private func showPermission() {
         let window = permissionWindow ?? makePermissionWindow()
-        window.contentView = NSHostingView(rootView: RecordingPermissionView(model: model, actions: actions))
+        let controller = NSHostingController(rootView: RecordingPermissionView(model: model, actions: actions))
+        controller.sizingOptions = [.preferredContentSize]
+        window.contentViewController = controller
         permissionWindow = window
         if !window.isVisible {
             if !AgentMode.isOn { NSApp.activate() }

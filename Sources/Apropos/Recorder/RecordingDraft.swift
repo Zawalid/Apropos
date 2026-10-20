@@ -24,9 +24,9 @@ public enum SkipReason: String, CaseIterable, Sendable {
     public var explanation: String {
         switch self {
         case .coordinateOnlyClick:
-            "A click on something that can only be found by its position on the screen was not recorded."
+            "A click that can only be found by where it is on the screen was not recorded."
         case .controlNotRecordedYet:
-            "A click on a button or control was not recorded: only menu items and shortcuts are recorded in this version."
+            "A click on a button or control was not recorded yet: only menu items and shortcuts are."
         case .contextMenu: "A choice in a context menu was not recorded: only the menu bar is recorded."
         case .menuExtra: "A click on a menu bar icon was not recorded."
         case .appleMenu: "The Apple menu was not recorded: it lists your recent items and your name."

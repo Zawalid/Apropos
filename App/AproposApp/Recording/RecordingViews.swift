@@ -132,7 +132,7 @@ struct RecordingPermissionView: View {
     let model: RecordingModel
     let actions: RecordingActions
 
-    static let size = CGSize(width: 500, height: 660)
+    static let size = CGSize(width: 500, height: 650)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -180,7 +180,6 @@ struct RecordingPermissionView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 12)
 
-            Spacer(minLength: 12)
             HStack(spacing: 10) {
                 Spacer()
                 Button("Not now", action: actions.dismiss)
@@ -190,9 +189,12 @@ struct RecordingPermissionView: View {
                     .disabled(!model.status.canRecord)
                     .opacity(model.status.canRecord ? 1 : 0.5)
             }
+            .padding(.top, 20)
         }
-        .padding(24)
-        .frame(width: Self.size.width, height: Self.size.height, alignment: .topLeading)
+        .padding(.horizontal, 24)
+        .padding(.top, 46)
+        .padding(.bottom, 24)
+        .frame(width: Self.size.width, alignment: .topLeading)
         .background(WindowBackdrop().ignoresSafeArea())
         .tint(Brand.mint)
         .ignoresSafeArea()
@@ -239,10 +241,13 @@ struct RecordingReviewView: View {
     var actions: RecordingActions = RecordingActions()
     var shortcutRecording: (Bool) -> Void = { _ in }
 
-    static let size = CGSize(width: 600, height: 700)
+    static let size = CGSize(width: 600, height: 660)
+    /// The list grows with its rows up to this height, then scrolls.
+    static let listLimit: CGFloat = 380
 
     @State private var editing: Int?
     @State private var draftText = ""
+    @FocusState private var nameFocused: Bool
 
     var body: some View {
         @Bindable var review = review
@@ -259,22 +264,11 @@ struct RecordingReviewView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 6)
 
-            ScrollView {
-                VStack(spacing: 0) {
-                    ForEach(review.notes(after: nil)) { noteRow($0) }
-                    ForEach(Array(review.items.enumerated()), id: \.element.id) { index, item in
-                        if index > 0 || !review.notes(after: nil).isEmpty { Divider().overlay(Brand.line) }
-                        itemRow(item, isFirst: index == 0, isLast: index == review.items.count - 1)
-                        ForEach(review.notes(after: item.id)) { noteRow($0) }
-                    }
-                    if review.items.isEmpty {
-                        Text("Nothing left. Discard this, or record again.")
-                            .font(.system(size: 12.5))
-                            .foregroundStyle(Brand.text3)
-                            .padding(20)
-                    }
-                }
+            ViewThatFits(in: .vertical) {
+                rows
+                ScrollView { rows }
             }
+            .frame(maxHeight: Self.listLimit)
             .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Brand.section))
             .padding(.top, 14)
 
@@ -292,11 +286,46 @@ struct RecordingReviewView: View {
             buttons
                 .padding(.top, 12)
         }
-        .padding(24)
-        .frame(width: Self.size.width, height: Self.size.height, alignment: .topLeading)
+        .padding(.horizontal, 24)
+        .padding(.top, 46)
+        .padding(.bottom, 24)
+        .frame(width: Self.size.width, alignment: .topLeading)
         .background(WindowBackdrop().ignoresSafeArea())
         .tint(Brand.mint)
         .ignoresSafeArea()
+        .onAppear { nameFocused = true }
+    }
+
+    /// The steps and the notes between them. Rows that only record that text was typed are not shown: they cannot be
+    /// edited, and the header already says typing is left out. Notes that followed one still show.
+    private var rows: some View {
+        VStack(spacing: 0) {
+            ForEach(review.notes(after: nil)) { noteRow($0) }
+            ForEach(Array(visibleItems.enumerated()), id: \.element.id) { index, item in
+                if index > 0 || !review.notes(after: nil).isEmpty { Divider().overlay(Brand.line) }
+                itemRow(item, isFirst: index == 0, isLast: index == visibleItems.count - 1)
+                ForEach(notesFollowing(item)) { noteRow($0) }
+            }
+            if visibleItems.isEmpty {
+                Text("Nothing left. Discard this, or record again.")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Brand.text3)
+                    .padding(20)
+            }
+        }
+    }
+
+    private var visibleItems: [DraftItem] { review.items.filter { $0.content != .textEntered } }
+
+    /// The notes after a row, including those after the typed-text rows that follow it and are not shown.
+    private func notesFollowing(_ item: DraftItem) -> [SkippedNote] {
+        var found = review.notes(after: item.id)
+        guard let position = review.items.firstIndex(where: { $0.id == item.id }) else { return found }
+        for next in review.items[(position + 1)...] {
+            guard next.content == .textEntered else { break }
+            found += review.notes(after: next.id)
+        }
+        return found
     }
 
     private var subtitle: String {
@@ -423,7 +452,10 @@ struct RecordingReviewView: View {
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 labelled("Name") {
-                    TextField("Name this command", text: $review.name).field()
+                    TextField("Name this command", text: $review.name)
+                        .field()
+                        .focused($nameFocused)
+                        .onSubmit { if review.canSave { actions.saveReview() } }
                 }
                 labelled("Alias") {
                     TextField("Optional, typed to find it", text: $review.alias).field().frame(width: 190)
