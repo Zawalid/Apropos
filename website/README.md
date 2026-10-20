@@ -159,7 +159,7 @@ Each table cell links its source. Notes with every fact and URL: `side-session-n
 
 ## Cannot be verified from here
 
-The global hotkey on a real Mac, real glass, live Accessibility reading, the download itself (no release exists), and every
+The global hotkey on a real Mac, live Accessibility reading (the pictures use sample data in a stage build), the download itself (no release exists), and every
 "Early" feature. Nothing on the page claims these were checked.
 
 ## TODO for the owner
