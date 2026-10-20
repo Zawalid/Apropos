@@ -130,6 +130,24 @@
             AXUIElementSetMessagingTimeout(app, 0.3)
             _ = AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue)
             _ = AXUIElementSetAttributeValue(app, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+            // Chromium builds its tree lazily after the switch; reading the windows and their first children nudges it.
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.6) {
+                guard let windows = value(app, kAXWindowsAttribute) as? [AnyObject] else { return }
+                for window in windows.prefix(3) where CFGetTypeID(window) == AXUIElementGetTypeID() {
+                    let element = unsafeDowncast(window, to: AXUIElement.self)
+                    AXUIElementSetMessagingTimeout(element, 0.5)
+                    var queue: [(AXUIElement, Int)] = [(element, 0)]
+                    var visited = 0
+                    while !queue.isEmpty, visited < 400 {
+                        let (node, depth) = queue.removeFirst()
+                        visited += 1
+                        guard depth < 6, let kids = value(node, kAXChildrenAttribute) as? [AnyObject] else { continue }
+                        for kid in kids.prefix(40) where CFGetTypeID(kid) == AXUIElementGetTypeID() {
+                            queue.append((unsafeDowncast(kid, to: AXUIElement.self), depth + 1))
+                        }
+                    }
+                }
+            }
         }
 
         private nonisolated static func record(click point: CGPoint, box: Box, lock: NSLock) {
@@ -182,6 +200,16 @@
             }
             if let identifier, !identifier.isEmpty { line += ", identifier \u{201C}\(identifier.prefix(40))\u{201D}" }
             line += ", enabled \(bool(element, kAXEnabledAttribute) ?? true)"
+            if let description = string(element, kAXRoleDescriptionAttribute) { line += ", is a \u{201C}\(description)\u{201D}" }
+            if let domID = string(element, "AXDOMIdentifier"), !domID.isEmpty { line += ", dom id \u{201C}\(domID.prefix(40))\u{201D}" }
+            if let classes = value(element, "AXDOMClassList") as? [String], !classes.isEmpty {
+                line += ", classes \(classes.prefix(3).map { String($0.prefix(24)) }.joined(separator: " "))"
+            }
+            line += ", children \(childCount(element))"
+            if !pressable {
+                if let near = pressableAncestor(of: element) { line += ", pressable parent: \(near)" }
+                if let deeper = pressableChild(of: element, at: point) { line += ", pressable under pointer: \(deeper)" }
+            }
             line += ", parents \(chain.joined(separator: " < "))"
 
             lock.withLock {
@@ -190,6 +218,61 @@
                 if named { box.perApp[app, default: [0, 0, 0, 0]][2] += 1 }
                 box.lines.append("\(box.lines.count + 1). \(line)")
             }
+        }
+
+        private nonisolated static func childCount(_ element: AXUIElement) -> Int {
+            (value(element, kAXChildrenAttribute) as? [AnyObject])?.count ?? 0
+        }
+
+        /// "2 levels up: AXButton, title X" for the nearest parent that can be pressed, looking at most five levels up.
+        private nonisolated static func pressableAncestor(of element: AXUIElement) -> String? {
+            var current = parent(of: element)
+            var level = 1
+            while let node = current, level <= 5 {
+                if actionNames(node).contains(kAXPressAction as String) {
+                    let role = (string(node, kAXRoleAttribute) ?? "?").replacingOccurrences(of: "AX", with: "")
+                    let name = [string(node, kAXTitleAttribute), string(node, kAXDescriptionAttribute)]
+                        .compactMap { $0 }.first { !$0.isEmpty }
+                    return "\(level) up, \(role)" + (name.map { ", named \u{201C}\($0.prefix(40))\u{201D}" } ?? ", no name")
+                }
+                current = parent(of: node)
+                level += 1
+            }
+            return nil
+        }
+
+        /// A descendant, at most three levels down, whose frame holds the pointer and that can be pressed.
+        private nonisolated static func pressableChild(of element: AXUIElement, at point: CGPoint) -> String? {
+            var queue: [(AXUIElement, Int)] = [(element, 0)]
+            var visited = 0
+            while !queue.isEmpty, visited < 60 {
+                let (node, depth) = queue.removeFirst()
+                visited += 1
+                if depth > 0, frame(of: node)?.contains(point) == true, actionNames(node).contains(kAXPressAction as String) {
+                    let role = (string(node, kAXRoleAttribute) ?? "?").replacingOccurrences(of: "AX", with: "")
+                    let name = [string(node, kAXTitleAttribute), string(node, kAXDescriptionAttribute)]
+                        .compactMap { $0 }.first { !$0.isEmpty }
+                    return "\(depth) down, \(role)" + (name.map { ", named \u{201C}\($0.prefix(40))\u{201D}" } ?? ", no name")
+                }
+                guard depth < 3, let kids = value(node, kAXChildrenAttribute) as? [AnyObject] else { continue }
+                for kid in kids.prefix(30) {
+                    if CFGetTypeID(kid) == AXUIElementGetTypeID() {
+                        queue.append((unsafeDowncast(kid, to: AXUIElement.self), depth + 1))
+                    }
+                }
+            }
+            return nil
+        }
+
+        private nonisolated static func frame(of element: AXUIElement) -> CGRect? {
+            guard let positionValue = value(element, kAXPositionAttribute), let sizeValue = value(element, kAXSizeAttribute),
+                CFGetTypeID(positionValue) == AXValueGetTypeID(), CFGetTypeID(sizeValue) == AXValueGetTypeID()
+            else { return nil }
+            var origin = CGPoint.zero
+            var size = CGSize.zero
+            AXValueGetValue(unsafeDowncast(positionValue, to: AXValue.self), .cgPoint, &origin)
+            AXValueGetValue(unsafeDowncast(sizeValue, to: AXValue.self), .cgSize, &size)
+            return CGRect(origin: origin, size: size)
         }
 
         private nonisolated static func value(_ element: AXUIElement, _ name: String) -> AnyObject? {
