@@ -62,12 +62,12 @@ and the stories are told by pressing keys and scrolling.
 | Hero | Headline, the ring with its pearl, key caps. Pressing them, or Option-Space, opens the real panel over the page where the app puts it; typing n then f steps it to New Folder first, with the caps lighting as you type | `hero-open`, `hero-n`, `hero-nf` |
 | Gap (`#gap`) | A statement that lights word by word; measured numbers and the folding wall once `apps.json` exists | none |
 | How it works (`#how`) | Pinned on wide screens: one panel stays while seven chapters scroll past and it changes to the state each one is about; the pearl travels down a line beside the words. On phones each chapter is its words then its window | `deep-xcode`, `slip`, `holding`, `send-list`, `sequence`, `confirm`, `usually-next` |
-| Actions (`#holding`) | The 35 built-in actions, read from the app's pack, as tiles by what you hold | none |
+| Actions (`#holding`) | A working playground: type or pick a sample selection, choose any of the 22 text actions and see the result. The functions are ported line for line from `TextTools.swift` (`src/scripts/textTools.ts`), and actions that do not fit the text are dimmed with the reason, as in the app. Then files, page and folder or repository with one result each and their actions | none |
 | Apps (`#apps`) | An app switcher: a dock of 14 real app icons, the panel jumps to that app's real menu bar; it moves on by itself while on screen until you pick one | `app-*` (13 from the capture run, Safari from the website slots) |
-| Your commands (`#yours`) | Alias, key and link tiles, then two windows overlapping like on a desktop, drifting apart a little as you scroll, beside the recording and menu item notes (both Early) | `recording-review`, `alias-popover` |
+| Your commands (`#yours`) | One real command file (`docs/user-commands.md` format) beside its four ways to run it: alias, key, link, Shortcuts. Pointing at a way lights the lines it comes from; it walks through them by itself while on screen. Then recording and keys for menu items as two large feature rows (both Early) | `recording-review`, `alias-popover` |
 | Compare (`#compare`) | The sourced table | none |
-| Privacy (`#private`) | The read, kept, never kept map; the real Privacy and data page scrolls inside its window as the site scrolls, with the recording permission window overlapping it | `privacy-page` (light and dark), `recording-permission` |
-| Install (`#install`) | Download, then a stepper: Open (the menu bar popover hanging from a drawn menu bar), Allow Accessibility, Press Option-Space (the welcome guide); it moves on by itself until you pick a step. Then the FAQ, whose answers slide open | `menubar-popover`, `onboarding-permission`, `onboarding-done` |
+| Privacy (`#private`) | A "Your Mac" boundary: what is read flows into Apropos, what is kept flows out to the real file names in `~/Library/Application Support/Apropos` (from `docs/data-layer.md`), and under it "Leaves your Mac: Nothing" with what is never kept. Then the permissions beside the real Privacy and data page scrolling inside its window, with the recording permission window over it | `privacy-page` (light and dark), `recording-permission` |
+| Install (`#install`) | Download, then a stepper beside a small Mac screen: the capture wallpaper (paper or night), a drawn menu bar, and each step's real window on it: the menu bar popover hanging from the Apropos icon, the welcome guide asking for Accessibility, then the panel itself. Then the FAQ, whose answers slide open | `menubar-popover`, `onboarding-permission`, `hero-nf`; wallpapers from the capture spike |
 
 ### Other pages
 
@@ -177,6 +177,6 @@ The global hotkey on a real Mac, live Accessibility reading (the pictures use sa
 
 - `npm run build`, `check:seo`, `check:ui` (demo, story, app switcher, install steps, nav, FAQ, copy; with and without
   motion) and `check:a11y` (axe, light and dark, 1440 and 375) pass.
-- Lighthouse 12, home page: mobile 98/100/100/100 (LCP 2.3 s, 264 KiB), desktop 100/100/100/100.
+- Lighthouse 12, home page: mobile 99/100/100/100 (LCP 2.0 s, 267 KiB), desktop 100/100/100/100.
 - Nothing scrolls sideways at 375 px: the windows that run off the edge on phones are clipped by their section.
 - Section screenshots of the home page, desktop and 375 px, light and dark, were taken with Playwright and reviewed.

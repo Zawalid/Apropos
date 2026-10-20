@@ -3,6 +3,8 @@ import { links, site, version } from '../data/site';
 import { faq } from '../data/faq';
 import Window from './Window.astro';
 import ring from '../assets/icon.png';
+import paper from '../assets/wallpaper-paper.webp';
+import night from '../assets/wallpaper-night.webp';
 import { Image } from 'astro:assets';
 ---
 <section id="install" class="section install" aria-labelledby="install-title">
@@ -33,21 +35,23 @@ import { Image } from 'astro:assets';
           <span class="t"><strong>Press Option-Space</strong>In any app. Type a few letters of what you want, press Return. Escape closes it.</span>
         </button>
       </div>
-      <div class="step-panels">
-        <div class="step-panel" id="step-0" role="tabpanel" aria-labelledby="step-tab-0" data-panel>
-          <div class="bar-wrap">
-          <div class="menubar" aria-hidden="true">
-            <strong>Finder</strong><span>File</span><span>Edit</span><span>View</span><span>Go</span>
-            <span class="mb-gap"></span><Image src={ring} alt="" width={16} height={16} densities={[1, 2]} class="mb-ring" /><span class="mb-clock">Tue 9:41</span>
-          </div>
-          <div class="hang"><Window id="menubar-popover" width={320} /></div>
-          </div>
+      <div class="screen" aria-label="A Mac screen">
+        <picture class="wallpaper" aria-hidden="true">
+          <source media="(prefers-color-scheme: dark)" srcset={night.src} />
+          <img src={paper.src} alt="" width={paper.width} height={paper.height} loading="lazy" decoding="async" />
+        </picture>
+        <div class="menubar" aria-hidden="true">
+          <strong>Finder</strong><span>File</span><span>Edit</span><span>View</span><span class="mb-more">Go</span><span class="mb-more">Window</span>
+          <span class="mb-gap"></span><Image src={ring} alt="" width={16} height={16} densities={[1, 2]} class="mb-ring" /><span class="mb-clock">Tue 9:41</span>
         </div>
-        <div class="step-panel" id="step-1" role="tabpanel" aria-labelledby="step-tab-1" hidden data-panel>
-          <Window id="onboarding-permission" width={640} />
+        <div class="step-panel p-bar" id="step-0" role="tabpanel" aria-labelledby="step-tab-0" data-panel>
+          <Window id="menubar-popover" width={300} />
         </div>
-        <div class="step-panel" id="step-2" role="tabpanel" aria-labelledby="step-tab-2" hidden data-panel>
-          <Window id="onboarding-done" width={640} />
+        <div class="step-panel p-mid" id="step-1" role="tabpanel" aria-labelledby="step-tab-1" hidden data-panel>
+          <Window id="onboarding-permission" width={560} />
+        </div>
+        <div class="step-panel p-mid p-panel" id="step-2" role="tabpanel" aria-labelledby="step-tab-2" hidden data-panel>
+          <Window id="hero-nf" width={520} />
         </div>
       </div>
     </div>
@@ -150,72 +154,90 @@ import { Image } from 'astro:assets';
     letter-spacing: -0.02em;
     color: var(--ink);
   }
-  .step-panels {
-    display: grid;
-    align-items: center;
-    min-height: 440px;
-  }
-  .step-panel {
-    grid-area: 1 / 1;
-    display: grid;
-    justify-items: center;
-    animation: step-in 260ms var(--ease);
-  }
-  .step-panel[hidden] {
-    display: none;
-  }
   @keyframes step-in {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(8px);
     }
-  }
-  /* A drawn menu bar for the popover to hang from: the macOS strip, not a picture of it. */
-  .menubar {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    width: 100%;
-    height: 30px;
-    padding: 0 14px;
-    border-radius: 9px;
-    background: var(--card);
-    box-shadow: 0 0 0 1px var(--line);
-    font-size: 13px;
-    color: var(--ink);
-  }
-  .mb-gap {
-    flex: 1;
-  }
-  .menubar :global(.mb-ring) {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-  }
-  .mb-clock {
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
   }
   @media (max-width: 600px) {
     .mb-clock,
     .menubar span:nth-of-type(n + 3) {
       display: none;
     }
-    .hang {
-      justify-self: end;
-      margin-right: 0;
     }
+  /* A small Mac screen: the real capture wallpaper, a drawn menu bar, and the real window of each step on it. */
+  .screen {
+    position: relative;
+    aspect-ratio: 16 / 10.4;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px var(--line-2),
+      0 50px 90px -50px rgba(6, 11, 14, 0.55);
+    isolation: isolate;
   }
-  /* The popover hangs from the Apropos icon: its middle sits under the icon, which is about 96 px from the bar's end. */
-  .bar-wrap {
-    width: min(100%, 560px);
-    display: grid;
+  .wallpaper,
+  .wallpaper img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
-  .hang {
-    width: min(320px, 62%);
-    margin-top: 6px;
-    justify-self: end;
-    margin-right: calc(96px - min(320px, 62%) / 2);
+  .menubar {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 26px;
+    padding: 0 14px;
+    background: color-mix(in srgb, var(--paper) 62%, transparent);
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .mb-gap {
+    flex: 1;
+  }
+  .menubar :global(.mb-ring) {
+    width: 15px;
+    height: 15px;
+    border-radius: 4px;
+  }
+  .mb-clock {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .step-panel {
+    position: absolute;
+    z-index: 1;
+    animation: step-in 260ms var(--ease);
+  }
+  .step-panel[hidden] {
+    display: none;
+  }
+  /* The popover hangs from the Apropos icon: the icon sits right above the middle of the popover, where its notch is. */
+  .p-bar {
+    top: 30px;
+    right: 12px;
+    width: 36%;
+  }
+  .menubar :global(.mb-ring) {
+    position: absolute;
+    right: calc(12px + 18% - 7.5px);
+    top: 5.5px;
+  }
+  .p-mid {
+    left: 50%;
+    top: 54%;
+    width: 78%;
+    translate: -50% -50%;
+  }
+  .p-panel {
+    top: 47%;
+    width: 72%;
   }
   .faq {
     margin-top: clamp(96px, 11vw, 160px);
@@ -311,6 +333,23 @@ import { Image } from 'astro:assets';
     }
     .none {
       grid-column: 1;
+    }
+  }
+  @media (max-width: 600px) {
+    .mb-more,
+    .mb-clock {
+      display: none;
+    }
+    .p-bar {
+      right: 8px;
+      width: 52%;
+    }
+    .menubar :global(.mb-ring) {
+      right: calc(8px + 26% - 7.5px);
+    }
+    .p-mid,
+    .p-panel {
+      width: 92%;
     }
   }
 </style>

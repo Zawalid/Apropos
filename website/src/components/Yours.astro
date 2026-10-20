@@ -1,276 +1,327 @@
 ---
 /**
- * Make your own: aliases, keys, links, Shortcuts, programs, and recording (early). Each tile does one small thing when
- * you touch it, and the features that are not yet checked on a real Mac carry the Early tag.
+ * Make your own: one real command file (the format of docs/user-commands.md, its own example) with the four ways to run
+ * it beside it. Pointing at a way lights the line of the file it comes from. Then recording and keys for menu items as
+ * two feature rows with their real windows, both tagged Early.
  */
 import Window from './Window.astro';
 
-const link = 'apropos://run?command=up&text=hello%20world';
+const link = 'apropos://run?command=say&text=hello';
+
+// The file, line by line. `for` ties a line to the way of running it that it enables.
+const file: { t: string; for?: string }[] = [
+  { t: '{' },
+  { t: '  "command": {' },
+  { t: '    "title": "Speak selection",' },
+  { t: '    "requires": ["selectedText"],' },
+  { t: '    "backend": { "type": "shell",' },
+  { t: '      "executable": "/usr/bin/say", "stdin": "text" }' },
+  { t: '  },' },
+  { t: '  "aliases": ["say"],', for: 'alias' },
+  { t: '  "hotkey": { "keyCode": 1,', for: 'key' },
+  { t: '    "modifiers": ["control", "option"] },', for: 'key' },
+  { t: '  "allowFromURL": true', for: 'link shortcuts' },
+  { t: '}' },
+];
 ---
 <section id="yours" class="section yours" aria-labelledby="yours-title">
   <div class="wrap">
     <div class="section-head">
       <h2 id="yours-title" class="claim">Make your own commands.</h2>
       <p class="lede">
-        A link, a Shortcut or a program becomes a row in the list, with its own name, alias and key. It asks before its
-        first run, and it can say what it needs, like selected text.
+        A link, a Shortcut or a program becomes a row in the list. Write it once, then reach it four ways. It asks before
+        its first run, and it can say what it needs, like selected text.
       </p>
     </div>
 
-    <div class="bento">
-      <article class="b b-alias">
-        <h3>Give it a short name</h3>
-        <p class="alias-demo" aria-hidden="true">
-          <span class="typed-alias">up</span>
-          <span class="alias-row"><span class="alias-pill">up</span> UPPERCASE</span>
-        </p>
-        <p>Type the alias and your command comes first, whatever else matches.</p>
-      </article>
+    <div class="anatomy" data-anatomy>
+      <figure class="file">
+        <figcaption class="file-bar">
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>commands/speak-selection.json</span>
+        </figcaption>
+        <pre tabindex="0" aria-label="The command file"><code>{file.map((l) => <span class="ln" data-for={l.for}>{l.t}{'\n'}</span>)}</code></pre>
+      </figure>
 
-      <article class="b b-key">
-        <h3>Give it a key</h3>
-        <div class="keys" data-keys aria-hidden="true">
-          <span class="cap">&#8963;</span><span class="cap">&#8997;</span><span class="cap">U</span>
-        </div>
-        <p>A global shortcut runs it from any app. A key that macOS, the panel or another command already uses is flagged.</p>
-      </article>
-
-      <article class="b b-link">
-        <h3>Run it from a link</h3>
-        <div class="link-row">
-          <code>{link}</code>
-          <button class="copy" type="button" data-copy={link}>Copy</button>
-        </div>
-        <p>Links run the commands you allow, from a Raycast quicklink, Alfred or any script. Shortcuts has a Run Apropos Command action for the same commands.</p>
-      </article>
-
+      <ol class="ways">
+        <li data-way="alias">
+          <p class="w-demo" aria-hidden="true"><span class="typed">say</span><span class="pill-alias">say</span><span class="w-row">Speak selection</span></p>
+          <h3>Type its alias</h3>
+          <p>The alias puts it first, whatever else matches.</p>
+        </li>
+        <li data-way="key">
+          <p class="w-demo" aria-hidden="true"><span class="cap">&#8963;</span><span class="cap">&#8997;</span><span class="cap">S</span></p>
+          <h3>Press its key</h3>
+          <p>From any app. A key that macOS, the panel or another command uses is flagged.</p>
+        </li>
+        <li data-way="link">
+          <p class="w-demo w-link"><code>{link}</code><button class="copy" type="button" data-copy={link}>Copy</button></p>
+          <h3>Open its link</h3>
+          <p>From a Raycast quicklink, Alfred or a script, once you allow it from outside.</p>
+        </li>
+        <li data-way="shortcuts">
+          <p class="w-demo" aria-hidden="true"><span class="sc">Run Apropos Command</span><span class="w-row">Speak selection</span></p>
+          <h3>Use it in Shortcuts</h3>
+          <p>The Run Apropos Command action lists the commands you allowed.</p>
+        </li>
+      </ol>
     </div>
 
-    <div class="desk" data-desk>
-      <div class="desk-wins" aria-hidden="false">
-        <div class="w-review" data-drift="-0.06"><Window id="recording-review" width={500} /></div>
-        <div class="w-alias" data-drift="0.05"><Window id="alias-popover" width={600} /></div>
+    <div class="feature">
+      <div class="f-text">
+        <h3>Record it once <span class="early">Early</span></h3>
+        <p>
+          Choose Record and use the menus of any app, then stop with Control-Option-Command-R. The review lists every step
+          in plain words with how sturdy it is, tries each one against the apps without pressing anything, and saves it as
+          a command. Typed text is never recorded.
+        </p>
       </div>
-      <div class="desk-text">
-        <div class="note">
-          <h3>Record it once <span class="early">Early</span></h3>
-          <p>
-            Choose Record and use the menus of any app. Stop with Control-Option-Command-R. The review lists every step in
-            plain words with how sturdy it is, tries each one against the apps without pressing anything, and saves it as
-            a command. Typed text is never recorded.
-          </p>
-        </div>
-        <div class="note">
-          <h3>Keys for any menu item <span class="early">Early</span></h3>
-          <p>
-            Command-K on a menu item gives it an alias and a shortcut of its own. One key can serve items in different
-            apps, since it runs the item of the app in front.
-          </p>
-        </div>
+      <div class="f-win" data-drift="-0.04"><Window id="recording-review" width={560} /></div>
+    </div>
+
+    <div class="feature flip">
+      <div class="f-text">
+        <h3>Keys for any menu item <span class="early">Early</span></h3>
+        <p>
+          Command-K on a menu item gives it an alias and a shortcut of its own. One key can serve items in different apps,
+          since it runs the item of the app in front.
+        </p>
       </div>
+      <div class="f-win" data-drift="-0.04"><Window id="alias-popover" width={640} /></div>
     </div>
   </div>
 </section>
 
 <style>
-  .bento {
+  .anatomy {
     display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
     gap: 16px;
+    align-items: stretch;
   }
-  .b {
+  .file {
     display: grid;
-    align-content: start;
-    gap: 18px;
-    padding: clamp(22px, 2.6vw, 32px);
-    border-radius: var(--r-frame);
-    background: var(--card);
-    box-shadow: 0 0 0 1px var(--line);
+    grid-template-rows: auto 1fr;
+    margin: 0;
+    border-radius: 22px;
+    background: #0b1418;
+    color: #c9d6d3;
+    box-shadow: 0 40px 80px -44px rgba(6, 11, 14, 0.55);
+    overflow: hidden;
   }
-  .b h3 {
-    font-size: 21px;
-    font-weight: 700;
-    letter-spacing: -0.022em;
+  @media (prefers-color-scheme: dark) {
+    .file {
+      background: #060b0e;
+      box-shadow: 0 0 0 1px var(--line);
+    }
   }
-  .b p {
-    color: var(--ink-2);
+  .file-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    font: 500 13px var(--mono);
+    color: rgba(234, 243, 241, 0.66);
   }
-  .b-alias {
-    grid-column: span 4;
+  .dots {
+    display: flex;
+    gap: 6px;
   }
-  .b-key {
-    grid-column: span 4;
+  .dots i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
   }
-  .b-link {
-    grid-column: span 4;
+  .file pre {
+    display: grid;
+    align-content: center;
+    margin: 0;
+    padding: 22px 0 26px;
+    overflow-x: auto;
+    font: 500 15px/1.95 var(--mono);
+  }
+  .ln {
+    display: block;
+    padding: 0 22px;
+    white-space: pre;
+    transition:
+      background-color 160ms var(--ease),
+      color 160ms var(--ease);
+  }
+  .ln[data-for] {
+    color: #eaf3f1;
+  }
+  .ln:global(.lit) {
+    background: rgba(140, 242, 204, 0.12);
+    color: #8cf2cc;
   }
 
-  .alias-demo {
+  .ways {
     display: grid;
-    gap: 10px;
-    padding: 14px;
-    border-radius: var(--r-box);
-    background: var(--paper-2);
+    gap: 12px;
   }
-  .typed-alias {
-    font-size: 22px;
+  .ways li {
+    display: grid;
+    gap: 6px;
+    padding: 18px 22px;
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: 0 0 0 1px var(--line);
+    transition: box-shadow 160ms var(--ease);
+  }
+  .ways li:hover,
+  .ways li:global(.lit) {
+    box-shadow:
+      0 0 0 1px var(--line-2),
+      0 18px 40px -26px rgba(6, 11, 14, 0.35);
+  }
+  .ways h3 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .ways p:not(.w-demo) {
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  .w-demo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    margin-bottom: 4px;
+    font-size: 15px;
+  }
+  .typed {
     font-weight: 600;
-    color: var(--ink);
   }
-  .typed-alias::after {
+  .typed::after {
     content: '';
     display: inline-block;
     width: 2px;
-    height: 1.05em;
-    margin-left: 2px;
-    vertical-align: -0.15em;
+    height: 1.1em;
+    margin: 0 10px 0 2px;
+    vertical-align: -0.2em;
     background: var(--mint);
   }
-  .alias-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 600;
-    color: var(--ink);
-  }
-  .alias-pill {
+  .pill-alias {
     padding: 1px 8px;
     border-radius: 6px;
     background: var(--mint-wash);
-    color: var(--ink);
     font-size: 13px;
     font-weight: 700;
   }
-
-  .keys {
-    display: flex;
-    gap: 8px;
-    padding: 6px 0;
+  .w-row {
+    font-weight: 600;
+  }
+  .sc {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: var(--paper-2);
+    font-size: 13px;
+    font-weight: 600;
   }
   .cap {
     display: grid;
     place-items: center;
-    width: 56px;
-    height: 56px;
-    border-radius: 11px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     background: var(--key);
     color: var(--key-ink);
     box-shadow:
       0 0 0 1px var(--line-2),
-      0 4px 0 var(--key-edge);
-    font-size: 20px;
+      0 3px 0 var(--key-edge);
+    font-size: 15px;
     font-weight: 500;
     transition:
       transform 90ms var(--ease),
       box-shadow 90ms var(--ease);
   }
-  .b-key:hover .cap,
-  .keys:global(.down) .cap {
-    transform: translateY(3px);
+  li[data-way='key']:hover .cap,
+  li[data-way='key']:global(.lit) .cap {
+    transform: translateY(2px);
     box-shadow:
       0 0 0 1px var(--line-2),
       0 1px 0 var(--key-edge);
   }
-  .b-key:hover .cap:nth-child(2) {
-    transition-delay: 40ms;
-  }
-  .b-key:hover .cap:nth-child(3) {
-    transition-delay: 80ms;
-  }
-
-  .link-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 10px 10px 14px;
-    border-radius: var(--r-box);
+  .w-link {
+    justify-content: space-between;
+    padding: 6px 6px 6px 12px;
+    border-radius: 10px;
     background: var(--paper-2);
-    min-width: 0;
   }
-  .link-row code {
-    flex: 1;
+  .w-link code {
     min-width: 0;
-    font-family: var(--mono);
-    font-size: 13px;
     overflow-wrap: anywhere;
-    color: var(--ink);
+    font: 500 13px var(--mono);
   }
   .copy {
     flex: none;
-    min-height: 36px;
-    padding: 0 14px;
+    min-height: 32px;
+    padding: 0 12px;
     border: 0;
     border-radius: 999px;
     background: var(--card);
     box-shadow: 0 0 0 1px var(--line-2);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
   }
-  @media (max-width: 1000px) {
-    .b-alias,
-    .b-key {
-      grid-column: span 6;
-    }
-    .b-link {
-      grid-column: 1 / -1;
-    }
-  }
-  @media (max-width: 640px) {
-    .b-alias,
-    .b-key {
-      grid-column: 1 / -1;
-    }
-  }
-  /* Two real windows overlapping like on a desktop, drifting apart a little as the page scrolls. */
-  .desk {
-    margin-top: clamp(56px, 7vw, 104px);
+
+  /* Recording and menu item keys: the real window large beside the words, alternating sides. */
+  .feature {
+    margin-top: clamp(80px, 10vw, 140px);
     display: grid;
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    gap: clamp(32px, 5vw, 72px);
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(32px, 6vw, 96px);
     align-items: center;
   }
-  .desk-wins {
-    position: relative;
-    aspect-ratio: 1.12;
+  .feature.flip {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
   }
-  .w-review {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 66%;
-    transform: translateY(var(--drift, 0px));
+  .feature.flip .f-text {
+    order: 2;
   }
-  .w-alias {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    width: 74%;
-    transform: translateY(var(--drift, 0px));
-  }
-  .desk-text {
+  .f-text {
     display: grid;
-    gap: 36px;
+    gap: 14px;
   }
-  .note {
-    display: grid;
-    gap: 10px;
-  }
-  .note h3 {
-    font-size: 24px;
+  .f-text h3 {
+    font-family: var(--display);
+    font-size: clamp(30px, 3.2vw, 44px);
     font-weight: 700;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
   }
-  .note p {
+  .f-text p {
     color: var(--ink-2);
-    max-width: 44ch;
+    max-width: 42ch;
+  }
+  .f-win {
+    justify-self: center;
+    width: min(100%, 640px);
+    transform: translateY(var(--drift, 0px));
+  }
+  @media (max-width: 600px) {
+    .file pre {
+      font-size: 11.5px;
+      line-height: 1.8;
+    }
+    .ln {
+      padding: 0 14px;
+    }
   }
   @media (max-width: 900px) {
-    .desk {
+    .anatomy,
+    .feature,
+    .feature.flip {
       grid-template-columns: 1fr;
     }
-    .desk-wins {
-      aspect-ratio: 0.95;
+    .feature.flip .f-text {
+      order: 0;
     }
   }
 </style>

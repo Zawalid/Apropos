@@ -265,20 +265,115 @@ if (story) {
   });
 }
 
-// Selected text tile: the same words, turned by one action after another, while it is on screen.
-const turns = $<HTMLElement>('[data-turns]');
-if (turns && motion) {
-  const rows = $$<HTMLElement>('[data-turn]', turns);
-  let i = 1;
-  let timer = 0;
-  const tick = () => {
-    i = (i + 1) % rows.length;
-    rows.forEach((r, n) => r.classList.toggle('on', n === i));
+// The action playground: the app's own text functions on what you type.
+const lab = $<HTMLElement>('[data-lab]');
+if (lab) {
+  const input = $<HTMLTextAreaElement>('[data-lab-text]', lab);
+  const name = $<HTMLElement>('[data-lab-name]', lab);
+  const effect = $<HTMLElement>('[data-lab-effect]', lab);
+  const result = $<HTMLElement>('[data-lab-result]', lab);
+  const search = $<HTMLInputElement>('[data-lab-search]', lab);
+  const buttons = $$<HTMLButtonElement>('[data-action]', lab);
+  const samples = $$<HTMLButtonElement>('[data-sample]', lab);
+  let touched = false;
+  let current = '';
+  // Loaded on first use so the page does not pay for it up front.
+  let tools: typeof import('./textTools') | null = null;
+  const load = async () => (tools ??= await import('./textTools'));
+
+  const paintNeeds = async () => {
+    const t = await load();
+    const text = input?.value ?? '';
+    for (const b of buttons) {
+      const action = t.textActions.find((a) => a.title === b.dataset.action);
+      const need = action?.needs?.(text) ?? null;
+      b.classList.toggle('off', Boolean(need));
+      const tag = $<HTMLElement>('[data-need]', b);
+      if (tag) tag.textContent = need ?? '';
+    }
   };
-  new IntersectionObserver(([e]) => {
-    window.clearInterval(timer);
-    if (e.isIntersecting) timer = window.setInterval(tick, 1700);
-  }).observe(turns);
+  const run = async (title: string) => {
+    const t = await load();
+    const action = t.textActions.find((a) => a.title === title);
+    if (!action || !input || !result || !name || !effect) return;
+    current = title;
+    buttons.forEach((b) => b.classList.toggle('on', b.dataset.action === title));
+    name.textContent = title;
+    const need = action.needs?.(input.value) ?? null;
+    let out: string | null = null;
+    if (!need) {
+      try {
+        out = action.run(input.value);
+      } catch {
+        out = null;
+      }
+    }
+    effect.textContent = need
+      ? need
+      : out === null
+        ? 'This text cannot be read that way'
+        : action.effect === 'notice'
+          ? 'Shown as a notice'
+          : action.effect === 'opens'
+            ? 'Opens in your browser'
+            : 'Replaces the selection';
+    result.textContent = need || out === null ? '' : out;
+    result.classList.remove('swap');
+    void result.offsetWidth;
+    result.classList.add('swap');
+  };
+  const stop = () => {
+    touched = true;
+  };
+  buttons.forEach((b) =>
+    b.addEventListener('click', () => {
+      stop();
+      void run(b.dataset.action ?? '');
+    }),
+  );
+  samples.forEach((s) =>
+    s.addEventListener('click', () => {
+      stop();
+      if (!input) return;
+      input.value = s.dataset.sample ?? '';
+      samples.forEach((x) => x.classList.toggle('on', x === s));
+      void paintNeeds();
+      if (current) void run(current);
+    }),
+  );
+  input?.addEventListener('input', () => {
+    stop();
+    samples.forEach((x) => x.classList.remove('on'));
+    void paintNeeds();
+    if (current) void run(current);
+  });
+  search?.addEventListener('input', () => {
+    stop();
+    const q = search.value.trim().toLowerCase();
+    for (const b of buttons) {
+      const li = b.parentElement;
+      if (li) li.hidden = Boolean(q) && !(b.dataset.action ?? '').toLowerCase().includes(q);
+    }
+  });
+  // Until someone touches it, it shows a few actions on the sample by itself while on screen.
+  const tour = ['UPPERCASE', 'Title Case', 'camelCase', 'snake_case', 'kebab-case', 'Wrap in quotes', 'Base64 encode'];
+  let step = 0;
+  let timer = 0;
+  new IntersectionObserver(
+    ([e]) => {
+      window.clearInterval(timer);
+      if (!e.isIntersecting || touched) return;
+      void paintNeeds();
+      void run(tour[step % tour.length]);
+      if (!motion) return;
+      timer = window.setInterval(() => {
+        if (touched || lab.contains(document.activeElement)) return window.clearInterval(timer);
+        step++;
+        void run(tour[step % tour.length]);
+      }, 1800);
+    },
+    { threshold: 0.35 },
+  ).observe(lab);
 }
 
 // Tabs: the dock of apps and the measured app picker. Arrow keys move between tabs, as in a real tab list.
@@ -357,6 +452,59 @@ for (const frame of $$<HTMLElement>('[data-scroll-page]')) {
     const room = inner.offsetHeight - frame.clientHeight;
     inner.style.setProperty('--scroll', `${(-room * clamp((p - 0.15) / 0.7)).toFixed(1)}px`);
   });
+}
+
+// A command file and the ways to run it: pointing at a way lights the lines of the file it comes from. While on
+// screen and untouched, it walks through the four by itself.
+const anatomy = $<HTMLElement>('[data-anatomy]');
+if (anatomy) {
+  const ways = $$<HTMLElement>('[data-way]', anatomy);
+  const lines = $$<HTMLElement>('.ln[data-for]', anatomy);
+  let touched = false;
+  const light = (way: string | null) => {
+    ways.forEach((w) => w.classList.toggle('lit', w.dataset.way === way));
+    lines.forEach((l) => l.classList.toggle('lit', Boolean(way) && (l.dataset.for ?? '').split(' ').includes(way ?? '')));
+  };
+  ways.forEach((w) => {
+    w.addEventListener('pointerenter', () => {
+      touched = true;
+      light(w.dataset.way ?? null);
+    });
+    w.addEventListener('focusin', () => {
+      touched = true;
+      light(w.dataset.way ?? null);
+    });
+  });
+  if (motion) {
+    let at = 0;
+    let timer = 0;
+    new IntersectionObserver(
+      ([e]) => {
+        window.clearInterval(timer);
+        if (!e.isIntersecting || touched) return;
+        light(ways[at % ways.length]?.dataset.way ?? null);
+        timer = window.setInterval(() => {
+          if (touched) return window.clearInterval(timer);
+          at++;
+          light(ways[at % ways.length]?.dataset.way ?? null);
+        }, 1900);
+      },
+      { threshold: 0.4 },
+    ).observe(anatomy);
+  }
+}
+
+// The Your Mac diagram draws its wires once it is in view.
+const mac = $<HTMLElement>('[data-mac]');
+if (mac) {
+  new IntersectionObserver(
+    ([e], obs) => {
+      if (!e.isIntersecting) return;
+      mac.classList.add('on');
+      obs.disconnect();
+    },
+    { threshold: 0.3 },
+  ).observe(mac);
 }
 
 // Windows that drift at their own pace as the page scrolls, so overlapping windows read as layers.

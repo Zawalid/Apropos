@@ -1,7 +1,8 @@
 ---
 /**
- * What you are holding: the context actions, grouped by what they need, listed from the app's own pack. Each tile
- * shows what the action leaves in your hands (the output), not a drawing of the app.
+ * Actions on what you hold. The text actions are a working playground: the same functions as the app (ported in
+ * scripts/textTools.ts), run on what you type. The other kinds (files, a page, a folder or repository) show what one of
+ * their actions hands you, with the rest of their actions beside it. Every name comes from the app's own pack.
  */
 import { actionCount, titlesFor } from '../data/actions';
 
@@ -10,14 +11,17 @@ const files = titlesFor('selectedFiles');
 const page = titlesFor('pageURL');
 const folder = [...titlesFor('folder'), ...titlesFor('gitRepo')];
 
-// The words the text tile turns into, one action at a time. Each is the real output of the named action.
-const turns = [
-  { action: 'Selected', out: 'release notes for friday' },
-  { action: 'UPPERCASE', out: 'RELEASE NOTES FOR FRIDAY' },
-  { action: 'Title Case', out: 'Release Notes For Friday' },
-  { action: 'snake_case', out: 'release_notes_for_friday' },
-  { action: 'camelCase', out: 'releaseNotesForFriday' },
-  { action: 'kebab-case', out: 'release-notes-for-friday' },
+const samples = [
+  { label: 'A sentence', value: 'release notes for friday' },
+  { label: 'A few lines', value: 'pears\napples\nfigs\napples' },
+  { label: 'JSON', value: '{"name":"Apropos","keys":["option","space"],"local":true}' },
+  { label: 'A link', value: 'https://swift.org' },
+];
+
+const kinds = [
+  { title: 'Selected files', action: 'Copy path', result: '~/Desktop/Invoices/2026-10.pdf', all: files },
+  { title: 'The page in your browser', action: 'Copy as Markdown link', result: '[Swift.org](https://swift.org)', all: page },
+  { title: 'A folder or a repository', action: 'Copy branch name', result: 'feature/send-to', all: folder },
 ];
 ---
 <section id="holding" class="section holding" aria-labelledby="holding-title">
@@ -25,186 +29,282 @@ const turns = [
     <div class="section-head">
       <h2 id="holding-title" class="claim">{actionCount} things to do with what you selected.</h2>
       <p class="lede">
-        Built in, in any app, grouped by what you hold: text, files, the page in your browser, a folder or a repository.
-        They run on your Mac, and a selection is never run as code.
+        Select something in any app and the list grows the actions that fit it. The text ones work right here: type, or
+        pick a sample, then choose an action. Same functions as the app.
       </p>
     </div>
 
-    <div class="tiles">
-      <article class="tile t-text">
-        <h3>Selected text</h3>
-        <div class="turn" data-turns aria-live="off">
-          {turns.map((t, i) => (
-            <p class:list={['turn-row', { on: i === 1 }]} data-turn>
-              <span class="turn-action">{t.action}</span>
-              <span class="turn-out">{t.out}</span>
-            </p>
-          ))}
+    <div class="lab" data-lab>
+      <div class="lab-in">
+        <div class="lab-top">
+          <label class="lab-label" for="lab-text">Your selection</label>
+          <div class="samples" role="group" aria-label="Samples">
+            {samples.map((s, i) => (
+              <button type="button" class:list={['sample', { on: i === 0 }]} data-sample={s.value}>{s.label}</button>
+            ))}
+          </div>
         </div>
-        <ul class="names" aria-label={`${text.length} actions for selected text`}>
-          {text.map((t) => <li>{t}</li>)}
+        <textarea id="lab-text" class="lab-text" rows="4" spellcheck="false" data-lab-text>{samples[0].value}</textarea>
+        <div class="lab-out" aria-live="polite">
+          <p class="lab-label"><span data-lab-name>Pick an action</span> <span class="lab-effect" data-lab-effect></span></p>
+          <pre class="lab-result" data-lab-result>The result shows here.</pre>
+        </div>
+      </div>
+
+      <div class="lab-list">
+        <label class="visually-hidden" for="lab-search">Search the text actions</label>
+        <input id="lab-search" class="lab-search" type="search" placeholder={`Search ${text.length} text actions`} autocomplete="off" data-lab-search />
+        <ul class="actions" data-lab-actions>
+          {text.map((t) => (
+            <li>
+              <button type="button" data-action={t}>
+                <span class="a-title">{t}</span>
+                <span class="a-need" data-need></span>
+              </button>
+            </li>
+          ))}
         </ul>
-      </article>
+      </div>
+    </div>
 
-      <article class="tile t-files">
-        <h3>Selected files</h3>
-        <p class="out" aria-label="Example result of Copy path">
-          <span class="out-label">Copy path</span>
-          <code>~/Desktop/Invoices/2026-10.pdf</code>
-        </p>
-        <ul class="names">{files.map((t) => <li>{t}</li>)}</ul>
-      </article>
-
-      <article class="tile t-page">
-        <h3>The page in your browser</h3>
-        <p class="out" aria-label="Example result of Copy as Markdown link">
-          <span class="out-label">Copy as Markdown link</span>
-          <code>[Swift.org](https://swift.org)</code>
-        </p>
-        <ul class="names">{page.map((t) => <li>{t}</li>)}</ul>
-      </article>
-
-      <article class="tile t-folder">
-        <h3>A folder, or a git repository</h3>
-        <p class="out" aria-label="Example result of Copy branch name">
-          <span class="out-label">Copy branch name</span>
-          <code>feature/send-to</code>
-        </p>
-        <ul class="names">{folder.map((t) => <li>{t}</li>)}</ul>
-      </article>
+    <div class="kinds">
+      {kinds.map((k) => (
+        <article class="kind">
+          <h3>{k.title}</h3>
+          <p class="k-action">{k.action}</p>
+          <p class="k-result">{k.result}</p>
+          <ul class="k-all" aria-label={`Actions for ${k.title.toLowerCase()}`}>
+            {k.all.map((a) => <li>{a}</li>)}
+          </ul>
+        </article>
+      ))}
     </div>
     <p class="small after">
-      Secure fields are never read, and password managers never give up their selection. You can switch each kind of
-      context off, or list apps that are never read.
+      Secure fields are never read, and password managers never give up their selection. Each kind of context can be
+      switched off, and apps can be listed that are never read.
     </p>
   </div>
 </section>
 
 <style>
-  .tiles {
+  .lab {
     display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+    border-radius: 24px;
+    background: var(--card);
+    box-shadow:
+      0 0 0 1px var(--line),
+      0 40px 80px -48px rgba(6, 11, 14, 0.35);
+    overflow: hidden;
+  }
+  .lab-in {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 18px;
+    padding: clamp(22px, 3vw, 40px);
+    min-width: 0;
+  }
+  .lab-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+  }
+  .lab-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-3);
+  }
+  .samples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .sample {
+    min-height: 32px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--paper-2);
+    color: var(--ink-2);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .sample.on {
+    background: var(--pill);
+    color: var(--pill-ink);
+  }
+  /* The selection reads like selected text in a document: a mint wash behind large type. */
+  .lab-text {
+    width: 100%;
+    min-height: 112px;
+    padding: 16px 18px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--mint-wash);
+    color: var(--ink);
+    font: 600 clamp(22px, 2.4vw, 32px) / 1.25 var(--display);
+    letter-spacing: -0.02em;
+    resize: vertical;
+  }
+  .lab-out {
+    display: grid;
+    gap: 8px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .lab-effect {
+    margin-left: 8px;
+    font-weight: 500;
+  }
+  .lab-result {
+    margin: 0;
+    min-height: 2.6em;
+    max-height: 220px;
+    overflow: auto;
+    font: 600 clamp(20px, 2.1vw, 28px) / 1.3 var(--display);
+    letter-spacing: -0.02em;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: var(--ink);
+  }
+  .lab-result:global(.swap) {
+    animation: swap 260ms var(--ease);
+  }
+  @keyframes swap {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  .lab-list {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-height: 0;
+    border-left: 1px solid var(--line);
+    background: color-mix(in srgb, var(--paper-2) 55%, transparent);
+  }
+  .lab-search {
+    margin: 14px 14px 6px;
+    height: 40px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--card);
+    box-shadow: 0 0 0 1px var(--line-2);
+    color: var(--ink);
+    font: inherit;
+    font-size: 15px;
+  }
+  .lab-search::placeholder {
+    color: var(--ink-3);
+  }
+  .actions {
+    max-height: 470px;
+    overflow-y: auto;
+    padding: 4px 8px 12px;
+    scrollbar-width: thin;
+  }
+  .actions button {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 38px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 9px;
+    background: none;
+    color: var(--ink);
+    font-size: 15px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .actions button:hover {
+    background: var(--paper-3);
+  }
+  .actions button:global(.on) {
+    background: var(--pill);
+    color: var(--pill-ink);
+  }
+  .actions button:global(.off) {
+    color: var(--ink-3);
+  }
+  .actions button:global(.on) .a-need {
+    color: inherit;
+  }
+  .a-need {
+    font-size: 12px;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .actions li[hidden] {
+    display: none;
+  }
+
+  .kinds {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
   }
-  .tile {
+  .kind {
     display: grid;
     align-content: start;
-    gap: 22px;
-    padding: clamp(22px, 2.6vw, 34px);
-    border-radius: var(--r-frame);
+    gap: 8px;
+    padding: clamp(20px, 2.4vw, 28px);
+    border-radius: 20px;
     background: var(--card);
     box-shadow: 0 0 0 1px var(--line);
+    min-width: 0;
   }
-  .tile h3 {
+  .kind h3 {
     font-size: 15px;
     font-weight: 600;
     color: var(--ink-2);
-    letter-spacing: -0.01em;
   }
-  .t-text {
-    grid-column: span 7;
-    grid-row: span 2;
-    background: var(--ink);
-    color: var(--paper);
-    box-shadow: none;
-  }
-  .t-text h3 {
-    color: color-mix(in srgb, var(--paper) 70%, transparent);
-  }
-  .t-files {
-    grid-column: span 5;
-  }
-  .t-page {
-    grid-column: span 5;
-  }
-  .t-folder {
-    grid-column: 1 / -1;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-    align-items: center;
-  }
-  .t-folder h3 {
-    grid-column: 1 / -1;
-  }
-
-  .turn {
-    display: grid;
-    min-height: clamp(150px, 15vw, 210px);
-    align-items: center;
-  }
-  .turn-row {
-    grid-area: 1 / 1;
-    display: grid;
-    gap: 10px;
-    opacity: 0;
-    transform: translateY(8px);
-    transition:
-      opacity 260ms var(--ease),
-      transform 260ms var(--ease);
-  }
-  .turn-row.on {
-    opacity: 1;
-    transform: none;
-  }
-  .turn-action {
-    justify-self: start;
-    padding: 3px 10px;
-    border-radius: 999px;
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--paper) 30%, transparent);
-    font-size: 13px;
-    font-weight: 600;
-  }
-  .turn-out {
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: clamp(30px, 3.9vw, 54px);
-    letter-spacing: -0.035em;
-    line-height: 1.02;
-    overflow-wrap: anywhere;
-  }
-  .names {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 8px;
-  }
-  .names li {
-    padding: 4px 11px;
-    border-radius: 999px;
-    background: var(--paper-2);
-    font-size: 14px;
-    color: var(--ink-2);
-  }
-  .t-text .names li {
-    background: color-mix(in srgb, var(--paper) 10%, transparent);
-    color: color-mix(in srgb, var(--paper) 82%, transparent);
-  }
-  .out {
-    display: grid;
-    gap: 8px;
-  }
-  .out-label {
+  .k-action {
+    margin-top: 10px;
     font-size: 13px;
     color: var(--ink-3);
   }
-  .out code {
-    font-family: var(--display);
-    font-size: clamp(20px, 2vw, 26px);
-    font-weight: 600;
+  .k-result {
+    font: 600 clamp(18px, 1.7vw, 22px) / 1.3 var(--display);
     letter-spacing: -0.02em;
     overflow-wrap: anywhere;
+  }
+  .k-all {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .k-all li {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--paper-2);
+    font-size: 13px;
+    color: var(--ink-2);
   }
   .after {
     margin-top: 22px;
     max-width: 64ch;
   }
   @media (max-width: 900px) {
-    .t-text,
-    .t-files,
-    .t-page,
-    .t-folder {
-      grid-column: 1 / -1;
-      grid-row: auto;
+    .lab {
+      grid-template-columns: 1fr;
     }
-    .t-folder {
+    .lab-list {
+      border-left: 0;
+      border-top: 1px solid var(--line);
+    }
+    .actions {
+      max-height: 320px;
+    }
+    .kinds {
       grid-template-columns: 1fr;
     }
   }
