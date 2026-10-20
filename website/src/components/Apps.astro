@@ -1,90 +1,316 @@
 ---
-const rows: { when: string; where: string; does: string[] }[] = [
-  {
-    when: 'files selected',
-    where: 'in finder',
-    does: ['Compress to a zip', 'Copy path', 'Copy name', 'Reveal in Finder', 'Open in Terminal here', 'Copy SHA-256', 'Send to a Mail draft', 'Copy or move into a folder'],
-  },
-  {
-    when: 'text selected',
-    where: 'in any app',
-    does: ['UPPERCASE', 'snake_case', 'Title Case', 'Format JSON', 'Base64 encode', 'Sort lines', 'Wrap as a code block', 'Send to Notes, Things or Bear'],
-  },
-  {
-    when: 'a page open',
-    where: 'in your browser',
-    does: ['Copy URL', 'Copy as a Markdown link', 'Copy the title', 'Send the page to Obsidian', 'Send it to Reminders'],
-  },
-  {
-    when: 'a git folder',
-    where: 'in finder or an editor',
-    does: ['Copy the branch name', 'Copy the short commit hash', 'Open in Terminal here', 'Open the repository on its website'],
-  },
-  {
-    when: 'nothing selected',
-    where: 'in any app with a menu bar',
-    does: ['Product > Test in Xcode', 'New Private Window in Safari', 'Show Path Bar in Finder', 'Jump to Definition in Xcode'],
-  },
-  {
-    when: 'your own',
-    where: 'wherever you set them',
-    does: ['Speak the selection', 'A link with the selection in it', 'Run a Shortcut or a program', 'A sequence of the above'],
-  },
-];
+/**
+ * Works with your apps: a moving wall of real app icons, then an explorer of the measured apps. Without apps.json the
+ * explorer is left out and the wall stays, since every icon is an app the list reads through its menu bar.
+ */
+import { Image } from 'astro:assets';
+import { fmt, iconFor, measurement, wallApps, type MeasuredApp } from '../data/apps';
+
+const half = Math.ceil(wallApps.length / 2);
+const rows = [wallApps.slice(0, half), wallApps.slice(half)];
+const apps = measurement?.apps ?? [];
+
+function sample(app: MeasuredApp) {
+  const picked: MeasuredApp['commands'] = [];
+  const menus = new Set<string>();
+  for (const c of app.commands) {
+    const top = c.path[0] ?? '';
+    if (!c.shortcut || menus.has(top) || c.title.length > 32) continue;
+    menus.add(top);
+    picked.push(c);
+    if (picked.length === 8) break;
+  }
+  return picked;
+}
+
+function topMenus(app: MeasuredApp) {
+  return Object.entries(app.menus)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+}
 ---
-<section class="apps" id="apps" aria-labelledby="apps-title">
+<section id="apps" class="section apps" aria-labelledby="apps-title">
   <div class="wrap">
-    <div class="apps-head">
-      <h2 id="apps-title" class="title">what it offers depends on what you are holding.</h2>
-      <p class="lead">
-        The list changes with the app in front and with what is selected in it. Nothing here needs setting up. These are real
-        examples, not a promise of every app.
+    <div class="section-head">
+      <h2 id="apps-title" class="claim">Works in the apps you already have.</h2>
+      <p class="lede">
+        If an app has a menu bar, Apropos reads it. No plugin per app, no waiting for anyone to add support.
       </p>
     </div>
-
-    <ul class="rows" aria-label="Examples by situation">
-      {rows.map((row) => (
-        <li class="row" data-row data-reveal>
-          <span class="pearl-mark" aria-hidden="true"></span>
-          <h3 class="row-name">
-            <span class="row-when">{row.when}</span>
-            <span class="row-where">{row.where}</span>
-          </h3>
-          <ul class="does" aria-label={`What it offers with ${row.when} ${row.where}`}>
-            {row.does.map((item) => <li><span class="slash" aria-hidden="true">/</span> {item}</li>)}
-          </ul>
-        </li>
-      ))}
-    </ul>
   </div>
+
+  <div class="marquee">
+    {rows.map((row, r) => (
+      <div class:list={['row', { reverse: r === 1 }]}>
+        <ul class="belt">
+          {[...row, ...row].map((name, i) => {
+            const icon = iconFor(name);
+            return (
+              <li aria-hidden={i >= row.length ? 'true' : undefined}>
+                {icon && <Image src={icon} alt="" width={64} height={64} densities={[1, 2]} />}
+                <span>{name}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    ))}
+  </div>
+
+  {apps.length > 0 && measurement && (
+    <div class="wrap explorer" data-explorer>
+      <div class="picker" role="tablist" aria-label="Measured apps">
+        {apps.map((app, i) => {
+          const icon = iconFor(app.name);
+          return (
+            <button type="button" role="tab" id={`app-tab-${i}`} aria-controls={`app-panel-${i}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} data-tab>
+              {icon && <Image src={icon} alt="" width={28} height={28} densities={[1, 2]} />}
+              <span class="pick-name">{app.name}</span>
+              <span class="pick-n num">{fmt(app.total)}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div class="panels">
+        {apps.map((app, i) => (
+          <div class="panel" id={`app-panel-${i}`} role="tabpanel" aria-labelledby={`app-tab-${i}`} hidden={i !== 0} data-panel>
+            <p class="big">
+              <span class="num">{fmt(app.total)}</span>
+              <span class="big-label">menu commands in {app.name}</span>
+            </p>
+            <p class="split">
+              <span><strong class="num">{fmt(app.withShortcut)}</strong> with a shortcut</span>
+              <span><strong class="num">{fmt(app.withoutShortcut)}</strong> without one</span>
+            </p>
+            <ul class="menus">
+              {topMenus(app).map(([menu, n]) => (
+                <li style={`--w:${n / topMenus(app)[0][1]}`}>
+                  <span class="menu-name">{menu}</span>
+                  <span class="menu-bar" aria-hidden="true"></span>
+                  <span class="num">{n}</span>
+                </li>
+              ))}
+            </ul>
+            <ul class="cmds" aria-label={`Some ${app.name} commands`}>
+              {sample(app).map((c) => (
+                <li>
+                  <span>{c.title}</span>
+                  <kbd class="kbd">{c.shortcut}</kbd>
+                </li>
+              ))}
+            </ul>
+            {(app.kind === 'electron' || app.kind === 'web') && (
+              <p class="small">{app.name} is built on web views: Apropos lists its menu bar, not the controls inside its window.</p>
+            )}
+          </div>
+        ))}
+      </div>
+      <p class="small foot">
+        Measured on {measurement.measuredOn} on a {measurement.mac}, macOS {measurement.macOS}, with every window as it was.
+        <a href="/apps/">Search every measured command</a>
+      </p>
+    </div>
+  )}
 </section>
 
 <style>
-  .apps { position: relative; z-index: 2; background: var(--ink); padding-block: clamp(80px, 11vw, 160px); }
-  .apps-head { display: grid; gap: 24px; }
-  @media (min-width: 960px) { .apps-head { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 64px; align-items: end; } }
-  .apps-head .title { max-width: 11em; }
-  .rows { list-style: none; margin-top: clamp(48px, 7vw, 96px); border-top: 1px solid var(--line-strong); }
-  .row {
-    position: relative; display: grid; gap: 18px; padding: clamp(24px, 3.4vw, 40px) 0 clamp(24px, 3.4vw, 40px) 0;
-    border-bottom: 1px solid var(--line-strong);
+  .marquee {
+    display: grid;
+    gap: 18px;
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   }
-  @media (min-width: 900px) { .row { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr); gap: 56px; align-items: baseline; padding-left: 28px; } }
-  .pearl-mark {
-    position: absolute; left: 0; top: clamp(34px, 4.4vw, 56px); width: 10px; height: 10px; border-radius: 50%; background: var(--pearl);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--pearl) 50%, transparent);
-    opacity: 0; transform: scale(0.4); transition: opacity 240ms var(--ease-out), transform 420ms var(--ease-pearl);
+  .belt {
+    display: flex;
+    gap: 28px;
+    width: max-content;
+    animation: belt 70s linear infinite;
+  }
+  .reverse .belt {
+    animation-direction: reverse;
+    animation-duration: 80s;
+  }
+  .marquee:hover .belt {
+    animation-play-state: paused;
+  }
+  @keyframes belt {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .belt li {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    width: 92px;
+    font-size: 12px;
+    color: var(--ink-3);
+    text-align: center;
+  }
+  .belt img {
+    width: 64px;
+    height: 64px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .belt {
+      animation: none;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: auto;
+    }
+    .belt li[aria-hidden] {
+      display: none;
+    }
+    .reverse {
+      display: none;
+    }
+  }
+
+  .explorer {
+    margin-top: clamp(56px, 7vw, 96px);
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 16px 48px;
+  }
+  .picker {
+    display: grid;
+    align-content: start;
+    max-height: 560px;
+    overflow-y: auto;
+    border-top: 1px solid var(--line);
+  }
+  .picker button {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 10px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    color: var(--ink-2);
+  }
+  .picker img {
+    width: 28px;
+    height: 28px;
+  }
+  .picker button[aria-selected='true'] {
+    color: var(--ink);
+    background: var(--paper-2);
+  }
+  .pick-name {
+    font-weight: 500;
+  }
+  .pick-n {
+    font-size: 14px;
+    color: var(--ink-3);
+  }
+  .panels {
+    display: grid;
+  }
+  .panel {
+    grid-area: 1 / 1;
+    display: grid;
+    align-content: start;
+    gap: 28px;
+  }
+  .panel[hidden] {
     display: none;
   }
-  @media (min-width: 900px) { .pearl-mark { display: block; } }
-  .row-name { display: grid; gap: 4px; font-weight: 400; }
-  .row-when { font-family: var(--font-display); font-weight: 900; font-size: clamp(2rem, 4vw, 3.6rem); line-height: 0.95; letter-spacing: -0.04em; text-transform: lowercase; color: var(--text); }
-  .row-where { color: var(--faint); font-size: 1rem; }
-  .does { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 22px; font: 500 0.95rem/1.5 var(--font-mono); color: var(--muted); }
-  .slash { color: var(--mint); }
-  @media (hover: hover) and (pointer: fine) {
-    .row:hover .pearl-mark { opacity: 1; transform: none; }
-    .row:hover .does { color: var(--text); }
+  .big {
+    display: grid;
+    gap: 4px;
   }
-  .does { transition: color 240ms var(--ease-out); }
+  .big .num {
+    font-family: var(--display);
+    font-size: clamp(64px, 8vw, 120px);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 0.9;
+  }
+  .big-label {
+    font-size: 19px;
+    color: var(--ink-2);
+  }
+  .split {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 32px;
+    color: var(--ink-2);
+  }
+  .split strong {
+    color: var(--ink);
+  }
+  .menus {
+    display: grid;
+    gap: 8px;
+    max-width: 560px;
+  }
+  .menus li {
+    display: grid;
+    grid-template-columns: 110px 1fr 44px;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+  }
+  .menu-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .menu-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--ink);
+    transform-origin: left;
+    transform: scaleX(var(--w));
+  }
+  .menus .num {
+    text-align: right;
+    color: var(--ink-3);
+  }
+  .cmds {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 1px solid var(--line);
+  }
+  .cmds li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 15px;
+  }
+  .foot {
+    grid-column: 1 / -1;
+  }
+  @media (max-width: 860px) {
+    .explorer {
+      grid-template-columns: 1fr;
+    }
+    .picker {
+      display: flex;
+      overflow-x: auto;
+      max-height: none;
+      border: 0;
+      gap: 6px;
+    }
+    .picker button {
+      flex: none;
+      grid-template-columns: 24px auto;
+      border: 0;
+      border-radius: 999px;
+      padding: 6px 12px 6px 6px;
+    }
+    .pick-n {
+      display: none;
+    }
+    .cmds {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>

@@ -1,58 +1,201 @@
 ---
-import { links, version } from '../data/site';
-const open = 'open "apropos://open"';
+import { links, site, version } from '../data/site';
+import { faq } from '../data/faq';
 ---
-<section class="install" id="install" aria-labelledby="install-title" data-install>
-  <div class="install-panel" data-install-panel>
-    <div class="wrap install-grid">
-      <div class="install-main">
-        <h2 id="install-title" class="display install-title">get apropos.</h2>
-        <p class="install-lead">One download. Version {version} needs macOS 14 or later.</p>
-        <div class="install-actions">
-          <a class="btn btn-ink" href={links.download}>
-            Download for macOS
-            <svg class="i-down" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3.5v11m0 0 4.5-4.5M10 14.5 5.5 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </a>
-          <a class="install-guide link" href={links.releases}>All releases</a>
-        </div>
+<section id="install" class="section install" aria-labelledby="install-title">
+  <div class="wrap">
+    <div class="get">
+      <div class="get-text">
+        <h2 id="install-title" class="claim">From download to the first Option-Space.</h2>
+        <p class="small">Version {version}. macOS {site.minimumMacOS} or later. <a href={links.changelog}>What changed</a></p>
       </div>
+      <a class="pill big-pill" href={links.download}>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v9m0 0L4.5 7M8 10.5 11.5 7M2.5 13.5h11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        Download for Mac
+      </a>
+    </div>
 
-      <ol class="install-side">
-        <li class="step">
-          <h3>The first launch</h3>
-          <p>Apropos is not notarized yet, so macOS asks you to confirm the first launch. It is the cost of distributing outside the Mac App Store without an Apple Developer account. The source is open if you would rather read it first.</p>
-        </li>
-        <li class="step">
-          <h3>Allow Accessibility</h3>
-          <p>Apropos explains why it needs it, opens the right page of System Settings, and notices the change without a restart. Nothing else is asked for until you use a feature that needs it.</p>
-        </li>
-        <li class="step">
-          <h3>Press Option-Space</h3>
-          <p>Or open the panel from a terminal, which also shows that it works from outside:</p>
-          <div class="cmd"><pre><code>{open}</code></pre><button class="cmd-copy" type="button" data-copy={open} title="Copy the command">Copy</button></div>
-        </li>
-      </ol>
+    <ol class="steps">
+      <li>
+        <h3>Open the download</h3>
+        <p>Move Apropos to Applications and open it. It lives in the menu bar, with no Dock icon.</p>
+      </li>
+      <li>
+        <h3>Allow Accessibility</h3>
+        <p>The welcome screen says why and opens the right page of System Settings. Apropos notices the change without a restart.</p>
+      </li>
+      <li>
+        <h3>Press Option-Space</h3>
+        <p>In any app. Type a few letters of what you want, press Return. Escape closes it.</p>
+      </li>
+    </ol>
+
+    <div class="faq" data-faq>
+      <div class="faq-head">
+        <h2 class="faq-title">Questions</h2>
+        <label class="search">
+          <span class="visually-hidden">Search the questions</span>
+          <input type="search" placeholder="Search the questions" autocomplete="off" data-faq-search />
+        </label>
+      </div>
+      <div class="qs">
+        {faq.map((q) => (
+          <details data-q>
+            <summary>{q.q}</summary>
+            <div class="a" set:html={q.a} />
+          </details>
+        ))}
+      </div>
+      <p class="small none" data-faq-none hidden>No question matches. <a href={links.issues}>Ask on GitHub</a></p>
     </div>
   </div>
-  <p class="sr-only" aria-live="polite" data-copy-status></p>
 </section>
 
 <style>
-  .install { position: relative; z-index: 2; background: var(--ink); }
-  .install-panel { background: var(--mint); color: var(--mint-ink); padding-block: clamp(80px, 11vw, 160px); }
-  .install-grid { display: grid; gap: clamp(48px, 6vw, 96px); }
-  @media (min-width: 1040px) { .install-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
-  .install-main { display: grid; gap: 26px; align-content: start; }
-  .install-title { font-size: clamp(3.4rem, 11vw, 10rem); padding-bottom: 0.1em; }
-  .install-lead { font-size: clamp(1.1rem, 1.5vw, 1.3rem); line-height: 1.5; max-width: 26rem; color: var(--mint-muted); }
-  .install-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; margin-top: 8px; }
-  .install-guide { font-weight: 700; color: var(--mint-ink); }
-  .install-guide:focus-visible { outline-color: var(--mint-ink); }
+  .get {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: 28px 40px;
+    padding-bottom: clamp(36px, 4vw, 56px);
+    border-bottom: 1px solid var(--line);
+  }
+  .get-text {
+    display: grid;
+    gap: 18px;
+  }
+  .big-pill {
+    min-height: 56px;
+    padding: 0 30px;
+    font-size: 17px;
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 32px;
+    padding-top: clamp(32px, 4vw, 48px);
+    counter-reset: step;
+  }
+  .steps li {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    counter-increment: step;
+  }
+  .steps h3 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+  }
+  .steps h3::before {
+    content: counter(step);
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px var(--line-2);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .steps p {
+    color: var(--ink-2);
+  }
 
-  .install-side { list-style: none; display: grid; gap: 34px; counter-reset: step; }
-  .step { display: grid; gap: 10px; padding-top: 22px; border-top: 1px solid var(--mint-line); }
-  .step h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; letter-spacing: -0.015em; text-transform: lowercase; }
-  .step p { color: var(--mint-muted); }
-  .step .cmd { margin-top: 4px; border-color: var(--mint-line); }
-  :global(.motion) .install-panel { will-change: clip-path; }
+  .faq {
+    margin-top: clamp(96px, 11vw, 160px);
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+    gap: 24px clamp(24px, 5vw, 80px);
+    align-items: start;
+  }
+  .faq-head {
+    position: sticky;
+    top: 96px;
+    display: grid;
+    gap: 22px;
+  }
+  .faq-title {
+    font-family: var(--display);
+    font-size: clamp(36px, 4vw, 56px);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .search input {
+    width: 100%;
+    height: 46px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--card);
+    box-shadow: 0 0 0 1px var(--line-2);
+    color: var(--ink);
+    font: inherit;
+    font-size: 16px;
+  }
+  .search input::placeholder {
+    color: var(--ink-3);
+  }
+  .qs {
+    border-top: 1px solid var(--line);
+  }
+  details {
+    border-bottom: 1px solid var(--line);
+  }
+  summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 0;
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary::after {
+    content: '';
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-right: 1.6px solid var(--ink-2);
+    border-bottom: 1.6px solid var(--ink-2);
+    transform: translateY(-3px) rotate(45deg);
+    transition: transform 200ms var(--ease);
+  }
+  details[open] summary::after {
+    transform: translateY(2px) rotate(-135deg);
+  }
+  .a {
+    padding: 0 0 22px;
+    color: var(--ink-2);
+    max-width: 62ch;
+  }
+  .a :global(p + p) {
+    margin-top: 10px;
+  }
+  .none {
+    grid-column: 2;
+  }
+  @media (max-width: 860px) {
+    .steps,
+    .faq {
+      grid-template-columns: 1fr;
+    }
+    .faq-head {
+      position: static;
+    }
+    .none {
+      grid-column: 1;
+    }
+  }
 </style>

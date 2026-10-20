@@ -1,0 +1,253 @@
+---
+/**
+ * The gap: what apps already offer against what people reach. Every number comes from apps.json (apropos-probe, read
+ * only); without it the numbers and the wall are left out rather than guessed.
+ */
+import { Image } from 'astro:assets';
+import { fmt, iconFor, measured, measurement } from '../data/apps';
+
+const statement =
+  'Your apps can already do almost everything you ask of them. The commands are in the menus, a few levels deep, and many of them have no shortcut at all.';
+const words = statement.split(' ');
+
+const featured = ['Finder', 'Safari', 'Mail', 'Notes', 'Xcode', 'Preview']
+  .map((name) => measured(name))
+  .filter((a) => a !== undefined)
+  .slice(0, 5);
+const lead = featured.find((a) => a.name === 'Safari') ?? featured[0];
+
+// The wall: real titles from the measured apps, deduplicated, enough to fill the stage.
+const wall: string[] = [];
+const seen = new Set<string>();
+for (const app of featured) {
+  for (const c of app.commands) {
+    const t = c.title.trim();
+    if (t.length < 3 || t.length > 34 || seen.has(t)) continue;
+    seen.add(t);
+    wall.push(t);
+  }
+}
+const wallTitles = wall.slice(0, 220);
+const totalAll = featured.reduce((n, a) => n + a.total, 0);
+---
+<section id="gap" class="section gap" aria-labelledby="gap-title">
+  <div class="wrap">
+    <h2 id="gap-title" class="visually-hidden">Why Apropos</h2>
+    <p class="statement display" data-lit>
+      {words.map((w, i) => <span style={`--i:${i}`}>{w} </span>)}
+    </p>
+
+    {lead && measurement && (
+      <div class="proof">
+        <p class="proof-line">
+          {lead.name} has <strong class="num">{fmt(lead.total)}</strong> menu commands.
+          <strong class="num">{fmt(lead.withShortcut)}</strong> of them have a shortcut. Apropos reaches all{' '}
+          <span class="num">{fmt(lead.total)}</span> from one field.
+        </p>
+        <ol class="bars" aria-label="Menu commands per app, with and without a shortcut">
+          {featured.map((app) => {
+            const icon = iconFor(app.name);
+            const max = Math.max(...featured.map((a) => a.total));
+            return (
+              <li style={`--all:${app.total / max};--keyed:${app.withShortcut / app.total}`}>
+                <span class="who">
+                  {icon && <Image src={icon} alt="" width={28} height={28} densities={[1, 2]} />}
+                  {app.name}
+                </span>
+                <span class="bar" aria-hidden="true"><span class="keyed"></span></span>
+                <span class="count num">
+                  <strong>{fmt(app.total)}</strong> commands, {fmt(app.withShortcut)} with a shortcut
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+        <p class="small foot">
+          Measured with apropos-probe, which reads the menu bar and presses nothing, on a {measurement.mac} with macOS{' '}
+          {measurement.macOS}, on {measurement.measuredOn}. Menus change with the window and the selection, so your counts
+          will differ.
+        </p>
+      </div>
+    )}
+  </div>
+
+  {wallTitles.length > 0 && (
+    <div class="wall-track" data-wall>
+      <div class="wall-stage">
+        <ul class="wall" aria-hidden="true">
+          {wallTitles.map((t) => <li>{t}</li>)}
+        </ul>
+        <div class="field" aria-hidden="true">
+          <span class="field-mark"></span>
+          <span class="field-text">Search {fmt(totalAll)} commands</span>
+        </div>
+        <p class="wall-say claim">All of them behind one field.</p>
+      </div>
+    </div>
+  )}
+</section>
+
+<style>
+  .statement {
+    font-size: clamp(32px, 4.6vw, 64px);
+    line-height: 1.06;
+    letter-spacing: -0.036em;
+    max-width: 22ch;
+  }
+  .statement span {
+    transition: opacity 240ms var(--ease);
+  }
+  :global(html.js-motion) .statement span {
+    opacity: 0.16;
+  }
+  :global(html.js-motion) .statement span:global(.on) {
+    opacity: 1;
+  }
+  .proof {
+    margin-top: clamp(56px, 7vw, 96px);
+    display: grid;
+    gap: 36px;
+  }
+  .proof-line {
+    font-size: clamp(22px, 2.4vw, 30px);
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    max-width: 36ch;
+  }
+  .bars {
+    display: grid;
+    gap: 14px;
+  }
+  .bars li {
+    display: grid;
+    grid-template-columns: 150px 1fr 290px;
+    align-items: center;
+    gap: 18px;
+  }
+  .who {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+  }
+  .who img {
+    width: 28px;
+    height: 28px;
+  }
+  .bar {
+    position: relative;
+    height: 12px;
+    border-radius: 999px;
+    background: var(--paper-3);
+    transform-origin: left center;
+    transform: scaleX(var(--all));
+  }
+  .keyed {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: calc(var(--keyed) * 100%);
+    border-radius: 999px;
+    background: var(--ink);
+  }
+  .count {
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  .count strong {
+    color: var(--ink);
+  }
+  .foot {
+    max-width: 70ch;
+  }
+
+  /* The wall of real menu titles folds into one field as you scroll past it. */
+  .wall-track {
+    height: 220vh;
+    margin-top: clamp(64px, 8vw, 120px);
+  }
+  .wall-stage {
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+  }
+  .wall {
+    position: absolute;
+    inset: -4% -2%;
+    columns: 7 150px;
+    column-gap: 22px;
+    font-size: 14px;
+    line-height: 2;
+    color: var(--ink-3);
+    transform: scale(calc(1 - var(--p, 0) * 0.55));
+    opacity: calc(1 - var(--p, 0) * 1.4);
+    mask-image: radial-gradient(closest-side, #000 55%, transparent);
+  }
+  .wall li {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .field {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: min(620px, 88vw);
+    height: 64px;
+    padding: 0 22px;
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow:
+      0 0 0 1px var(--line-2),
+      0 24px 60px -24px rgba(0, 0, 0, 0.35);
+    font-size: 21px;
+    color: var(--ink-3);
+    opacity: calc((var(--p, 0) - 0.35) * 2.2);
+    transform: scale(calc(0.92 + min(var(--p, 0), 1) * 0.08));
+  }
+  .field-mark {
+    width: 2px;
+    height: 26px;
+    background: var(--mint);
+  }
+  .wall-say {
+    position: absolute;
+    bottom: 12%;
+    left: 50%;
+    width: max-content;
+    max-width: 90vw;
+    text-align: center;
+    font-size: clamp(30px, 4vw, 52px);
+    transform: translateX(-50%);
+    opacity: calc((var(--p, 0) - 0.6) * 3);
+  }
+  :global(html:not(.js-motion)) .wall-track {
+    height: auto;
+  }
+  :global(html:not(.js-motion)) .wall-stage {
+    position: relative;
+    height: 70vh;
+    top: 0;
+  }
+  :global(html:not(.js-motion)) .wall {
+    --p: 0.5;
+  }
+  :global(html:not(.js-motion)) .field,
+  :global(html:not(.js-motion)) .wall-say {
+    --p: 1;
+  }
+
+  @media (max-width: 760px) {
+    .bars li {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+    .wall {
+      columns: 3 110px;
+      font-size: 12px;
+    }
+  }
+</style>

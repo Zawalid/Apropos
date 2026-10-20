@@ -1,63 +1,123 @@
 ---
-const rows: [want: string, reach: 'launcher' | 'apropos'][] = [
-  ['open an app or find a file', 'launcher'],
-  ['paste something I copied an hour ago', 'launcher'],
-  ['run Product > Test in Xcode', 'apropos'],
-  ['compress the three files I selected', 'apropos'],
-  ['turn the selected text into snake_case', 'apropos'],
-  ['send this page to Things', 'apropos'],
-  ['do five steps in a row, in two apps', 'apropos'],
-];
----
-<section class="raycast" id="raycast" aria-labelledby="raycast-title">
-  <div class="wrap raycast-grid">
-    <div class="raycast-copy">
-      <h2 id="raycast-title" class="title">it sits next to raycast. it does not replace it.</h2>
-      <p class="lead">
-        A launcher answers &ldquo;where do I go&rdquo;. Apropos answers &ldquo;what can I do here&rdquo;. It never launches apps or
-        manages your clipboard, and it opens with its own key, so both can stay installed.
-      </p>
-      <dl class="facts">
-        <div><dt>Different key</dt><dd>Apropos opens with <span class="key">Option</span> <span class="key">Space</span>. Raycast&rsquo;s default is <span class="key">Command</span> <span class="key">Space</span>.</dd></div>
-        <div><dt>They can talk</dt><dd>An <code>apropos://search?q=</code> link opens the panel with a query typed. Raycast quicklinks, Alfred and Terminal can all call it.</dd></div>
-      </dl>
-    </div>
+import { rows, tools } from '../data/compare';
 
-    <table class="pick" data-reveal>
-      <caption class="sr-only">When to reach for a launcher and when for Apropos</caption>
-      <thead><tr><th scope="col">I want to</th><th scope="col">Reach for</th></tr></thead>
-      <tbody>
-        {rows.map(([want, reach]) => (
-          <tr class={reach}>
-            <th scope="row">{want}</th>
-            <td>{reach === 'apropos' ? 'Apropos' : 'your launcher'}</td>
+interface Props {
+  /** On the home page the table is a section; on /compare/ it is the page body. */
+  heading?: boolean;
+}
+const { heading = true } = Astro.props;
+---
+<section id="compare" class="section compare" aria-labelledby={heading ? 'compare-title' : undefined}>
+  <div class="wrap">
+    {heading && (
+      <div class="section-head">
+        <h2 id="compare-title" class="claim">Keep your launcher.</h2>
+        <p class="lede">
+          Apropos does not launch apps, search files or keep your clipboard. Raycast, Alfred and Spotlight do that well,
+          and Apropos sits next to any of them. It answers a narrower question: what can I do here, right now.
+        </p>
+      </div>
+    )}
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Comparison of Apropos, Raycast, Spotlight, Alfred and the Help menu">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col"><span class="visually-hidden">Feature</span></th>
+            {tools.map((t) => <th scope="col" class:list={{ us: t.id === 'apropos' }}>{t.short}</th>)}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr>
+              <th scope="row">{row.label}</th>
+              {tools.map((t) => {
+                const cell = row.cells[t.id];
+                return (
+                  <td class:list={{ us: t.id === 'apropos' }}>
+                    {cell.source ? <a href={cell.source} rel="noopener">{cell.text}</a> : cell.text}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="small note">
+      Checked on 20 October 2026 against each tool’s own pages and, for Spotlight’s menu search, a MacMost review. Each
+      linked cell opens its source. More on <a href="/compare/raycast/">Raycast</a>, <a href="/compare/spotlight/">Spotlight</a>
+      and <a href="/compare/alfred/">Alfred</a>.
+    </p>
   </div>
 </section>
 
 <style>
-  .raycast { position: relative; z-index: 2; background: var(--ink-2); padding-block: clamp(80px, 11vw, 160px); }
-  .raycast-grid { display: grid; gap: clamp(40px, 6vw, 88px); align-items: start; }
-  @media (min-width: 960px) { .raycast-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr); } }
-  .raycast-copy { display: grid; gap: 24px; }
-  .raycast-copy .title { max-width: 10.5em; }
-  .raycast-copy .lead { max-width: 32rem; }
-  .facts { display: grid; gap: 22px; margin-top: 8px; max-width: 32rem; }
-  .facts > div { display: grid; gap: 4px; padding-top: 18px; border-top: 1px solid var(--line-strong); }
-  .facts dt { font-weight: 700; }
-  .facts dd { color: var(--muted); }
-  .facts code { color: var(--text); }
-
-  .pick { width: 100%; border-collapse: collapse; font-size: clamp(1.02rem, 1.4vw, 1.2rem); }
-  .pick thead th { text-align: left; padding: 0 0 14px; font: 500 0.85rem var(--font-mono); color: var(--faint); border-bottom: 1px solid var(--line-strong); }
-  .pick thead th:last-child { text-align: right; }
-  .pick tbody th { text-align: left; font-weight: 500; padding: 20px 16px 20px 0; border-bottom: 1px solid var(--line); }
-  .pick td { text-align: right; padding: 20px 0; border-bottom: 1px solid var(--line); font-weight: 700; white-space: nowrap; }
-  .pick .launcher th, .pick .launcher td { color: var(--faint); font-weight: 500; }
-  .pick .apropos td { color: var(--mint); }
-  .pick tbody tr { transition: background-color 200ms var(--ease-out); }
-  @media (hover: hover) and (pointer: fine) { .pick tbody tr:hover { background: var(--ink-3); } }
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: var(--r-frame);
+    box-shadow: 0 0 0 1px var(--line);
+    background: var(--card);
+  }
+  table {
+    width: 100%;
+    min-width: 860px;
+    border-collapse: collapse;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  th,
+  td {
+    padding: 16px 18px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--line);
+  }
+  tbody tr:last-child th,
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  thead th {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    padding-block: 18px 14px;
+  }
+  tbody th {
+    font-weight: 600;
+    width: 17%;
+  }
+  /* The row names stay in view while the table scrolls sideways on a phone. */
+  tbody th,
+  thead th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--card);
+  }
+  @media (max-width: 760px) {
+    tbody th {
+      min-width: 128px;
+      box-shadow: 1px 0 0 var(--line);
+    }
+  }
+  td {
+    color: var(--ink-2);
+    width: 16.6%;
+  }
+  td a {
+    color: inherit;
+    text-decoration-color: var(--line-2);
+  }
+  td a:hover {
+    color: var(--mint);
+    text-decoration-color: currentColor;
+  }
+  .us {
+    background: var(--paper-2);
+    color: var(--ink);
+  }
+  .note {
+    margin-top: 18px;
+    max-width: 72ch;
+  }
 </style>

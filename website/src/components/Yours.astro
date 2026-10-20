@@ -1,0 +1,234 @@
+---
+/**
+ * Make your own: aliases, keys, links, Shortcuts, programs, and recording (early). Each tile does one small thing when
+ * you touch it, and the features that are not yet checked on a real Mac carry the Early tag.
+ */
+import Shot from './Shot.astro';
+
+const link = 'apropos://run?command=up&text=hello%20world';
+---
+<section id="yours" class="section yours" aria-labelledby="yours-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="yours-title" class="claim">Make your own commands.</h2>
+      <p class="lede">
+        A link, a Shortcut or a program becomes a row in the list, with its own name, alias and key. It asks before its
+        first run, and it can say what it needs, like selected text.
+      </p>
+    </div>
+
+    <div class="bento">
+      <article class="b b-alias">
+        <h3>Give it a short name</h3>
+        <p class="alias-demo" aria-hidden="true">
+          <span class="typed-alias">up</span>
+          <span class="alias-row"><span class="alias-pill">up</span> UPPERCASE</span>
+        </p>
+        <p>Type the alias and your command comes first, whatever else matches.</p>
+      </article>
+
+      <article class="b b-key">
+        <h3>Give it a key</h3>
+        <div class="keys" data-keys aria-hidden="true">
+          <span class="cap">&#8963;</span><span class="cap">&#8997;</span><span class="cap">U</span>
+        </div>
+        <p>A global shortcut runs it from any app. A key that macOS, the panel or another command already uses is flagged.</p>
+      </article>
+
+      <article class="b b-link">
+        <h3>Run it from a link</h3>
+        <div class="link-row">
+          <code>{link}</code>
+          <button class="copy" type="button" data-copy={link}>Copy</button>
+        </div>
+        <p>Links run the commands you allow, from a Raycast quicklink, Alfred or any script. Shortcuts has a Run Apropos Command action for the same commands.</p>
+      </article>
+
+      <article class="b b-record">
+        <div class="b-text">
+          <h3>Record it once <span class="early">Early</span></h3>
+          <p>
+            Choose Record, use the menus of any app, stop with Control-Option-Command-R. A review lists every step in plain
+            words with how sturdy it is, tries each one against the apps without pressing anything, and saves it as a
+            command. Typed text is never recorded.
+          </p>
+        </div>
+        <Shot id="recording-review" ratio={1.3} sizes="(min-width: 1000px) 560px, 100vw" />
+      </article>
+
+      <article class="b b-menu">
+        <div class="b-text">
+          <h3>Keys for any menu item <span class="early">Early</span></h3>
+          <p>
+            Command-K on a menu item gives it an alias and a shortcut of its own. One key can serve items in different
+            apps, since it runs the item of the app in front.
+          </p>
+        </div>
+        <Shot id="alias-popover" ratio={1.3} sizes="(min-width: 1000px) 560px, 100vw" />
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .b {
+    display: grid;
+    align-content: start;
+    gap: 18px;
+    padding: clamp(22px, 2.6vw, 32px);
+    border-radius: var(--r-frame);
+    background: var(--card);
+    box-shadow: 0 0 0 1px var(--line);
+  }
+  .b h3 {
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+  }
+  .b p {
+    color: var(--ink-2);
+  }
+  .b-alias {
+    grid-column: span 4;
+  }
+  .b-key {
+    grid-column: span 4;
+  }
+  .b-link {
+    grid-column: span 4;
+  }
+  .b-record,
+  .b-menu {
+    grid-column: span 6;
+    align-content: space-between;
+  }
+  .b-text {
+    display: grid;
+    gap: 12px;
+  }
+
+  .alias-demo {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border-radius: var(--r-box);
+    background: var(--paper-2);
+  }
+  .typed-alias {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .typed-alias::after {
+    content: '';
+    display: inline-block;
+    width: 2px;
+    height: 1.05em;
+    margin-left: 2px;
+    vertical-align: -0.15em;
+    background: var(--mint);
+  }
+  .alias-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .alias-pill {
+    padding: 1px 8px;
+    border-radius: 6px;
+    background: var(--mint-wash);
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .keys {
+    display: flex;
+    gap: 8px;
+    padding: 6px 0;
+  }
+  .cap {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 11px;
+    background: var(--key);
+    color: var(--key-ink);
+    box-shadow:
+      0 0 0 1px var(--line-2),
+      0 4px 0 var(--key-edge);
+    font-size: 20px;
+    font-weight: 500;
+    transition:
+      transform 90ms var(--ease),
+      box-shadow 90ms var(--ease);
+  }
+  .b-key:hover .cap,
+  .keys:global(.down) .cap {
+    transform: translateY(3px);
+    box-shadow:
+      0 0 0 1px var(--line-2),
+      0 1px 0 var(--key-edge);
+  }
+  .b-key:hover .cap:nth-child(2) {
+    transition-delay: 40ms;
+  }
+  .b-key:hover .cap:nth-child(3) {
+    transition-delay: 80ms;
+  }
+
+  .link-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 10px 10px 14px;
+    border-radius: var(--r-box);
+    background: var(--paper-2);
+    min-width: 0;
+  }
+  .link-row code {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+    color: var(--ink);
+  }
+  .copy {
+    flex: none;
+    min-height: 36px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--card);
+    box-shadow: 0 0 0 1px var(--line-2);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  @media (max-width: 1000px) {
+    .b-alias,
+    .b-key {
+      grid-column: span 6;
+    }
+    .b-link,
+    .b-record,
+    .b-menu {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (max-width: 640px) {
+    .b-alias,
+    .b-key {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

@@ -1,0 +1,211 @@
+---
+/**
+ * What you are holding: the context actions, grouped by what they need, listed from the app's own pack. Each tile
+ * shows what the action leaves in your hands (the output), not a drawing of the app.
+ */
+import { actionCount, titlesFor } from '../data/actions';
+
+const text = titlesFor('selectedText');
+const files = titlesFor('selectedFiles');
+const page = titlesFor('pageURL');
+const folder = [...titlesFor('folder'), ...titlesFor('gitRepo')];
+
+// The words the text tile turns into, one action at a time. Each is the real output of the named action.
+const turns = [
+  { action: 'Selected', out: 'release notes for friday' },
+  { action: 'UPPERCASE', out: 'RELEASE NOTES FOR FRIDAY' },
+  { action: 'Title Case', out: 'Release Notes For Friday' },
+  { action: 'snake_case', out: 'release_notes_for_friday' },
+  { action: 'camelCase', out: 'releaseNotesForFriday' },
+  { action: 'kebab-case', out: 'release-notes-for-friday' },
+];
+---
+<section id="holding" class="section holding" aria-labelledby="holding-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="holding-title" class="claim">It sees what you are holding.</h2>
+      <p class="lede">
+        Select text, files, a page or a folder, and the list adds what you can do with it, in any app. {actionCount} actions ship
+        built in. They run on your Mac, and a selection is never run as code.
+      </p>
+    </div>
+
+    <div class="tiles">
+      <article class="tile t-text">
+        <h3>Selected text</h3>
+        <div class="turn" data-turns aria-live="off">
+          {turns.map((t, i) => (
+            <p class:list={['turn-row', { on: i === 1 }]} data-turn>
+              <span class="turn-action">{t.action}</span>
+              <span class="turn-out">{t.out}</span>
+            </p>
+          ))}
+        </div>
+        <ul class="names" aria-label={`${text.length} actions for selected text`}>
+          {text.map((t) => <li>{t}</li>)}
+        </ul>
+      </article>
+
+      <article class="tile t-files">
+        <h3>Selected files</h3>
+        <p class="out" aria-label="Example result of Copy path">
+          <span class="out-label">Copy path</span>
+          <code>~/Desktop/Invoices/2026-10.pdf</code>
+        </p>
+        <ul class="names">{files.map((t) => <li>{t}</li>)}</ul>
+      </article>
+
+      <article class="tile t-page">
+        <h3>The page in your browser</h3>
+        <p class="out" aria-label="Example result of Copy as Markdown link">
+          <span class="out-label">Copy as Markdown link</span>
+          <code>[Swift.org](https://swift.org)</code>
+        </p>
+        <ul class="names">{page.map((t) => <li>{t}</li>)}</ul>
+      </article>
+
+      <article class="tile t-folder">
+        <h3>A folder, or a git repository</h3>
+        <p class="out" aria-label="Example result of Copy branch name">
+          <span class="out-label">Copy branch name</span>
+          <code>feature/send-to</code>
+        </p>
+        <ul class="names">{folder.map((t) => <li>{t}</li>)}</ul>
+      </article>
+    </div>
+    <p class="small after">
+      Secure fields are never read, and password managers never give up their selection. You can switch each kind of
+      context off, or list apps that are never read.
+    </p>
+  </div>
+</section>
+
+<style>
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .tile {
+    display: grid;
+    align-content: start;
+    gap: 22px;
+    padding: clamp(22px, 2.6vw, 34px);
+    border-radius: var(--r-frame);
+    background: var(--card);
+    box-shadow: 0 0 0 1px var(--line);
+  }
+  .tile h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-2);
+    letter-spacing: -0.01em;
+  }
+  .t-text {
+    grid-column: span 7;
+    grid-row: span 2;
+    background: var(--ink);
+    color: var(--paper);
+    box-shadow: none;
+  }
+  .t-text h3 {
+    color: color-mix(in srgb, var(--paper) 70%, transparent);
+  }
+  .t-files {
+    grid-column: span 5;
+  }
+  .t-page {
+    grid-column: span 5;
+  }
+  .t-folder {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    align-items: center;
+  }
+  .t-folder h3 {
+    grid-column: 1 / -1;
+  }
+
+  .turn {
+    display: grid;
+    min-height: clamp(150px, 15vw, 210px);
+    align-items: center;
+  }
+  .turn-row {
+    grid-area: 1 / 1;
+    display: grid;
+    gap: 10px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity 260ms var(--ease),
+      transform 260ms var(--ease);
+  }
+  .turn-row.on {
+    opacity: 1;
+    transform: none;
+  }
+  .turn-action {
+    justify-self: start;
+    padding: 3px 10px;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--paper) 30%, transparent);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .turn-out {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(30px, 3.9vw, 54px);
+    letter-spacing: -0.035em;
+    line-height: 1.02;
+    overflow-wrap: anywhere;
+  }
+  .names {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 8px;
+  }
+  .names li {
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: var(--paper-2);
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+  .t-text .names li {
+    background: color-mix(in srgb, var(--paper) 10%, transparent);
+    color: color-mix(in srgb, var(--paper) 82%, transparent);
+  }
+  .out {
+    display: grid;
+    gap: 8px;
+  }
+  .out-label {
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+  .out code {
+    font-family: var(--display);
+    font-size: clamp(20px, 2vw, 26px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+  .after {
+    margin-top: 22px;
+    max-width: 64ch;
+  }
+  @media (max-width: 900px) {
+    .t-text,
+    .t-files,
+    .t-page,
+    .t-folder {
+      grid-column: 1 / -1;
+      grid-row: auto;
+    }
+    .t-folder {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

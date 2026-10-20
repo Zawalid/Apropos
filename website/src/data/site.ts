@@ -44,9 +44,10 @@ export const links = {
 export const site = {
   name: 'Apropos',
   url: 'https://apropos.zawalid.com',
-  title: 'Apropos: a Mac command palette that fits the moment',
+  title: 'Apropos: every command in every Mac app, one key',
   description:
-    'Press Option-Space in any Mac app. Apropos lists that app’s menu commands, actions for what you selected and your own commands. Local, private, native.',
+    'Press Option-Space in any Mac app. Apropos lists every menu command of that app, actions for what you selected and your own commands. Native and private.',
   /** The day the page last changed in a way worth telling a search engine about. */
   updated: '2026-10-20',
+  minimumMacOS: '14',
 };

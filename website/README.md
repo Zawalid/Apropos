@@ -1,7 +1,8 @@
 # Apropos website
 
-The marketing site for Apropos. Astro, static output, deployed on Cloudflare with Wrangler, built the same way as the Lopper
-site (`/Users/walid/Personal/Projects/Lopper/website`): GSAP and Lenis for the scroll work, `playwright-core` for the checks.
+The marketing site for Apropos, version 2 ("pearl and paper"). Astro, static output, deployed on Cloudflare with Wrangler.
+Only the tooling is shared with the Lopper site (Astro, wrangler, the check scripts). Layout, type, colour, motion and copy are
+Apropos's own, from `docs/identity/brand.md`.
 
 ```bash
 cd website
@@ -14,78 +15,162 @@ npm run preview -- --port 4321
 With the preview running in another terminal:
 
 ```bash
-npm run check:seo    # titles, description, canonical, share image, JSON-LD, sitemap, robots, dashes, emoji, 375px overflow
-npm run check:ui     # app tabs by keyboard, FAQ, copy button, control names; with motion and with reduced motion
-npm run shots        # desktop and 375px screenshots, light and dark, into .shots/ (not committed)
+npm run check:seo    # titles, descriptions, canonicals, share image, JSON-LD, sitemap, robots, dashes, emoji, 375px overflow
+npm run check:ui     # Option-Space demo, app dock and explorer keys, nav pearl, FAQ search, copy; with and without motion
+npm run check:a11y   # axe on every page, light and dark, 1440 and 375 wide
+npm run shots        # one screenshot per viewport down every section of every page, light and dark, into .shots/
 npm run og           # redraws public/og.png from scripts/og.html
-npm run images       # recrops src/assets/shots from the app's preview renders
+npm run ring         # re-renders the hero ring and pearl from the app icon's 3D scene
+npm run harvest      # measures real apps with apropos-probe into src/data/apps.json (needs Accessibility, see below)
 ```
 
-All scripts use the system Chrome (`channel: 'chrome'`), like Lopper's.
+All browser scripts use Playwright (`playwright-core`) with the system Chrome. There is no TypeScript compiler in this folder;
+Astro strips types at build, so `npm run build` is the gate.
 
-## What is on the page
+## Art direction
 
-| Section | Idea | Pictures (renders of the real views) |
-|---|---|---|
-| Hero | The right command for the moment, one download button | `palette-finder` |
-| Why | One key, a different palette per app. Pinned and scroll driven on big screens, real tabs everywhere | `palette-finder`, `palette-safari`, `palette-xcode` |
-| Tour | Six chapters, alternating sides, each with one outlined detail | `palette-search-matches`, `palette-usually-next`, `palette-send-list`, `palette-sequence-draft`, `palette-actions`, `recording-review` |
-| Apps | What the list offers by situation, as typography | none |
-| Raycast | Sits next to a launcher, with a "reach for" table | none |
-| Safety | "Apropos will ... only when ..." ledger, the privacy statement | `settings-privacy-and-data` |
-| Install | Download, first launch, Accessibility, `apropos://open` | none |
-| FAQ | Ten honest questions | none |
+- Paper `#F3F5F4` and ink `#0E1A1D` in light, the brand teal-black `#0B1418` in dark. Both themes follow the system.
+- SF Pro (the system font) only, 600 and 700, sentence case, tight tracking at display sizes. No web fonts are loaded.
+- Ink pills for the one main action per view (paper pills in dark). Mint only for matched letters and links. The pearl is the
+  one "now" marker: it leaves the hero ring as you scroll, docks under the section you are reading in the nav, rides the line in
+  the Send to story, and marks the selected app in the dock. It is never decoration.
+- The hero object is the ring from `docs/identity/app-icon/index.html` (hero camera), rendered by `scripts/render-ring.mjs`
+  into a ring layer (light and dark shadows) and a separate pearl layer, so the pearl can move on its own.
+- Motion: only transform and opacity, ease-out, 120 to 420 ms. Reduced motion keeps every word, tab and dialog and drops
+  the flight, the lighting words, the folding wall, the cycling text and the marquee.
 
-## Where the images come from
+### Primitives taken from the reference sites (technique only)
 
-`src/assets/shots/*.png` are cropped from `build/previews/` in the main checkout, which `scripts/render-previews.sh` writes
-from the app's own SwiftUI views without launching the app. They are renders with example data, they carry no real glass, and
-they are labelled as renders on the page. Nothing here is a live capture. To refresh them after the UI changes, run
-`scripts/render-previews.sh` in the repo root, then `npm run images` here (the folder defaults to
-`/Users/walid/Personal/Projects/Cue/build/previews`, pass another as the first argument).
+From the contact sheets of every section of these sites (`/private/tmp/claude-501/ref/full`):
+- Raycast: a real product frame with dock-like tabs that swap the screen (One key section); words that light as you
+  scroll (the gap statement); pressable key caps (hero, Make your own).
+- Apple macOS page: the claim plus one sentence rhythm, a section nav with a current marker, footnotes for measured numbers.
+- CleanShot: bento tiles that each do one small thing (alias, key press, copy link); alternating picture and text blocks.
+- Droppy: one art direction around every picture (all captures over the same wallpaper), a moving wall of app icons to
+  show breadth, a searchable FAQ.
 
-Not shown, because it cannot be captured without the real app on screen: the glass over a real desktop, the global hotkey,
-live Accessibility reading. The hero says so under the panel.
+## What is on each page
+
+### Home `/`
+
+| Section | Idea | Pictures (slot ids) | Data |
+|---|---|---|---|
+| Hero | Headline, download pill, the ring and pearl, key caps that open the demo; Option-Space on the page opens it too | demo: `demo-open`, `demo-n`, `demo-nf` | version from `App/project.yml` |
+| Gap (`#gap`) | A statement that lights as you read, then measured counts per app and a wall of real menu titles that folds into one field | none | `apps.json` (numbers and wall appear only when it exists) |
+| One key (`#onekey`) | Dock of real app icons swapping one capture per app, with a typed example per app | `finder`, `safari`, `mail`, `notes`, `xcode` | shortcuts shown only from `apps.json`; the build warns if a named menu item is not in it |
+| Holding (`#holding`) | Text, files, page, folder and git: what each action leaves in your hands, and every action name | none | `Sources/Apropos/Resources/ActionPacks/builtin.json`, read at build |
+| Reach (`#reach`) | Send to and sequences as a four step story with the pearl on a line, then the built in destinations | `send-list`, `sequence-draft` | |
+| Learns (`#learns`) | Usually next with its reason, what it learns from and never keeps | `usually-next` | |
+| Your commands (`#yours`) | Alias, key, link (copy), Shortcuts, recording and menu item keys (both tagged Early) | `recording-review`, `alias-popover` | |
+| Apps (`#apps`) | Marquee of 31 real app icons, then an explorer of measured apps | none | icons from `scripts/app-icons.swift`; explorer needs `apps.json` |
+| Compare (`#compare`) | Apropos, Raycast, Spotlight, Alfred and the Help menu, each cell linked to its source | none | `src/data/compare.ts` |
+| Private (`#private`) | Read in the moment, kept on this Mac, never kept; each macOS permission and why; the network line | `settings-privacy` | |
+| Install (`#install`) | Download, three steps, searchable FAQ (also FAQPage JSON-LD) | none | `src/data/faq.ts` |
+
+### Other pages
+
+- `/compare/`: what each tool is best at, then the full table. `/compare/raycast/`, `/compare/spotlight/`, `/compare/alfred/`:
+  how they differ, how to use both (keys, quicklinks, workflows), and a two column table.
+- `/apps/`: every measured app with its counts and biggest menus, and a search over every measured command
+  (`/apps/commands.json`, fetched only when the search is used). Without `apps.json` it shows the app icons only, is left out of
+  the sitemap, and the footer hides its link.
+- `/404/`.
+
+## Pictures: what is real, what is a placeholder
+
+**Every app picture is a placeholder today.** No capture has landed yet. Each picture is a typed slot (`src/data/shots.ts`); an
+empty slot renders a flat panel that says which capture it waits for ("Capture coming: panel over Finder with 3 files selected"),
+so nothing fake ships. The v1 flat renders from `build/previews` are not used anywhere.
+
+To fill a slot, save the capture as `src/assets/shots/<slot>-light.png` and `<slot>-dark.png` (one is enough; it is then used for
+both themes) and rebuild. The frame takes the picture's own proportions, rounds it at 22 px and lifts it with a soft shadow, so a
+capture that already includes its wallpaper (as the capture spike produces) needs no cropping.
+
+Slots and what each needs: `demo-open`, `demo-n`, `demo-nf` (Finder, panel just opened, then "n", then "nf" with New Folder
+first, same framing for all three so the demo can step through them), `finder` (3 files selected), `safari` (a page), `mail`,
+`notes` (with a selection), `xcode`, `usually-next`, `send-list`, `sequence-draft`, `alias-popover`, `recording-review`,
+`settings-privacy`, plus `recording-bar` and `menubar-popover` (defined, not placed yet).
+
+The capture spike (`side-session-notes/local_76764915-.../captures/capture-spike.md`) found that real glass needs a region capture of
+the real screen over a stage wallpaper window, run from the owner's terminal, and recommends a Debug-only stage mode in the app.
+
+Real pictures that are on the page: the ring and pearl (rendered from the icon scene), the app icons (macOS's own icons for
+apps installed on this Mac, read with `NSWorkspace`, nothing launched), the share image.
+
+## Measured app data
+
+`npm run harvest` runs `apropos-probe <bundle id>` for 31 installed apps (it only reads the menu bar, it presses nothing) and
+writes `src/data/apps.json` with the date, the Mac and macOS version, counts per app (total, with and without a shortcut, per
+menu) and command titles. Titles under menus that can hold your own content (History, Bookmarks, Open Recent, the Window list,
+mailboxes, Share, Services and similar) are counted but never written. Review the file before committing it.
+
+It needs a terminal that has Accessibility. The agent shell that built this site does not, so **apps.json does not exist yet**
+and the page shows no numbers: the Gap section is the statement only, One key shows no shortcut keys, the explorer and `/apps/`
+are hidden. `node scripts/harvest-apps.mjs --launch` also opens missing apps hidden (`open -gj`) and quits only those it opened.
 
 ## Where each claim comes from
 
-Everything on the page was checked against `CHANGELOG.md`, `git log main` and these docs on 2026-10-20: `docs/design.md`
-(positioning next to Raycast, no launching apps or clipboard), `docs/context-actions.md` (the actions listed under Apps, the
-secure-field and password-manager rules), `docs/destinations.md` (Send to, Mail draft never sends, second Return),
-`docs/sequences.md`, `docs/ranking.md` (typed slips, match highlighting), `docs/prediction.md` (what Usually next stores),
-`docs/integrations.md` (`apropos://`, Raycast quicklinks, Alfred), `docs/user-commands.md`, and the app's own Privacy and data
-page. Early features carry an "early" tag: aliases and shortcuts for menu items, and recording. Not sold as features:
-anything in `docs/roadmap.md`, `docs/backlog.md` or `docs/recorder-plan.md` (packs, sync, Pro, a pack registry, AI step,
-controls and typed text in recordings).
+Checked against `CHANGELOG.md`, `git log main` and the docs on 2026-10-20:
+- Panel, menus, shortcuts, slips and abbreviations: CHANGELOG, `docs/ranking.md` (one swap of neighbouring letters, accents
+  ignored, remembered abbreviations).
+- Context actions and their safety: `builtin.json` (35 actions, counted at build), `docs/context-actions.md` (secure fields,
+  password managers, a selection never becomes code).
+- Send to: `docs/destinations.md` (eight built in places, shown only when installed, second Return for anything with a trace,
+  Mail draft never sends, ids only remembered).
+- Sequences: CHANGELOG and `docs/sequences.md` (each step reads the result of the one before; uppercase then Notes sends the capitals).
+- Usually next: `docs/prediction.md` and the CHANGELOG example reason ("After Run Tests you chose Commit 9 of 12 times").
+- Your commands, links and Shortcuts: `docs/user-commands.md`, `docs/integrations.md` (links and the Run Apropos Command
+  action run only commands you allow; first run asks once).
+- Privacy: the app's Privacy and data page (no network connections; the update check is off by default, see
+  `SettingsRegistry.swift`), `docs/recorder.md` and CHANGELOG (Input Monitoring only for recording, typed text never recorded).
+- Early, and tagged so on the page: recording, aliases and shortcuts for menu items, sequence step icons. Shortcut tips are
+  not mentioned. Not claimed: anything in `docs/roadmap.md`, `docs/backlog.md` or `docs/recorder-plan.md`.
 
-## TODO for the owner (nothing here is on the page as a placeholder)
+### Competitor facts (checked 2026-10-20)
 
+Each table cell links its source. Notes with every fact and URL: `side-session-notes/local_45dabc38-.../competitors.md`.
+- Raycast: default key Option-Space (manual.raycast.com/settings); Search Menu Bar Items (manual.raycast.com/navigation);
+  `getSelectedText` and `getSelectedFinderItems` (developers.raycast.com/api-reference/environment); Free, Pro $10 a month or $96 a
+  year, free clipboard history kept three months (raycast.com/pricing); AI from Pro (raycast.com/core-features/ai); no account
+  needed, sync and AI need one (raycast.com/faq).
+- Spotlight on macOS 26: actions through App Intents, menu items of the app in front, clipboard history you turn on (Apple
+  newsroom, June 2025); Command-3 narrows to actions and menu items (macmost.com); Change Case and Translate actions
+  (support.apple.com, Spotlight actions guide).
+- Alfred 5: default key Option-Space (alfredapp.com/help/general, seen in a search snippet, not fetched); Powerpack £34
+  (alfredapp.com/powerpack/buy); Universal Actions and clipboard history in the Powerpack; menu search only through the third
+  party Menu Bar Search workflow (alfred.app/workflows/benziahamed/menu-bar-search).
+- Help menu: Shift-Command-? (support.apple.com/en-us/102650); menu item results point at the item (Apple guide, 10.15 page).
+- Not confirmed and so not claimed: whether Raycast's menu command is free or Pro, how Spotlight treats disabled items,
+  whether the Help menu search works in every app. The table says "Not announced yet" for Apropos's price.
+- Worth knowing: `docs/design.md` assumed Raycast uses Command-Space. Its default is Option-Space, like Apropos and Alfred.
+  The FAQ and compare pages say so and suggest moving one of them.
+
+## Cannot be verified from here
+
+The global hotkey on a real Mac, real glass, live Accessibility reading, the download itself (no release exists), and every
+"Early" feature. Nothing on the page claims these were checked.
+
+## TODO for the owner
+
+- **Captures.** Every app picture is a placeholder. Fill the slots above (see the capture spike). The page is designed around them.
+- **Measured numbers.** Run `npm run harvest` from a terminal with Accessibility, review `src/data/apps.json`, rebuild.
 - **Repository name.** `src/data/site.ts` assumes `https://github.com/Zawalid/Apropos`.
-- **Release asset.** The download button points at `https://github.com/Zawalid/Apropos/releases/latest/download/Apropos.dmg`.
-  It 404s until a release with an asset of exactly that name exists.
-- **Install steps.** The Install section says macOS asks to confirm the first launch because the build is not notarized, and
-  stops there. Add the exact steps (and a one line command, if you want one like Lopper's) once they exist. There is no Homebrew
-  tap, so no brew command is shown.
-- **Domain.** `apropos.zawalid.com` is assumed in `astro.config.mjs`, `wrangler.jsonc`, `public/robots.txt`,
-  `src/data/site.ts` and `scripts/check-seo.mjs`. Change all five if it differs.
-- **Contact.** The footer links to GitHub issues, zawalid.com, GitHub and X. There is no email address on the page.
-- **License.** There is no LICENSE file in the repo, so the page makes no open source claim beyond "the source is open to read".
-  Add the licence and a footer link when decided.
-- **Price.** Not mentioned anywhere. `docs/design.md` leaves it open.
-- **Analytics.** The footer says there are none, and the site has none. Lopper loads the Cloudflare beacon; this one does not.
-- **Deploy.** `deploy-workflow.yml.example` is a copy of Lopper's workflow for this folder. Move it to
-  `.github/workflows/website.yml`, add the repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, and it deploys on
-  pushes to `main` that touch `website/`. Nothing has been pushed or deployed from this work.
-- **Videos.** There are none. Lopper's site plays short recordings; Apropos has no recordings of the real app yet, so the
-  Worker that serves video ranges was left out of `wrangler.jsonc`. Add `worker.js` back if mp4 files come.
+- **Release asset.** The download pill points at `.../releases/latest/download/Apropos.dmg`. It 404s until a release with an
+  asset of exactly that name exists.
+- **Install steps.** The page says: move it to Applications, open it, allow Accessibility, press Option-Space. Add the
+  first-launch step for a build that is not notarized, if that is how it ships.
+- **Domain.** `apropos.zawalid.com` is assumed in `astro.config.mjs`, `wrangler.jsonc`, `public/robots.txt`, `src/data/site.ts`
+  and `scripts/check-seo.mjs`.
+- **Price.** The page says nothing about price except "Not announced yet" in the comparison.
+- **Contact.** GitHub issues and the author's site only. No email address.
+- **Licence.** No licence claim anywhere.
+- **Deploy.** `deploy-workflow.yml.example` is ready to move to `.github/workflows/website.yml` with the two Cloudflare secrets.
+  Nothing has been pushed or deployed.
 
-## Design notes
+## Quality gates (last run 2026-10-20, without captures or measured data)
 
-- Type: Barlow 800 and 900 in lowercase for display lines, the system font (SF Pro) for everything else, IBM Plex Mono for the
-  small mono lines. Three font files, all self hosted.
-- Colour: off-black and off-white surfaces from the brand tokens, light and dark by `prefers-color-scheme`. One accent. Mint
-  is `#0A8F70` on light and `#8CF2CC` on dark in the app; on paper the text and buttons use a darker step (`#07785D`) so contrast
-  holds at 4.5:1. The pearl orange appears only as the "now" marker: the full stop of the headline, the glide in Why, the dots in
-  the tour captions.
-- Motion: only transform, opacity and clip-path. `prefers-reduced-motion` gives a plain layout with the same content and the
-  same tabs. If the animation module fails to start within six seconds, the static layout takes over.
+- `npm run build`, `check:seo`, `check:ui` and `check:a11y` pass.
+- Lighthouse 12, home page: mobile 100/100/100/100, desktop 100/100/100/100 (performance, accessibility, best practices, SEO).
+- Nothing scrolls sideways at 375 px (the comparison table scrolls inside its own frame, with the row names pinned).
+- Screenshots of every section of every page, desktop and 375 px, light and dark, were taken and reviewed.
+Re-run all of these after the captures and `apps.json` land: images are the biggest change to performance.

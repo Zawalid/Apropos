@@ -1,0 +1,91 @@
+---
+import Shot from './Shot.astro';
+---
+<section id="learns" class="section learns" aria-labelledby="learns-title">
+  <div class="wrap grid">
+    <div class="text">
+      <h2 id="learns-title" class="claim">It learns what comes next. On this Mac.</h2>
+      <p class="lede">
+        After a while, the list opens with what you usually do next, and says why in plain words. Command-Return runs it.
+      </p>
+      <blockquote class="reason">
+        <span class="bead" aria-hidden="true"></span>
+        <p>After Run Tests you chose Commit 9 of 12 times.</p>
+      </blockquote>
+      <dl class="ledger">
+        <div>
+          <dt>It learns from</dt>
+          <dd>Command names, the app, the time of day.</dd>
+        </div>
+        <div>
+          <dt>It never keeps</dt>
+          <dd>Your selection, web addresses, document names, or what you typed.</dd>
+        </div>
+        <div>
+          <dt>You stay in charge</dt>
+          <dd>Dismiss a suggestion, forget a habit, pause learning for an hour, or turn it off.</dd>
+        </div>
+      </dl>
+      <p class="small">
+        Typing gets smarter too: two swapped letters still find the item, accents do not matter, and short names you
+        type often are remembered as your own abbreviations.
+      </p>
+    </div>
+    <Shot id="usually-next" ratio={1.15} sizes="(min-width: 1000px) 600px, 100vw" class="pic" />
+  </div>
+</section>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+    gap: clamp(32px, 6vw, 96px);
+    align-items: center;
+  }
+  .text {
+    display: grid;
+    gap: 28px;
+  }
+  .reason {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 22px;
+    border-radius: var(--r-box);
+    background: var(--card);
+    box-shadow: 0 0 0 1px var(--line);
+    font-size: clamp(18px, 1.7vw, 22px);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .reason .bead {
+    flex: none;
+  }
+  .ledger {
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+  .ledger div {
+    display: grid;
+    grid-template-columns: 170px 1fr;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .ledger dt {
+    font-weight: 600;
+  }
+  .ledger dd {
+    color: var(--ink-2);
+  }
+  @media (max-width: 900px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+    .ledger div {
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+  }
+</style>

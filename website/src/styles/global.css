@@ -1,196 +1,331 @@
-@font-face { font-family: "Barlow"; font-weight: 800; font-style: normal; font-display: swap; src: url("/fonts/Barlow-800.woff2") format("woff2"); }
-@font-face { font-family: "Barlow"; font-weight: 900; font-style: normal; font-display: swap; src: url("/fonts/Barlow-900.woff2") format("woff2"); }
-@font-face { font-family: "IBM Plex Mono"; font-weight: 500; font-style: normal; font-display: swap; src: url("/fonts/IBMPlexMono-500.woff2") format("woff2"); }
+/* Apropos site: "pearl and paper". Light first, dark as a second theme, both from the brand tokens in
+   docs/identity/brand.md. Ink pills for actions, mint only for matched letters and links, the pearl only for "now". */
 
-/* Light is the base; dark overrides it. Never pure black or white. */
 :root {
   color-scheme: light dark;
-
-  --ink: #f2f5f4;
-  --ink-2: #e8eeec;
-  --ink-3: #dde6e3;
-  --line: rgba(14, 26, 29, 0.12);
-  --line-strong: rgba(14, 26, 29, 0.26);
-  --text: #0e1a1d;
-  --muted: #48585c;
-  --faint: #5c6c70;
-  /* Text and fills. The brand mint (#0a8f70) is too light for text on paper, so this is its darker step. */
+  --paper: #f3f5f4;
+  --paper-2: #e8eeec;
+  --paper-3: #dde6e3;
+  --card: #fbfcfc;
+  --ink: #0e1a1d;
+  --ink-2: #43504e;
+  --ink-3: #5a6664;
+  --line: rgba(10, 24, 28, 0.1);
+  --line-2: rgba(10, 24, 28, 0.17);
   --mint: #07785d;
-  --mint-hover: #066650;
-  --mint-ink: #f2fbf8;
-  --mint-muted: rgba(242, 251, 248, 0.92);
-  --mint-line: rgba(242, 251, 248, 0.3);
-  --mint-tint: rgba(6, 32, 24, 0.22);
-  /* Drawn marks, not text. */
-  --mint-mark: #0a8f70;
+  --mint-wash: rgba(10, 143, 112, 0.12);
   --pearl: #e56f2e;
-  --shot-shadow: 0 0 0 1px rgba(14, 26, 29, 0.1), 0 44px 80px -28px rgba(14, 26, 29, 0.4);
+  --pearl-glow: rgba(229, 111, 46, 0.4);
+  --pill: #0e1a1d;
+  --pill-ink: #f3f5f4;
+  --key: #fbfcfc;
+  --key-edge: #c9d3d0;
+  --key-ink: #0e1a1d;
+  --shadow-frame: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 30px 60px -30px rgba(14, 26, 29, 0.35);
 
-  --font-body: ui-sans-serif, -apple-system, "SF Pro Text", system-ui, "Segoe UI", sans-serif;
-  --font-display: "Barlow", ui-sans-serif, -apple-system, "SF Pro Display", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
-  --radius: 16px;
-  --radius-sm: 10px;
-  --gutter: clamp(16px, 4.4vw, 64px);
-  --max: 1280px;
-  --nav-h: 64px;
-
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  /* The pearl is the one spring. */
-  --ease-pearl: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --gutter: clamp(16px, 4.2vw, 48px);
+  --max: 1240px;
+  --r-control: 8px;
+  --r-box: 12px;
+  --r-frame: 22px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ink: #0b1418;
-    --ink-2: #111d22;
-    --ink-3: #182a31;
-    --line: rgba(234, 243, 241, 0.1);
-    --line-strong: rgba(234, 243, 241, 0.22);
-    --text: #eaf3f1;
-    --muted: #a6b6b3;
-    --faint: #8b9a97;
+    --paper: #0b1418;
+    --paper-2: #111d22;
+    --paper-3: #182a31;
+    --card: #0f1a1f;
+    --ink: #eaf3f1;
+    --ink-2: #a8b7b4;
+    --ink-3: #8f9f9c;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-2: rgba(255, 255, 255, 0.14);
     --mint: #8cf2cc;
-    --mint-hover: #b0f7dc;
-    --mint-ink: #062018;
-    --mint-muted: rgba(6, 32, 24, 0.8);
-    --mint-line: rgba(6, 32, 24, 0.22);
-    --mint-tint: rgba(6, 32, 24, 0.09);
-    --mint-mark: #8cf2cc;
+    --mint-wash: rgba(140, 242, 204, 0.12);
     --pearl: #ff8a4c;
-    --shot-shadow: 0 0 0 1px rgba(234, 243, 241, 0.1), 0 48px 90px -24px rgba(0, 0, 0, 0.75);
+    --pearl-glow: rgba(255, 138, 76, 0.45);
+    --pill: #eaf3f1;
+    --pill-ink: #0b1418;
+    --key: #182a31;
+    --key-edge: #060b0e;
+    --key-ink: #eaf3f1;
+    --shadow-frame: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 30px 70px -30px rgba(0, 0, 0, 0.8);
   }
 }
 
-*, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; background: var(--ink); scroll-padding-top: var(--nav-h); overflow-x: clip; }
-@media (prefers-reduced-motion: no-preference) { html:not(.motion) { scroll-behavior: smooth; } }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: 88px;
+}
 
 body {
   margin: 0;
-  min-height: 100vh;
-  background: var(--ink);
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 1.0625rem;
-  line-height: 1.6;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 17px/1.5 var(--sans);
+  letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+  font-kerning: normal;
   overflow-x: clip;
 }
 
-img, video, picture, svg { display: block; max-width: 100%; }
-img, video { height: auto; }
-p { margin: 0; text-wrap: pretty; }
-h1, h2, h3 { margin: 0; text-wrap: balance; }
-ul, ol, dl, dd { margin: 0; padding: 0; }
-code, .mono { font-family: var(--font-mono); font-size: 0.9em; }
-::selection { background: var(--mint); color: var(--mint-ink); }
-
-:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; border-radius: 6px; }
-
-.wrap { width: 100%; max-width: calc(var(--max) + 2 * var(--gutter)); margin-inline: auto; padding-inline: var(--gutter); }
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-
-.skip { position: fixed; left: 12px; top: -60px; z-index: 100; background: var(--mint); color: var(--mint-ink); padding: 10px 16px; border-radius: var(--radius-sm); font-weight: 700; text-decoration: none; transition: top 200ms var(--ease-out); }
-.skip:focus { top: 12px; }
-
-/* type */
-.display {
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: clamp(2.9rem, 10vw, 10rem);
-  line-height: 0.88;
-  letter-spacing: -0.045em;
-  text-transform: lowercase;
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
-.title {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: clamp(2.2rem, 5.2vw, 4.8rem);
-  line-height: 0.96;
-  letter-spacing: -0.035em;
-  text-transform: lowercase;
-}
-.lead { font-size: clamp(1.1rem, 1.5vw, 1.3rem); line-height: 1.5; color: var(--muted); }
-.pearl-dot { color: var(--pearl); }
 
-/* links: an underline that draws in */
-.link {
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: var(--mint);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+button {
+  font: inherit;
   color: inherit;
-  text-decoration: none;
-  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
-  transition: background-size 280ms var(--ease-out), color 200ms var(--ease-out);
-  padding-bottom: 1px;
-}
-.link:hover { background-size: 100% 1px; }
-.prose a { color: var(--mint); text-underline-offset: 0.22em; text-decoration-thickness: 1px; }
-.prose a:hover { text-decoration-thickness: 2px; }
-
-/* buttons */
-.btn {
-  --bg: transparent; --fg: var(--text); --bd: var(--line-strong);
-  position: relative;
-  display: inline-flex; align-items: center; justify-content: center; gap: 0.6em;
-  min-height: 52px; padding: 0 26px; border-radius: 999px;
-  background: var(--bg); color: var(--fg); border: 1px solid var(--bd);
-  font: 700 1rem/1 var(--font-body); letter-spacing: -0.005em;
-  text-decoration: none; white-space: nowrap; cursor: pointer;
-  transition: background-color 200ms var(--ease-out), border-color 200ms var(--ease-out), color 200ms var(--ease-out), transform 160ms var(--ease-out);
-  -webkit-tap-highlight-color: transparent;
-}
-.btn svg { width: 18px; height: 18px; flex: none; transition: transform 240ms var(--ease-out); }
-.btn:active { transform: scale(0.97); }
-.btn-mint { --bg: var(--mint); --fg: var(--mint-ink); --bd: var(--mint); }
-.btn-ink { --bg: var(--mint-ink); --fg: var(--mint); --bd: var(--mint-ink); }
-.btn-sm { min-height: 38px; padding: 0 16px; font-size: 0.92rem; }
-@media (hover: hover) and (pointer: fine) {
-  .btn-mint:hover { --bg: var(--mint-hover); --bd: var(--mint-hover); }
-  .btn-ink:hover { transform: translateY(-1px); }
-  .btn-line:hover { --bd: var(--text); }
-  .btn:hover .i-down { transform: translateY(2px); }
-}
-.btn-ink:focus-visible { outline-color: var(--mint-ink); }
-
-/* an app image: the render already has its own rounded corners, the frame only adds depth */
-.shot { position: relative; width: 100%; box-shadow: var(--shot-shadow); background: var(--ink-2); }
-.shot img { width: 100%; height: auto; }
-
-/* keycap, as in the app */
-.key {
-  display: inline-block; min-width: 1.9em; padding: 0.12em 0.5em; text-align: center;
-  font: 500 0.82em/1.5 var(--font-body); border-radius: 7px;
-  background: var(--ink-2); border: 1px solid var(--line-strong); color: var(--text);
 }
 
-/* code with a copy button */
-.cmd {
-  display: flex; align-items: stretch;
-  border-radius: var(--radius-sm);
-  background: var(--mint-tint);
-  border: 1px solid var(--mint-line);
+:focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+::selection {
+  background: var(--mint-wash);
+}
+
+.wrap {
+  width: 100%;
+  max-width: calc(var(--max) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
-.cmd pre { margin: 0; flex: 1; min-width: 0; padding: 14px 16px; overflow-x: auto; font: 500 0.92rem/1.6 var(--font-mono); }
-.cmd-copy {
-  flex: none; align-self: stretch; min-width: 84px;
-  border: 0; border-left: 1px solid var(--mint-line);
-  background: transparent; color: inherit; cursor: pointer;
-  font: 600 0.9rem var(--font-body);
-  transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out);
-}
-.cmd-copy:hover { background: color-mix(in srgb, var(--mint-ink) 12%, transparent); }
-.cmd-copy:focus-visible { outline: 2px solid var(--mint-ink); outline-offset: -4px; }
-.cmd-copy[data-copied] { background: var(--mint-ink); color: var(--mint); }
-html:not(.js) .cmd-copy { display: none; }
 
-/* a quiet tag for what is built but still being checked */
-.tag-early {
-  display: inline-block; vertical-align: middle; margin-left: 0.7em;
-  font: 500 0.72rem/1 var(--font-mono); letter-spacing: 0.02em; text-transform: lowercase;
-  padding: 0.45em 0.7em; border-radius: 999px; color: var(--faint); border: 1px solid var(--line-strong);
-  cursor: help;
+.skip {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--pill);
+  color: var(--pill-ink);
+  text-decoration: none;
+}
+
+.skip:focus {
+  top: 12px;
+}
+
+/* Type. One family, SF Pro, set tight at display sizes. */
+.display {
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  word-spacing: 0.05em;
+  line-height: 0.94;
+  text-wrap: balance;
+}
+
+.claim {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(40px, 6.4vw, 80px);
+  letter-spacing: -0.042em;
+  word-spacing: 0.05em;
+  line-height: 0.98;
+  text-wrap: balance;
+  max-width: 15ch;
+}
+
+.lede {
+  font-size: clamp(18px, 1.6vw, 21px);
+  line-height: 1.45;
+  color: var(--ink-2);
+  max-width: 34em;
+  text-wrap: pretty;
+}
+
+.small {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Matched letters in a typed query: the one job of mint besides links. */
+mark,
+.m {
+  background: none;
+  color: var(--mint);
+  font-weight: 700;
+}
+
+/* Sections keep one vertical rhythm. */
+.section {
+  padding-block: clamp(96px, 13vw, 176px) 0;
+}
+
+.section-head {
+  display: grid;
+  gap: 22px;
+  margin-bottom: clamp(40px, 5vw, 72px);
+}
+
+/* Actions: one ink pill per view, plain text links for the rest. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pill);
+  color: var(--pill-ink);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 160ms var(--ease);
+}
+
+.pill:hover {
+  text-decoration: none;
+}
+
+.pill:active {
+  transform: scale(0.97);
+}
+
+.pill svg {
+  width: 16px;
+  height: 16px;
+}
+
+.quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 16px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.quiet:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Keys: drawn like the caps on a Mac keyboard. */
+.kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.9em;
+  height: 1.9em;
+  padding: 0 0.45em;
+  border-radius: 0.38em;
+  background: var(--key);
+  color: var(--key-ink);
+  box-shadow:
+    0 0 0 1px var(--line-2),
+    0 2px 0 var(--key-edge);
+  font: 600 0.78em/1 var(--sans);
+  letter-spacing: 0;
+  vertical-align: 0.1em;
+  white-space: nowrap;
+}
+
+.early {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  vertical-align: 0.25em;
+  white-space: nowrap;
+}
+
+/* The pearl, as the brand draws it: a tangerine bead with a soft halo. */
+.bead {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pearl);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pearl) 18%, transparent), 0 0 12px var(--pearl-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 100ms !important;
+    scroll-behavior: auto !important;
+  }
 }

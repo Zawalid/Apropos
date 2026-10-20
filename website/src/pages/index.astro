@@ -1,21 +1,38 @@
 ---
 import Base from '../layouts/Base.astro';
 import Hero from '../components/Hero.astro';
-import Why from '../components/Why.astro';
-import Tour from '../components/Tour.astro';
+import Gap from '../components/Gap.astro';
+import OneKey from '../components/OneKey.astro';
+import Holding from '../components/Holding.astro';
+import Reach from '../components/Reach.astro';
+import Learns from '../components/Learns.astro';
+import Yours from '../components/Yours.astro';
 import Apps from '../components/Apps.astro';
 import Compare from '../components/Compare.astro';
-import Safety from '../components/Safety.astro';
+import Private from '../components/Private.astro';
 import Install from '../components/Install.astro';
-import Faq from '../components/Faq.astro';
+import { faq } from '../data/faq';
+
+const faqLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faq.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a.replace(/<[^>]+>/g, '') },
+  })),
+};
 ---
-<Base>
+<Base home extraJsonLd={[faqLd]}>
   <Hero />
-  <Why />
-  <Tour />
+  <Gap />
+  <OneKey />
+  <Holding />
+  <Reach />
+  <Learns />
+  <Yours />
   <Apps />
   <Compare />
-  <Safety />
+  <Private />
   <Install />
-  <Faq />
 </Base>

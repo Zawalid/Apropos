@@ -1,48 +1,78 @@
 ---
+/**
+ * One picture of the real app, light and dark. An empty slot is a neutral placeholder that says which capture it waits
+ * for (see src/data/shots.ts). Captures already include their wallpaper, so the frame only rounds and lifts them.
+ */
 import { getImage } from 'astro:assets';
-import type { ImageMetadata } from 'astro';
+import { shot, type SlotId } from '../data/shots';
 
 interface Props {
-  /** File name under src/assets/shots, without the -dark or -light suffix and the extension. */
-  name: string;
-  alt: string;
+  id: SlotId;
+  /** Width over height, used for the placeholder and to reserve space. */
+  ratio?: number;
   sizes?: string;
-  loading?: 'lazy' | 'eager';
+  eager?: boolean;
   class?: string;
 }
-const { name, alt, sizes = '(max-width: 700px) 94vw, 1000px', loading = 'lazy', class: className } = Astro.props;
 
-const files = import.meta.glob<{ default: ImageMetadata }>('../assets/shots/*.png', { eager: true });
-const pick = (mode: 'dark' | 'light') => {
-  const file = files[`../assets/shots/${name}-${mode}.png`];
-  if (!file) throw new Error(`Missing image ${name}-${mode}.png in src/assets/shots`);
-  return file.default;
-};
-const widths = [720, 1080, 1440];
-const build = async (src: ImageMetadata) => {
-  const set = await Promise.all(widths.map((width) => getImage({ src, width, format: 'webp', quality: 90 })));
-  return { src: set[1]?.src ?? '', srcset: set.map((image, i) => `${image.src} ${widths[i]}w`).join(', ') };
-};
-const dark = pick('dark');
-const [lightSet, darkSet] = await Promise.all([build(pick('light')), build(dark)]);
-// The render has its own rounded corners; the frame matches them so the shadow follows the shape.
-const radius = name.startsWith('palette') ? 52 : 44;
-const frameRadius = `${((radius / dark.width) * 100).toFixed(3)}% / ${((radius / dark.height) * 100).toFixed(3)}%`;
+const { id, ratio = 1.45, sizes = '(min-width: 1240px) 1100px, 100vw', eager = false, class: className } = Astro.props;
+const s = shot(id);
+const widths = [640, 960, 1400, 2000];
+
+async function srcset(image: NonNullable<typeof s.light>) {
+  const usable = widths.filter((w) => w <= image.width);
+  const list = usable.length ? usable : [image.width];
+  const out = await Promise.all(list.map((w) => getImage({ src: image, width: w, format: 'webp', quality: 82 })));
+  return { srcset: out.map((o, i) => `${o.src} ${list[i]}w`).join(', '), src: out[out.length - 1].src };
+}
+
+const light = s.light ? await srcset(s.light) : null;
+const dark = s.dark && s.dark !== s.light ? await srcset(s.dark) : null;
+const w = s.light?.width ?? 1400;
+const h = s.light ? s.light.height : Math.round(1400 / ratio);
 ---
-<div class:list={['shot', className]} style={`border-radius: ${frameRadius}`}>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset={darkSet.srcset} sizes={sizes} />
-    <img
-      src={lightSet.src}
-      srcset={lightSet.srcset}
-      sizes={sizes}
-      alt={alt}
-      width={dark.width}
-      height={dark.height}
-      loading={loading}
-      decoding="async"
-      fetchpriority={loading === 'eager' ? 'high' : undefined}
-    />
-  </picture>
-  <slot />
-</div>
+<figure class:list={['shot', className, { empty: !s.filled }]} style={`--ratio:${s.light ? s.light.width / s.light.height : ratio}`} data-slot={id}>
+  {light ? (
+    <picture>
+      {dark && <source media="(prefers-color-scheme: dark)" srcset={dark.srcset} sizes={sizes} />}
+      <img src={light.src} srcset={light.srcset} sizes={sizes} width={w} height={h} alt={s.alt} loading={eager ? 'eager' : 'lazy'} decoding="async" fetchpriority={eager ? 'high' : 'auto'} />
+    </picture>
+  ) : (
+    <div class="hold" role="img" aria-label={s.alt}>
+      <span>Capture coming: {s.want}</span>
+    </div>
+  )}
+</figure>
+
+<style>
+  .shot {
+    position: relative;
+    aspect-ratio: var(--ratio);
+    border-radius: var(--r-frame);
+    overflow: hidden;
+    background: var(--paper-2);
+    box-shadow: var(--shadow-frame);
+    isolation: isolate;
+  }
+  .shot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .hold {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: end start;
+    padding: 18px 20px;
+    background: var(--paper-2);
+    outline: 1px solid var(--line);
+    outline-offset: -1px;
+    border-radius: inherit;
+  }
+  .hold span {
+    font-size: 13px;
+    color: var(--ink-3);
+    max-width: 30ch;
+  }
+</style>

@@ -1,0 +1,169 @@
+---
+/**
+ * Private by construction: where each kind of data goes, then each macOS permission and why. Claims come from
+ * docs/context-actions.md, docs/prediction.md, docs/destinations.md and the app's Privacy and data page.
+ */
+import Shot from './Shot.astro';
+
+const map = [
+  {
+    head: 'Read in the moment',
+    say: 'Held in memory while the list is open, then dropped.',
+    items: ['The menus of the app in front', 'Your selection', 'The page address and title', 'The folder and git branch', 'Selected files in Finder'],
+  },
+  {
+    head: 'Kept on this Mac',
+    say: 'Small files in your Library, each with Reveal and Forget.',
+    items: ['Which commands you run, and when', 'Short names you type often', 'Which places you send things to', 'Your own commands, as plain files'],
+  },
+  {
+    head: 'Never kept, never sent',
+    say: 'Not in a log, not in an export, not on a server.',
+    items: ['What you selected or sent', 'Web addresses and document names', 'Anything you typed while recording', 'Secure fields, which are never read'],
+  },
+];
+
+const permissions = [
+  { name: 'Accessibility', when: 'Needed', why: 'Reads the menus of the app in front and presses the item you choose.' },
+  { name: 'Automation of Finder', when: 'The first time you act on files', why: 'Asks Finder which files are selected. macOS asks you once.' },
+  { name: 'Input Monitoring', when: 'Only to record', why: 'Lets a recording notice the menu items and shortcuts you use. Nothing is requested until you press Allow.' },
+];
+---
+<section id="private" class="section private" aria-labelledby="private-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="private-title" class="claim">Private by construction.</h2>
+      <p class="lede">
+        No account, no analytics, no server. It makes no network connections; the update check is off until you turn it on.
+      </p>
+    </div>
+
+    <ol class="map">
+      {map.map((col) => (
+        <li class="col">
+          <h3>{col.head}</h3>
+          <p class="say">{col.say}</p>
+          <ul>{col.items.map((it) => <li>{it}</li>)}</ul>
+        </li>
+      ))}
+    </ol>
+
+    <div class="lower">
+      <div class="perms">
+        <h3 class="perms-title">What it asks macOS for</h3>
+        <dl>
+          {permissions.map((p) => (
+            <div>
+              <dt>{p.name}</dt>
+              <dd class="when">{p.when}</dd>
+              <dd>{p.why}</dd>
+            </div>
+          ))}
+        </dl>
+        <p class="small">
+          Settings, Privacy and data shows what is kept with its size, exports all of it, and forgets everything it
+          learned in one step.
+        </p>
+      </div>
+      <Shot id="settings-privacy" ratio={1.25} sizes="(min-width: 1000px) 620px, 100vw" />
+    </div>
+  </div>
+</section>
+
+<style>
+  .map {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-radius: var(--r-frame);
+    box-shadow: 0 0 0 1px var(--line);
+    overflow: hidden;
+  }
+  .col {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    padding: clamp(22px, 2.6vw, 32px);
+    background: var(--card);
+  }
+  .col + .col {
+    border-left: 1px solid var(--line);
+  }
+  .col:last-child {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .col h3 {
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+  }
+  .say {
+    font-size: 15px;
+    color: var(--ink-3);
+  }
+  .col:last-child .say {
+    color: color-mix(in srgb, var(--paper) 72%, transparent);
+  }
+  .col ul {
+    display: grid;
+    margin-top: 10px;
+  }
+  .col ul li {
+    padding: 9px 0;
+    border-top: 1px solid var(--line);
+  }
+  .col:last-child ul li {
+    border-top-color: color-mix(in srgb, var(--paper) 14%, transparent);
+  }
+  .lower {
+    margin-top: clamp(48px, 6vw, 88px);
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(32px, 5vw, 80px);
+    align-items: center;
+  }
+  .perms {
+    display: grid;
+    gap: 22px;
+  }
+  .perms-title {
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+  }
+  .perms dl {
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+  .perms dl div {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .perms dt {
+    font-weight: 600;
+  }
+  .when {
+    font-size: 14px;
+    color: var(--ink-3);
+    text-align: right;
+  }
+  .perms dd:last-child {
+    grid-column: 1 / -1;
+    color: var(--ink-2);
+  }
+  @media (max-width: 900px) {
+    .map {
+      grid-template-columns: 1fr;
+    }
+    .col + .col {
+      border-left: 0;
+      border-top: 1px solid var(--line);
+    }
+    .lower {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,79 @@
+---
+/**
+ * The hero object: the ring from the app icon's 3D scene (scripts/render-ring.mjs) with the pearl as its own layer, so
+ * the page can lift the pearl out of the gap. Light and dark renders differ only in the strength of the shadow.
+ */
+import { getImage } from 'astro:assets';
+import ringLight from '../assets/ring/ring-light.png';
+import ringDark from '../assets/ring/ring-dark.png';
+import pearl from '../assets/ring/pearl.png';
+import place from '../data/ring.json';
+
+interface Props {
+  /** Rendered width in CSS pixels at its largest, for the image sizes. */
+  width: number;
+  eager?: boolean;
+  /** The hero ring: tilts with the pointer and its pearl travels. */
+  hero?: boolean;
+  class?: string;
+}
+
+const { width, eager = false, hero = false, class: className } = Astro.props;
+const steps = [width, Math.round(width * 1.5), width * 2].filter((w) => w <= ringLight.width);
+const make = async (src: typeof ringLight) => {
+  const out = await Promise.all(steps.map((w) => getImage({ src, width: w, format: 'webp', quality: 86 })));
+  return { srcset: out.map((o, i) => `${o.src} ${steps[i]}w`).join(', '), src: out[0].src };
+};
+const light = await make(ringLight);
+const dark = await make(ringDark);
+const pearlWidth = Math.round((width * place.width) / 100);
+const pearlImg = await getImage({ src: pearl, width: Math.min(pearl.width, pearlWidth * 2), format: 'webp', quality: 88 });
+const sizes = `(max-width: 700px) 80vw, ${width}px`;
+---
+<div class:list={['ring', className]} data-ring={hero ? 'hero' : 'still'} style={`--ring-ratio:${place.ratio}`}>
+  <div class="tilt" data-tilt>
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset={dark.srcset} sizes={sizes} />
+      <img class="ring-img" src={light.src} srcset={light.srcset} sizes={sizes} width={ringLight.width} height={ringLight.height} alt="" loading={eager ? 'eager' : 'lazy'} fetchpriority={eager ? 'high' : 'auto'} decoding="async" />
+    </picture>
+  </div>
+  <img
+    class="pearl"
+    data-pearl={hero ? 'hero' : 'still'}
+    src={pearlImg.src}
+    width={pearl.width}
+    height={pearl.height}
+    alt=""
+    loading={eager ? 'eager' : 'lazy'}
+    decoding="async"
+    style={`left:${place.left}%;top:${place.top}%;width:${place.width}%`}
+  />
+</div>
+
+<style>
+  .ring {
+    position: relative;
+    aspect-ratio: var(--ring-ratio);
+    perspective: 1400px;
+  }
+  .tilt {
+    width: 100%;
+    height: 100%;
+    transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 600ms var(--ease);
+    will-change: transform;
+  }
+  .ring-img {
+    width: 100%;
+    height: 100%;
+  }
+  .pearl {
+    position: absolute;
+    height: auto;
+    pointer-events: none;
+    transform: translate3d(var(--px, 0px), var(--py, 0px), 0) scale(var(--ps, 1));
+    transform-origin: 50% 50%;
+    will-change: transform;
+    z-index: 60;
+  }
+</style>

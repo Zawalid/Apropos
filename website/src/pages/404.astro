@@ -1,24 +1,23 @@
 ---
 import Base from '../layouts/Base.astro';
-import { links } from '../data/site';
 ---
-<Base title="Page not found | Apropos" description="That page does not exist. Go back to the Apropos home page, or download the app." home={false} noindex structuredData={[]}>
-  <section class="nf">
-    <div class="wrap">
-      <h1 class="display">not here<span class="pearl-dot">.</span></h1>
-      <p class="lead">The page you wanted does not exist. These do:</p>
-      <ul class="nf-links">
-        <li><a class="link" href="/">Apropos, the Mac app</a></li>
-        <li><a class="link" href={links.download}>Download for macOS</a></li>
-        <li><a class="link" href={links.repo}>Source on GitHub</a></li>
-      </ul>
-    </div>
+<Base title="Page not found | Apropos" description="That page does not exist. Go back to the Apropos home page to see what Apropos does and download it for your Mac." path="/404/" noindex>
+  <section class="wrap nf">
+    <h1 class="display">This page is not here.</h1>
+    <p class="lede">The address may be old, or mistyped. <a href="/">Go to the home page</a>.</p>
   </section>
 </Base>
 
 <style>
-  .nf { padding: calc(72px + clamp(48px, 9vw, 120px)) 0 clamp(80px, 12vw, 160px); min-height: 70vh; }
-  .nf .wrap { display: grid; gap: 28px; }
-  .nf-links { list-style: none; display: grid; gap: 12px; font-size: 1.2rem; }
-  .nf-links a { color: var(--mint); }
+  .nf {
+    display: grid;
+    gap: 28px;
+    justify-items: start;
+    padding-block: clamp(64px, 10vw, 140px);
+    min-height: 70vh;
+  }
+  h1 {
+    font-size: clamp(44px, 7vw, 96px);
+    max-width: 12ch;
+  }
 </style>
