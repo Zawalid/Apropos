@@ -12,6 +12,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSPopoverDelegate {
     private let popover = NSPopover()
     #if DEBUG
         private let recorderProbe = RecorderProbe()
+        private let axProbes = [AXProbe(enableElectronTree: false), AXProbe(enableElectronTree: true)]
     #endif
     private var clickMonitor: Any?
     private var observer: NSObjectProtocol?
@@ -104,6 +105,14 @@ final class StatusItemController: NSObject, NSMenuDelegate, NSPopoverDelegate {
             if !AgentMode.isOn {
                 actions.probeTitle = recorderProbe.isRunning ? "Stop recording test" : "Record test (R0)"
                 actions.probe = close { [recorderProbe] in recorderProbe.toggle() }
+                actions.axProbeTitles = axProbes.map {
+                    $0.isRunning ? "Stop AX probe" : ($0 === axProbes[1] ? "AX probe, Electron switch on" : "AX probe, plain")
+                }
+                actions.axProbe = { [weak self, axProbes] index in
+                    self?.popover.performClose(nil)
+                    guard axProbes.indices.contains(index) else { return }
+                    axProbes[index].toggle()
+                }
             }
         #endif
         let view = MenuPopoverView(

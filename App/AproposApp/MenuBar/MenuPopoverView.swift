@@ -19,6 +19,8 @@ struct MenuPopoverActions {
     /// A debug-only test row (the recorder's live proof). Nil in release builds, and the row is not drawn.
     var probeTitle: String?
     var probe: () -> Void = {}
+    var axProbeTitles: [String] = []
+    var axProbe: (Int) -> Void = { _ in }
 }
 
 /// The menu bar popover: the app in front and what Apropos sees in it, the way in, recent commands, and the app's own
@@ -56,6 +58,17 @@ struct MenuPopoverView: View {
             if let title = actions.probeTitle {
                 Button(action: actions.probe) {
                     Label(title, systemImage: "record.circle")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(Brand.text2)
+                        .frame(maxWidth: .infinity, minHeight: 30)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 10)
+                .padding(.bottom, 6)
+            }
+            ForEach(Array(actions.axProbeTitles.enumerated()), id: \.offset) { index, title in
+                Button { actions.axProbe(index) } label: {
+                    Label(title, systemImage: "scope")
                         .font(.system(size: 12.5, weight: .medium))
                         .foregroundStyle(Brand.text2)
                         .frame(maxWidth: .infinity, minHeight: 30)
