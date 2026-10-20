@@ -153,6 +153,7 @@ function topMenus(app: MeasuredApp) {
     }
     .sw-dock {
       justify-self: stretch;
+      overflow-x: auto;
     }
   }
   .sw-panel {
@@ -177,6 +178,7 @@ function topMenus(app: MeasuredApp) {
   }
   .sw-dock button {
     position: relative;
+    z-index: 0;
     flex: none;
     padding: 4px 4px 10px;
     border: 0;
@@ -184,13 +186,32 @@ function topMenus(app: MeasuredApp) {
     background: none;
     cursor: pointer;
   }
+  /* Magnification like the real Dock: --mag comes from the pointer's distance (motion.ts). */
+  .sw-dock {
+    overflow: visible;
+  }
   .sw-dock img {
     width: 48px;
     height: 48px;
-    transition: transform 200ms var(--ease);
+    transform-origin: 50% 100%;
+    transform: translateY(calc((var(--mag, 1) - 1) * -18px)) scale(var(--mag, 1));
+    transition: transform 160ms var(--ease);
   }
-  .sw-dock button:hover img {
-    transform: translateY(-4px) scale(1.06);
+  .sw-dock button:active img {
+    transform: translateY(calc((var(--mag, 1) - 1) * -18px)) scale(calc(var(--mag, 1) * 0.92));
+  }
+  /* The panel of the app you pick settles in: the app opens it at once, the page only lets it land. */
+  .sw-panel:not([hidden]) {
+    animation: sw-in 360ms cubic-bezier(0.19, 1, 0.22, 1);
+  }
+  :global(.flipping) .sw-panel:not([hidden]) {
+    animation: none;
+  }
+  @keyframes sw-in {
+    from {
+      opacity: 0.4;
+      transform: translateY(10px) scale(0.985);
+    }
   }
   .sw-dock button[aria-selected='true']::after {
     content: '';

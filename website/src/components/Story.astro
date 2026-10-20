@@ -68,7 +68,7 @@ const chapters: Chapter[] = [
   <div class="track">
     <div class="stage wrap">
       <div class="words">
-        <div class="rail" aria-hidden="true"><span class="bead" data-story-bead></span></div>
+        <div class="rail" aria-hidden="true"><span class="fill" data-story-fill></span><span class="bead" data-story-bead></span></div>
         <ol class="chapters">
           {chapters.map((c, i) => (
             <li class:list={['chapter', { on: i === 0 }]} data-chapter={i}>
@@ -131,6 +131,14 @@ const chapters: Chapter[] = [
     border-radius: 2px;
     background: var(--line-2);
   }
+  .fill {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--mint);
+    transform-origin: top center;
+    transform: scaleY(var(--fill, 0));
+  }
   .rail .bead {
     position: absolute;
     left: -3px;
@@ -183,16 +191,31 @@ const chapters: Chapter[] = [
     display: grid;
     align-items: center;
   }
+  /* Panes hand over with depth: the next one rises from below, the last one sinks back and away. */
+  .panes {
+    perspective: 1600px;
+  }
   .pane {
     grid-area: 1 / 1;
     opacity: 0;
-    transform: translateY(18px) scale(0.985);
+    transform: translate3d(0, 60px, -80px) rotateX(8deg);
+    transform-origin: 50% 100%;
     transition:
-      opacity 280ms var(--ease),
-      transform 420ms var(--ease);
+      opacity 420ms var(--ease),
+      transform 700ms cubic-bezier(0.19, 1, 0.22, 1);
+  }
+  .pane:global(.past) {
+    transform: translate3d(0, -40px, -160px) rotateX(-6deg);
   }
   .pane.on {
     opacity: 1;
+    transform: none;
+  }
+  :global(html.motion-on) .chapter :global(.wi) {
+    transform: translateY(108%);
+    transition: transform 700ms cubic-bezier(0.19, 1, 0.22, 1) var(--wd, 0ms);
+  }
+  :global(html.motion-on) .chapter.on :global(.wi) {
     transform: none;
   }
 
@@ -226,6 +249,9 @@ const chapters: Chapter[] = [
     .flow-win {
       display: block;
       margin-top: 8px;
+    }
+    :global(html.motion-on) .chapter :global(.wi) {
+      transform: none;
     }
   }
 </style>

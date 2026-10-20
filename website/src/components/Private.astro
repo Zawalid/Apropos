@@ -42,7 +42,7 @@ const permissions = [
         <div class="side reads">
           <h3>Read when you open the panel</h3>
           <ul>
-            {reads.map((r, i) => <li style={`--i:${i}`}><span>{r}</span><i class="wire" aria-hidden="true"></i></li>)}
+            {reads.map((r, i) => <li style={`--i:${i}`}><span>{r}</span><i class="wire" aria-hidden="true"><b class="dot"></b></i></li>)}
           </ul>
         </div>
         <div class="core">
@@ -54,7 +54,7 @@ const permissions = [
           <h3>Kept, as small files you can read</h3>
           <ul>
             {kept.map((k, i) => (
-              <li style={`--i:${i}`}><i class="wire" aria-hidden="true"></i><code>{k.file}</code><span>{k.what}</span></li>
+              <li style={`--i:${i}`}><i class="wire" aria-hidden="true"><b class="dot"></b></i><code>{k.file}</code><span>{k.what}</span></li>
             ))}
           </ul>
           <p class="where">In ~/Library/Application Support/Apropos, each with Reveal and Forget.</p>
@@ -188,6 +188,57 @@ const permissions = [
   }
   :global(html.js-motion) .mac:global(.on) .wire {
     transform: none;
+  }
+  /* Data moving along the wires: into Apropos from what is read, out of it to the files it keeps. */
+  .wire {
+    position: relative;
+    container-type: inline-size;
+  }
+  .dot {
+    position: absolute;
+    left: -3px;
+    top: -2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--mint);
+    opacity: 0;
+  }
+  :global(html.motion-on) .mac:global(.live) .dot {
+    animation: flow 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    animation-delay: calc(var(--i) * 0.42s + 0.5s);
+  }
+  :global(html.motion-on) .mac:global(.live) .kept .dot {
+    animation-delay: calc(var(--i) * 0.42s + 1.6s);
+  }
+  @keyframes flow {
+    0% {
+      opacity: 0;
+      transform: translateX(0);
+    }
+    15%,
+    80% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(100cqw);
+    }
+  }
+  :global(html.motion-on) .mac:global(.live) .core img {
+    animation: beat 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite 1.2s;
+  }
+  @keyframes beat {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    12% {
+      transform: scale(1.06);
+    }
+    30% {
+      transform: scale(1);
+    }
   }
   .core {
     display: grid;

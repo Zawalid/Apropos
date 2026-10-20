@@ -1,11 +1,28 @@
 ---
-import { rows, tools } from '../data/compare';
+/**
+ * Apropos next to the launchers. Wide screens: one table, the Apropos column raised, each tool under its real icon, every
+ * cell a mark (does it, partly, does not) plus a short line, and a small link to the source of each fact. Phones: pick
+ * one tool and read it against Apropos, two columns.
+ */
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { rows, tools, type Mark, type ToolId } from '../data/compare';
+import apropos from '../assets/icon.png';
+import raycast from '../assets/apps/raycast.png';
+import spotlight from '../assets/apps/spotlight.png';
+import alfred from '../assets/apps/alfred.png';
 
 interface Props {
   /** On the home page the table is a section; on /compare/ it is the page body. */
   heading?: boolean;
 }
 const { heading = true } = Astro.props;
+
+const icons: Partial<Record<ToolId, ImageMetadata>> = { apropos, raycast, spotlight, alfred };
+const others = tools.filter((t) => t.id !== 'apropos');
+const groups = (['Does', 'Setup and price'] as const).filter((g) => rows.some((r) => r.group === g));
+const markWord: Record<Mark, string> = { yes: 'Yes', some: 'Partly', no: 'No' };
+const sourceOf = (tool: string, label: string) => `Source for ${tool}, ${label.toLowerCase()}`;
 ---
 <section id="compare" class="section compare" aria-labelledby={heading ? 'compare-title' : undefined}>
   <div class="wrap">
@@ -18,106 +35,420 @@ const { heading = true } = Astro.props;
         </p>
       </div>
     )}
-    <div class="table-wrap" tabindex="0" role="region" aria-label="Comparison of Apropos, Raycast, Spotlight, Alfred and the Help menu">
+
+    <div class="wide">
       <table>
+        <caption class="visually-hidden">Apropos compared with Raycast, Spotlight, Alfred and the Help menu</caption>
         <thead>
           <tr>
-            <th scope="col"><span class="visually-hidden">Feature</span></th>
-            {tools.map((t) => <th scope="col" class:list={{ us: t.id === 'apropos' }}>{t.short}</th>)}
+            <td class="corner"></td>
+            {tools.map((t) => (
+              <th scope="col" class:list={['tool', { us: t.id === 'apropos' }]}>
+                <span class="tool-mark">
+                  {icons[t.id] ? (
+                    <Image src={icons[t.id]!} alt="" width={40} height={40} densities={[1, 2]} />
+                  ) : (
+                    <span class="glyph-help" aria-hidden="true">?</span>
+                  )}
+                </span>
+                <span class="tool-name">{t.short}</span>
+                <span class="tool-best">{t.bestAt}</span>
+              </th>
+            ))}
           </tr>
         </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr>
-              <th scope="row">{row.label}</th>
-              {tools.map((t) => {
-                const cell = row.cells[t.id];
-                return (
-                  <td class:list={{ us: t.id === 'apropos' }}>
-                    {cell.source ? <a href={cell.source} rel="noopener">{cell.text}</a> : cell.text}
-                  </td>
-                );
-              })}
+        {groups.map((g) => (
+          <tbody>
+            <tr class="group">
+              <th scope="rowgroup" colspan={tools.length + 1}>{g === 'Does' ? 'What it does' : 'Setup and price'}</th>
             </tr>
-          ))}
-        </tbody>
+            {rows
+              .filter((r) => r.group === g)
+              .map((row) => (
+                <tr>
+                  <th scope="row">{row.label}</th>
+                  {tools.map((t) => {
+                    const c = row.cells[t.id];
+                    return (
+                      <td class:list={{ us: t.id === 'apropos' }}>
+                        <span class="cell">
+                          {c.mark && (
+                            <span class:list={['mark', `m-${c.mark}`]}>
+                              <span class="visually-hidden">{markWord[c.mark]}: </span>
+                            </span>
+                          )}
+                          <span class="txt">{c.text}</span>
+                          {c.source && (
+                            <a class="src" href={c.source} rel="noopener" aria-label={sourceOf(t.short, row.label)} title="Source">
+                              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5h5v5M9.5 2.5 3 9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                            </a>
+                          )}
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+          </tbody>
+        ))}
       </table>
     </div>
-    <p class="small note">
-      Checked on 20 October 2026 against each tool’s own pages and, for Spotlight’s menu search, a MacMost review. Each
-      linked cell opens its source. More on <a href="/compare/raycast/">Raycast</a>, <a href="/compare/spotlight/">Spotlight</a>
-      and <a href="/compare/alfred/">Alfred</a>.
-    </p>
+
+    <div class="narrow" data-tabs>
+      <p class="pick-label">Compare Apropos with</p>
+      <div class="pick" role="tablist" aria-label="Compare Apropos with">
+        {others.map((t, i) => (
+          <button type="button" role="tab" id={`cmp-tab-${t.id}`} aria-controls={`cmp-${t.id}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} data-tab>
+            {icons[t.id] ? <Image src={icons[t.id]!} alt="" width={22} height={22} densities={[1, 2]} /> : <span class="glyph-help small-glyph" aria-hidden="true">?</span>}
+            {t.short}
+          </button>
+        ))}
+      </div>
+      {others.map((t, i) => (
+        <div class="pair" id={`cmp-${t.id}`} role="tabpanel" aria-labelledby={`cmp-tab-${t.id}`} hidden={i !== 0} data-panel>
+          {rows.map((row) => (
+            <div class="pair-row">
+              <p class="pair-label">{row.label}</p>
+              <div class="pair-cells">
+                {(['apropos', t.id] as ToolId[]).map((id) => {
+                  const c = row.cells[id];
+                  return (
+                    <p class:list={['pair-cell', { us: id === 'apropos' }]}>
+                      <span class="pair-who">{id === 'apropos' ? 'Apropos' : t.short}</span>
+                      <span class="cell">
+                        {c.mark && (
+                          <span class:list={['mark', `m-${c.mark}`]}>
+                            <span class="visually-hidden">{markWord[c.mark]}: </span>
+                          </span>
+                        )}
+                        <span class="txt">{c.text}</span>
+                        {c.source && (
+                          <a class="src" href={c.source} rel="noopener" aria-label={sourceOf(t.short, row.label)} title="Source">
+                            <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5h5v5M9.5 2.5 3 9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                          </a>
+                        )}
+                      </span>
+                    </p>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+
+    <div class="legend">
+      <p class="keys" aria-hidden="true">
+        <span><span class="mark m-yes"></span>Does it</span>
+        <span><span class="mark m-some"></span>Partly, or with an add-on or a paid plan</span>
+        <span><span class="mark m-no"></span>Does not</span>
+      </p>
+      <p class="small note">
+        Checked on 20 October 2026 against each tool’s own pages and, for Spotlight’s menu search, a MacMost review. The
+        arrow after a fact opens its source. More on <a href="/compare/raycast/">Raycast</a>,
+        <a href="/compare/spotlight/">Spotlight</a> and <a href="/compare/alfred/">Alfred</a>.
+      </p>
+    </div>
   </div>
 </section>
 
 <style>
-  .table-wrap {
-    overflow-x: auto;
-    border-radius: var(--r-frame);
-    box-shadow: 0 0 0 1px var(--line);
-    background: var(--card);
-  }
   table {
     width: 100%;
-    min-width: 860px;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
     font-size: 15px;
-    line-height: 1.4;
+    line-height: 1.45;
   }
   th,
   td {
-    padding: 16px 18px;
+    padding: 16px 16px;
     text-align: left;
     vertical-align: top;
-    border-bottom: 1px solid var(--line);
   }
-  tbody tr:last-child th,
-  tbody tr:last-child td {
-    border-bottom: 0;
+  .corner {
+    width: 18%;
   }
-  thead th {
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    padding-block: 18px 14px;
+  tbody tr:not(.group) > * {
+    border-top: 1px solid var(--line);
   }
-  tbody th {
+  tbody th[scope='row'] {
     font-weight: 600;
-    width: 17%;
-  }
-  /* The row names stay in view while the table scrolls sideways on a phone. */
-  tbody th,
-  thead th:first-child {
-    position: sticky;
-    left: 0;
-    z-index: 1;
-    background: var(--card);
-  }
-  @media (max-width: 760px) {
-    tbody th {
-      min-width: 128px;
-      box-shadow: 1px 0 0 var(--line);
-    }
+    color: var(--ink);
   }
   td {
     color: var(--ink-2);
-    width: 16.6%;
   }
-  td a {
-    color: inherit;
-    text-decoration-color: var(--line-2);
+
+  /* Tool headers: the real icon, the name, what it is best at. */
+  .tool {
+    vertical-align: bottom;
+    padding-bottom: 20px;
   }
-  td a:hover {
-    color: var(--mint);
-    text-decoration-color: currentColor;
+  .tool-mark {
+    display: block;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 14px;
   }
-  .us {
-    background: var(--paper-2);
+  .tool-mark :global(img) {
+    width: 40px;
+    height: 40px;
+    border-radius: 22%;
+  }
+  .glyph-help {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 22%;
+    background: var(--paper-3);
+    color: var(--ink-2);
+    font: 700 22px/1 var(--display);
+  }
+  .tool-name {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
     color: var(--ink);
   }
+  .tool-best {
+    display: block;
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--ink-3);
+  }
+
+  /* The Apropos column is raised: its own card from the header to the last row. */
+  .us {
+    background: var(--card);
+    box-shadow:
+      inset 1px 0 0 var(--line-2),
+      inset -1px 0 0 var(--line-2);
+  }
+  thead .us {
+    border-radius: 20px 20px 0 0;
+    box-shadow:
+      inset 1px 0 0 var(--line-2),
+      inset -1px 0 0 var(--line-2),
+      inset 0 1px 0 var(--line-2);
+  }
+  tbody:last-of-type tr:last-child .us {
+    border-radius: 0 0 20px 20px;
+    box-shadow:
+      inset 1px 0 0 var(--line-2),
+      inset -1px 0 0 var(--line-2),
+      inset 0 -1px 0 var(--line-2);
+  }
+  td.us {
+    color: var(--ink);
+  }
+  .group th {
+    padding-top: 34px;
+    padding-bottom: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-3);
+  }
+  .group .us,
+  .group th {
+    background: none;
+  }
+
+  .cell {
+    display: inline;
+  }
+  .mark {
+    display: inline-grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    border-radius: 50%;
+    vertical-align: -4px;
+  }
+  .m-yes {
+    background: var(--mint);
+  }
+  .m-yes::after {
+    content: '';
+    width: 7px;
+    height: 4px;
+    margin-top: -2px;
+    border-left: 1.8px solid var(--card);
+    border-bottom: 1.8px solid var(--card);
+    transform: rotate(-45deg);
+  }
+  .m-some {
+    background: conic-gradient(var(--ink-3) 0 50%, transparent 50% 100%);
+    box-shadow: inset 0 0 0 1.5px var(--ink-3);
+  }
+  .m-no {
+    box-shadow: inset 0 0 0 1.5px var(--line-2);
+  }
+  .m-no::after {
+    content: '';
+    width: 7px;
+    height: 1.6px;
+    border-radius: 1px;
+    background: var(--ink-3);
+  }
+  .src {
+    display: inline-grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    margin-left: 4px;
+    border-radius: 6px;
+    color: var(--ink-3);
+    vertical-align: -4px;
+  }
+  .src svg {
+    width: 11px;
+    height: 11px;
+  }
+  .src:hover {
+    color: var(--mint);
+    background: var(--mint-wash);
+  }
+
+  /* Pointing at a column lights it from top to bottom (motion.ts sets .col-on). */
+  th,
+  td {
+    transition: background-color 200ms var(--ease);
+  }
+  :global(.col-on):not(.us) {
+    background: color-mix(in srgb, var(--paper-2) 70%, transparent);
+  }
+  /* Marks pop in row by row the first time the table is seen. */
+  :global(html.motion-on) .wide .mark {
+    transform: scale(0);
+    transition: transform 420ms cubic-bezier(0.34, 1.6, 0.64, 1);
+  }
+  :global(html.motion-on) .wide table:global(.marks-in) .mark {
+    transform: none;
+  }
+  :global(html.motion-on) .wide tbody tr:nth-child(2) .mark {
+    transition-delay: 80ms;
+  }
+  :global(html.motion-on) .wide tbody tr:nth-child(3) .mark {
+    transition-delay: 160ms;
+  }
+  :global(html.motion-on) .wide tbody tr:nth-child(4) .mark {
+    transition-delay: 240ms;
+  }
+  :global(html.motion-on) .wide tbody tr:nth-child(5) .mark {
+    transition-delay: 320ms;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 14px 32px;
+    margin-top: 26px;
+  }
+  .keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    font-size: 14px;
+    color: var(--ink-2);
+  }
   .note {
-    margin-top: 18px;
-    max-width: 72ch;
+    max-width: 60ch;
+  }
+
+  /* Phones: pick a tool, read it against Apropos. */
+  .narrow {
+    display: none;
+  }
+  @media (max-width: 860px) {
+    .wide {
+      display: none;
+    }
+    .narrow {
+      display: grid;
+      gap: 14px;
+    }
+    .pick-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-3);
+    }
+    .pick {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .pick button {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 14px 0 8px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--card);
+      box-shadow: 0 0 0 1px var(--line);
+      color: var(--ink-2);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .pick button[aria-selected='true'] {
+      background: var(--pill);
+      color: var(--pill-ink);
+      box-shadow: none;
+    }
+    .pick :global(img),
+    .small-glyph {
+      width: 22px;
+      height: 22px;
+      border-radius: 22%;
+      font-size: 13px;
+    }
+    .pair[hidden] {
+      display: none;
+    }
+    .pair-row {
+      padding: 16px 0;
+      border-top: 1px solid var(--line);
+    }
+    .pair-label {
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .pair-cells {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .pair-cell {
+      display: grid;
+      gap: 4px;
+      align-content: start;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--paper-2);
+      font-size: 14px;
+      color: var(--ink-2);
+    }
+    .pair-cell.us {
+      background: var(--card);
+      box-shadow: 0 0 0 1px var(--line-2);
+      color: var(--ink);
+    }
+    .pair-who {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-3);
+    }
   }
 </style>

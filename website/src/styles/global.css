@@ -135,6 +135,12 @@ button {
   background: var(--mint-wash);
 }
 
+/* Elements that enter from the side start past the edge. main clips them (clip, unlike hidden, keeps sticky working);
+   on body the value would pass to the viewport and still count as page width. */
+main {
+  overflow-x: clip;
+}
+
 .wrap {
   width: 100%;
   max-width: calc(var(--max) + var(--gutter) * 2);
@@ -328,4 +334,218 @@ mark,
     transition-duration: 100ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Motion layer (src/scripts/motion.ts). Nothing here applies without the script, or with reduced motion. */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 260ms;
+  animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Headlines: each word rises out of its own mask. */
+.w {
+  display: inline-block;
+  overflow: clip;
+  overflow-clip-margin: 0.12em;
+  vertical-align: top;
+  padding-bottom: 0.1em;
+  margin-bottom: -0.1em;
+}
+.wi {
+  display: inline-block;
+}
+html.motion-on .wi {
+  transform: translateY(108%);
+  transition: transform 900ms cubic-bezier(0.19, 1, 0.22, 1);
+  transition-delay: var(--wd, 0ms);
+}
+html.motion-on .in .wi,
+html.motion-on .in.wi {
+  transform: none;
+}
+
+
+/* Results that type themselves in. */
+.ch {
+  display: inline;
+}
+html.motion-on .ch {
+  opacity: 0;
+  animation: ch-in 320ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  animation-delay: var(--cd, 0ms);
+}
+@keyframes ch-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Magnetic buttons lean toward the pointer. */
+.pill,
+header .get {
+  translate: var(--mx, 0px) var(--my, 0px);
+  transition:
+    transform 160ms var(--ease),
+    translate 260ms var(--ease);
+}
+
+/* The hero's first second: the ring settles, the pearl drops into its gap, the words rise, the rest follows. */
+html.motion-on .hero.intro .tilt {
+  opacity: 0;
+  scale: 0.86;
+  rotate: -14deg;
+}
+html.motion-on .hero.intro .pearl {
+  opacity: 0;
+  translate: 0 -180px;
+}
+html.motion-on .hero.intro :is(.lede, .actions, .meta, .press, .hint) {
+  opacity: 0;
+  translate: 0 18px;
+}
+html.motion-on .hero.intro.go .tilt {
+  opacity: 1;
+  scale: 1;
+  rotate: 0deg;
+  transition:
+    opacity 700ms var(--ease),
+    scale 1400ms cubic-bezier(0.16, 1, 0.3, 1),
+    rotate 1400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+html.motion-on .hero.intro.go .pearl {
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity 240ms var(--ease) 650ms,
+    translate 1000ms cubic-bezier(0.34, 1.5, 0.64, 1) 650ms;
+}
+html.motion-on .hero.intro.go :is(.lede, .actions, .meta, .press, .hint) {
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity 700ms var(--ease),
+    translate 900ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+html.motion-on .hero.intro.go .lede {
+  transition-delay: 420ms;
+}
+html.motion-on .hero.intro.go .actions {
+  transition-delay: 520ms;
+}
+html.motion-on .hero.intro.go .meta {
+  transition-delay: 620ms;
+}
+html.motion-on .hero.intro.go :is(.press, .hint) {
+  transition-delay: 900ms;
+}
+
+/* Scene entrances (motion.ts adds .rv and one .rv-<kind>). The rest state is always the element as written. */
+html.motion-on .rv {
+  transition:
+    opacity 700ms cubic-bezier(0.23, 1, 0.32, 1),
+    translate 1000ms cubic-bezier(0.19, 1, 0.22, 1),
+    scale 1000ms cubic-bezier(0.19, 1, 0.22, 1),
+    rotate 1000ms cubic-bezier(0.19, 1, 0.22, 1),
+    clip-path 1100ms cubic-bezier(0.77, 0, 0.18, 1);
+  transition-delay: calc(var(--d, 0ms) + 120ms);
+}
+html.motion-on .rv:not(.in) {
+  opacity: 0;
+}
+html.motion-on .rv-up:not(.in) {
+  translate: 0 28px;
+}
+html.motion-on .rv-left:not(.in) {
+  translate: -64px 0;
+}
+html.motion-on .rv-right:not(.in) {
+  translate: 64px 0;
+}
+html.motion-on .rv-line:not(.in) {
+  translate: -18px 0;
+}
+html.motion-on .rv-fan:not(.in) {
+  translate: 0 90px;
+  rotate: 4deg;
+}
+html.motion-on .rv-swing-r:not(.in) {
+  translate: 120px 40px;
+  rotate: 6deg;
+}
+html.motion-on .rv-swing-l:not(.in) {
+  translate: -120px 40px;
+  rotate: -6deg;
+}
+html.motion-on .rv-zoom:not(.in) {
+  scale: 0.9;
+}
+html.motion-on .rv-drop:not(.in) {
+  translate: 0 -56px;
+}
+html.motion-on .rv-drop {
+  transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1), cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+html.motion-on .rv-pop:not(.in) {
+  scale: 0.4;
+  translate: 0 24px;
+}
+html.motion-on .rv-pop {
+  transition-duration: 400ms, 700ms, 700ms, 700ms, 700ms;
+  transition-timing-function: ease-out, cubic-bezier(0.34, 1.6, 0.64, 1), cubic-bezier(0.34, 1.6, 0.64, 1);
+}
+html.motion-on .rv-stamp:not(.in) {
+  scale: 1.8;
+}
+html.motion-on .rv-stamp {
+  transition-duration: 300ms, 600ms, 600ms;
+  transition-timing-function: ease-out, cubic-bezier(0.34, 1.3, 0.64, 1), cubic-bezier(0.34, 1.3, 0.64, 1);
+  transition-delay: calc(var(--d, 0ms) + 500ms);
+}
+/* Wipes: opacity stays, the clip does the reveal. */
+html.motion-on .rv-wipe:not(.in) {
+  opacity: 1;
+  clip-path: inset(0 100% 0 0 round 24px);
+}
+html.motion-on .rv-wipe.in {
+  clip-path: inset(0 0 0 0 round 24px);
+}
+html.motion-on .rv-open:not(.in) {
+  opacity: 1;
+  clip-path: inset(30% 42% 30% 42% round 40px);
+  scale: 0.96;
+}
+html.motion-on .rv-open.in {
+  clip-path: inset(0 0 0 0 round 32px);
+}
+/* The screen turns on: a bright line opens into the picture. */
+html.motion-on .rv-boot:not(.in) {
+  opacity: 1;
+  clip-path: inset(49.6% 0 49.6% 0 round 18px);
+}
+html.motion-on .rv-boot.in {
+  clip-path: inset(0 0 0 0 round 18px);
+}
+html.motion-on .rv-boot {
+  transition-duration: 300ms, 1000ms, 1000ms, 1000ms, 900ms;
+}
+
+/* Headline directions. */
+html.motion-on .from-top:not(.in) .wi {
+  transform: translateY(-108%);
+}
+html.motion-on .from-side:not(.in) .wi {
+  transform: translateX(-40%);
+  opacity: 0;
+}
+html.motion-on .from-side .wi {
+  transition:
+    transform 900ms cubic-bezier(0.19, 1, 0.22, 1) var(--wd, 0ms),
+    opacity 500ms ease-out var(--wd, 0ms);
 }

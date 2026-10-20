@@ -36,7 +36,17 @@ Astro strips types at build, so `npm run build` is the gate.
   the Send to story, and marks the selected app in the dock. It is never decoration.
 - The hero object is the ring from `docs/identity/app-icon/index.html` (hero camera), rendered by `scripts/render-ring.mjs`
   into a ring layer (light and dark shadows) and a separate pearl layer, so the pearl can move on its own.
-- Motion: only transform and opacity, ease-out, 120 to 420 ms. Reduced motion keeps every word, tab and dialog and drops
+- Motion (`src/scripts/motion.ts`, styles at the end of `global.css`): each section arrives its own way, so the page reads as
+  scenes. Hero: the ring turns in and the pearl drops into its gap, words rise from masks, the keys press once. Actions: the
+  playground wipes open, the three kinds fan up, a highlight glides between actions, results type themselves in. Story:
+  panels hand over in depth while a mint line fills down the rail. Apps: the headline falls in, the dock icons pop up in a
+  wave, the panel flips through all 14 apps once and lands on Finder; the dock magnifies under the pointer. Your
+  commands: the file slides in and types its lines, the four ways come from the right and each acts itself out; the
+  recording and menu item windows swing in from their side. Compare: tool icons drop onto their columns, the table
+  wipes open, marks pop in, the column under the pointer lights. Privacy: Your Mac opens from its middle, data dots run
+  along the wires into Apropos and out to its files, "Nothing." lands like a stamp. Install: the screen turns on from a
+  line, the popover drops from the menu bar, a timer shows when the next step comes. Page changes use view transitions.
+  Only transform, opacity and clip-path; with reduced motion all of it is off and everything is simply there.
   the flight, the lighting words, the folding wall, the cycling text and the marquee.
 
 ### Primitives taken from the reference sites (technique only)

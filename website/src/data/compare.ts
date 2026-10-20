@@ -20,13 +20,18 @@ export const tools: Tool[] = [
   { id: 'help', name: 'The Help menu search', short: 'Help menu', bestAt: 'Finding where a command lives in the menus of one app.' },
 ];
 
+/** yes: does it; some: does part of it, or only with an add-on or a paid plan; no: does not. Facts rows have none. */
+export type Mark = 'yes' | 'some' | 'no';
+
 export interface Cell {
   text: string;
   source?: string;
+  mark?: Mark;
 }
 
 export interface Row {
   label: string;
+  group: 'Does' | 'Setup and price';
   cells: Record<ToolId, Cell>;
 }
 
@@ -55,6 +60,7 @@ const s = sources;
 export const rows: Row[] = [
   {
     label: 'Default key',
+    group: 'Setup and price',
     cells: {
       apropos: { text: 'Option-Space, any key you like' },
       raycast: { text: 'Option-Space', source: s.raycastSettings },
@@ -65,46 +71,51 @@ export const rows: Row[] = [
   },
   {
     label: 'Menu commands of the app in front',
+    group: 'Does',
     cells: {
-      apropos: { text: 'The list itself: every command, its menu path and its shortcut, as soon as it opens' },
-      raycast: { text: 'Through the Search Menu Bar Items command', source: s.raycastNavigation },
-      spotlight: { text: 'Mixed into results; Command-3 narrows to actions and menu items', source: s.spotlightMenus },
-      alfred: { text: 'With a third-party workflow, which needs the Powerpack', source: s.alfredMenuWorkflow },
-      help: { text: 'Search by name; it points at the item in its menu', source: s.helpMenuGuide },
+      apropos: { text: 'The list itself: every command, its menu path and its shortcut, as soon as it opens', mark: 'yes' },
+      raycast: { text: 'Through the Search Menu Bar Items command', mark: 'yes', source: s.raycastNavigation },
+      spotlight: { text: 'Mixed into results; Command-3 narrows to actions and menu items', mark: 'some', source: s.spotlightMenus },
+      alfred: { text: 'With a third-party workflow, which needs the Powerpack', mark: 'some', source: s.alfredMenuWorkflow },
+      help: { text: 'Search by name; it points at the item in its menu', mark: 'yes', source: s.helpMenuGuide },
     },
   },
   {
     label: 'Actions on what you selected',
+    group: 'Does',
     cells: {
-      apropos: { text: 'Built in for text, files, the page, the folder and git, plus your own' },
-      raycast: { text: 'Extensions can read selected text and Finder items', source: s.raycastApi },
-      spotlight: { text: 'Some actions, such as Change Case and Translate', source: s.spotlightActions },
-      alfred: { text: 'Universal Actions, in the Powerpack', source: s.alfredUniversal },
-      help: { text: 'None' },
+      apropos: { text: 'Built in for text, files, the page, the folder and git, plus your own', mark: 'yes' },
+      raycast: { text: 'Extensions can read selected text and Finder items', mark: 'some', source: s.raycastApi },
+      spotlight: { text: 'Some actions, such as Change Case and Translate', mark: 'some', source: s.spotlightActions },
+      alfred: { text: 'Universal Actions, in the Powerpack', mark: 'some', source: s.alfredUniversal },
+      help: { text: 'None', mark: 'no' },
     },
   },
   {
     label: 'Launch apps and search files',
+    group: 'Does',
     cells: {
-      apropos: { text: 'No, on purpose' },
-      raycast: { text: 'Yes', source: s.raycastPricing },
-      spotlight: { text: 'Yes', source: s.tahoe },
-      alfred: { text: 'Yes', source: s.alfredPowerpack },
-      help: { text: 'No' },
+      apropos: { text: 'No, on purpose', mark: 'no' },
+      raycast: { text: 'Yes', mark: 'yes', source: s.raycastPricing },
+      spotlight: { text: 'Yes', mark: 'yes', source: s.tahoe },
+      alfred: { text: 'Yes', mark: 'yes', source: s.alfredPowerpack },
+      help: { text: 'No', mark: 'no' },
     },
   },
   {
     label: 'Clipboard history',
+    group: 'Does',
     cells: {
-      apropos: { text: 'No' },
-      raycast: { text: 'Yes; three months on the free plan', source: s.raycastPricing },
-      spotlight: { text: 'Yes, once you turn it on', source: s.tahoe },
-      alfred: { text: 'Yes, in the Powerpack', source: s.alfredPowerpack },
-      help: { text: 'No' },
+      apropos: { text: 'No', mark: 'no' },
+      raycast: { text: 'Yes; three months on the free plan', mark: 'yes', source: s.raycastPricing },
+      spotlight: { text: 'Yes, once you turn it on', mark: 'yes', source: s.tahoe },
+      alfred: { text: 'Yes, in the Powerpack', mark: 'some', source: s.alfredPowerpack },
+      help: { text: 'No', mark: 'no' },
     },
   },
   {
     label: 'Account',
+    group: 'Setup and price',
     cells: {
       apropos: { text: 'None' },
       raycast: { text: 'Not required; sync and AI need one', source: s.raycastFaq },
@@ -115,6 +126,7 @@ export const rows: Row[] = [
   },
   {
     label: 'Price',
+    group: 'Setup and price',
     cells: {
       apropos: { text: 'Not announced yet' },
       raycast: { text: 'Free; Pro $10 a month or $96 a year', source: s.raycastPricing },

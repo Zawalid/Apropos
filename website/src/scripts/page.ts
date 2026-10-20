@@ -1,3 +1,4 @@
+import { typeIn } from './motion';
 // Everything that moves or answers on the page. Only transform and opacity are animated. With reduced motion the
 // page stays complete and readable: no flight, no lighting words, no wall, the same tabs and dialog.
 
@@ -242,6 +243,7 @@ if (story) {
   const chapters = $$<HTMLElement>('[data-chapter]', story);
   const panes = $$<HTMLElement>('[data-pane]', story);
   const bead = $<HTMLElement>('[data-story-bead]', story);
+  const fill = $<HTMLElement>('[data-story-fill]', story);
   let last = -1;
   const place = (at: number) => {
     if (!bead?.parentElement) return;
@@ -253,11 +255,15 @@ if (story) {
     const box = track.getBoundingClientRect();
     const run = box.height - (window.innerHeight - 64);
     const p = clamp(-box.top / Math.max(run, 1), 0, 0.9999);
+    fill?.style.setProperty('--fill', p.toFixed(4));
     const at = Math.floor(p * chapters.length);
     if (at === last) return;
     last = at;
     chapters.forEach((c, i) => c.classList.toggle('on', i === at));
-    panes.forEach((c, i) => c.classList.toggle('on', i === at));
+    panes.forEach((c, i) => {
+      c.classList.toggle('on', i === at);
+      c.classList.toggle('past', i < at);
+    });
     place(at);
   });
   window.addEventListener('resize', () => {
@@ -292,12 +298,31 @@ if (lab) {
       if (tag) tag.textContent = need ?? '';
     }
   };
+  // One highlight glides to the chosen action instead of each row lighting on its own.
+  const list = $<HTMLElement>('[data-lab-actions]', lab);
+  // A list may only hold list items, so the highlight is an empty, hidden one.
+  const glide = document.createElement('li');
+  glide.className = 'glide';
+  glide.setAttribute('aria-hidden', 'true');
+  list?.prepend(glide);
+  const moveGlide = (b: HTMLElement | undefined) => {
+    if (!b || !list) return;
+    glide.style.setProperty('--gy', `${b.offsetTop}px`);
+    glide.style.setProperty('--gh', `${b.offsetHeight}px`);
+    glide.classList.add('shown');
+    // Keep it in view inside the list without scrolling the page.
+    const top = b.offsetTop - list.scrollTop;
+    if (top < 0 || top + b.offsetHeight > list.clientHeight) {
+      list.scrollTo({ top: b.offsetTop - list.clientHeight / 2, behavior: 'smooth' });
+    }
+  };
   const run = async (title: string) => {
     const t = await load();
     const action = t.textActions.find((a) => a.title === title);
     if (!action || !input || !result || !name || !effect) return;
     current = title;
     buttons.forEach((b) => b.classList.toggle('on', b.dataset.action === title));
+    moveGlide(buttons.find((b) => b.dataset.action === title));
     name.textContent = title;
     const need = action.needs?.(input.value) ?? null;
     let out: string | null = null;
@@ -317,11 +342,26 @@ if (lab) {
           : action.effect === 'opens'
             ? 'Opens in your browser'
             : 'Replaces the selection';
-    result.textContent = need || out === null ? '' : out;
-    result.classList.remove('swap');
-    void result.offsetWidth;
-    result.classList.add('swap');
+    typeIn(result, need || out === null ? '' : out);
   };
+  // Arrow keys walk the list and Return runs, as in the panel.
+  const walk = (e: KeyboardEvent) => {
+    const shown = buttons.filter((b) => !b.parentElement?.hidden);
+    if (!shown.length) return;
+    const at = shown.findIndex((b) => b.dataset.action === current);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      stop();
+      const next = shown[(at + (e.key === 'ArrowDown' ? 1 : -1) + shown.length) % shown.length];
+      void run(next.dataset.action ?? '');
+      if (document.activeElement?.matches('[data-action]')) next.focus();
+    } else if (e.key === 'Enter' && document.activeElement === search) {
+      e.preventDefault();
+      void run((at >= 0 ? shown[at] : shown[0]).dataset.action ?? '');
+    }
+  };
+  search?.addEventListener('keydown', walk);
+  list?.addEventListener('keydown', walk);
   const stop = () => {
     touched = true;
   };
@@ -354,6 +394,10 @@ if (lab) {
       const li = b.parentElement;
       if (li) li.hidden = Boolean(q) && !(b.dataset.action ?? '').toLowerCase().includes(q);
     }
+    // The first match is chosen, as typing does in the panel.
+    const first = buttons.find((b) => !b.parentElement?.hidden);
+    if (first && q) void run(first.dataset.action ?? '');
+    else moveGlide(buttons.find((b) => b.dataset.action === current));
   });
   // Until someone touches it, it shows a few actions on the sample by itself while on screen.
   const tour = ['UPPERCASE', 'Title Case', 'camelCase', 'snake_case', 'kebab-case', 'Wrap in quotes', 'Base64 encode'];
@@ -408,6 +452,37 @@ for (const group of $$<HTMLElement>('[data-tabs], [data-explorer], [data-switche
       }
     });
   });
+  // The surprise of the Apps section: the first time it is seen, the panel flips through every app, fast, like
+  // pressing the key in one app after another, and lands back on the first.
+  if (motion && group.matches('[data-switcher]')) {
+    // Load every app's panel before the section arrives, so the flip never shows an empty frame.
+    new IntersectionObserver(
+      ([e], obs) => {
+        if (!e.isIntersecting) return;
+        obs.disconnect();
+        $$<HTMLImageElement>('img', group).forEach((img) => (img.loading = 'eager'));
+      },
+      { rootMargin: '900px 0px' },
+    ).observe(group);
+    new IntersectionObserver(
+      ([e], obs) => {
+        if (!e.isIntersecting) return;
+        obs.disconnect();
+        // Decode every panel first so each flip shows a finished picture, then flip with no settle animation.
+        const imgs = $$<HTMLImageElement>('img', group);
+        void Promise.all(imgs.map((img) => img.decode().catch(() => undefined))).then(() => {
+          if (group.dataset.touched) return;
+          group.classList.add('flipping');
+          tabs.forEach((_, i) => window.setTimeout(() => !group.dataset.touched && select(i), 300 + i * 120));
+          window.setTimeout(() => {
+            group.classList.remove('flipping');
+            if (!group.dataset.touched) select(0);
+          }, 300 + tabs.length * 120 + 240);
+        });
+      },
+      { threshold: 0.55 },
+    ).observe(group);
+  }
   // The app switcher and the install steps move on by themselves while on screen, until someone picks one.
   if (motion && (group.matches('[data-switcher]') || group.matches('[data-stepper]'))) {
     const every = group.matches('[data-stepper]') ? 3200 : 2200;
@@ -497,6 +572,8 @@ if (anatomy) {
 // The Your Mac diagram draws its wires once it is in view.
 const mac = $<HTMLElement>('[data-mac]');
 if (mac) {
+  // The data only moves while the diagram is on screen.
+  new IntersectionObserver(([e]) => mac.classList.toggle('live', e.isIntersecting)).observe(mac);
   new IntersectionObserver(
     ([e], obs) => {
       if (!e.isIntersecting) return;

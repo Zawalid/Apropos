@@ -25,7 +25,8 @@ for (const colorScheme of ['light', 'dark']) {
         }
         window.scrollTo(0, 0);
       });
-      await page.waitForTimeout(300);
+      // Long enough for every entrance animation to finish, so contrast is measured on the settled page.
+      await page.waitForTimeout(1800);
       await page.addScriptTag({ content: axe });
       const result = await page.evaluate(async () => {
         const r = await window.axe.run(document, { resultTypes: ['violations'] });

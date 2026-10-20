@@ -23,15 +23,15 @@ import { Image } from 'astro:assets';
     <div class="stepper" data-stepper>
       <div class="step-tabs" role="tablist" aria-label="Install steps">
         <button type="button" role="tab" id="step-tab-0" aria-controls="step-0" aria-selected="true" tabindex="0" data-tab>
-          <span class="n">1</span>
+          <span class="n">1</span><span class="timer" aria-hidden="true"></span>
           <span class="t"><strong>Open the download</strong>Move Apropos to Applications and open it. It lives in the menu bar, with no Dock icon.</span>
         </button>
         <button type="button" role="tab" id="step-tab-1" aria-controls="step-1" aria-selected="false" tabindex="-1" data-tab>
-          <span class="n">2</span>
+          <span class="n">2</span><span class="timer" aria-hidden="true"></span>
           <span class="t"><strong>Allow Accessibility</strong>The welcome guide says why, opens the right page of System Settings, and notices the change without a restart.</span>
         </button>
         <button type="button" role="tab" id="step-tab-2" aria-controls="step-2" aria-selected="false" tabindex="-1" data-tab>
-          <span class="n">3</span>
+          <span class="n">3</span><span class="timer" aria-hidden="true"></span>
           <span class="t"><strong>Press Option-Space</strong>In any app. Type a few letters of what you want, press Return. Escape closes it.</span>
         </button>
       </div>
@@ -121,6 +121,29 @@ import { Image } from 'astro:assets';
     color: var(--ink-2);
     transition: background-color 200ms var(--ease);
   }
+  .step-tabs button {
+    position: relative;
+    overflow: hidden;
+  }
+  /* The step that moves on by itself shows how long until the next one. */
+  .timer {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--mint);
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  :global(html.motion-on) .stepper:not([data-touched]) button[aria-selected='true'] .timer {
+    animation: timer 3200ms linear both;
+  }
+  @keyframes timer {
+    to {
+      transform: scaleX(1);
+    }
+  }
   .step-tabs button[aria-selected='true'] {
     background: var(--card);
     box-shadow: 0 0 0 1px var(--line);
@@ -153,6 +176,12 @@ import { Image } from 'astro:assets';
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--ink);
+  }
+  @keyframes drop {
+    from {
+      opacity: 0;
+      transform: translateY(-14px) scale(0.94);
+    }
   }
   @keyframes step-in {
     from {
@@ -220,6 +249,10 @@ import { Image } from 'astro:assets';
   }
   /* The popover hangs from the Apropos icon: the icon sits right above the middle of the popover, where its notch is. */
   .p-bar {
+    transform-origin: 50% 0;
+    animation-name: drop;
+    animation-duration: 420ms;
+    animation-timing-function: cubic-bezier(0.34, 1.4, 0.64, 1);
     top: 30px;
     right: 12px;
     width: 36%;

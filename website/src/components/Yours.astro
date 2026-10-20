@@ -240,8 +240,7 @@ const file: { t: string; for?: string }[] = [
       transform 90ms var(--ease),
       box-shadow 90ms var(--ease);
   }
-  li[data-way='key']:hover .cap,
-  li[data-way='key']:global(.lit) .cap {
+  li[data-way='key']:hover .cap {
     transform: translateY(2px);
     box-shadow:
       0 0 0 1px var(--line-2),
@@ -269,6 +268,64 @@ const file: { t: string; for?: string }[] = [
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+  }
+
+  /* Each way acts itself out when it lights. */
+  :global(html.motion-on) li:global(.lit) .typed {
+    animation: type-say 520ms steps(3, end) both;
+  }
+  :global(html.motion-on) li:global(.lit) :is(.pill-alias, .w-row) {
+    animation: pop-in 360ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+    animation-delay: 560ms;
+  }
+  :global(html.motion-on) li:global(.lit) .w-row {
+    animation-delay: 640ms;
+  }
+  @keyframes type-say {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px) scale(0.9);
+    }
+  }
+  :global(html.motion-on) li[data-way='key']:global(.lit) .cap {
+    animation: press 520ms var(--ease) both;
+  }
+  :global(html.motion-on) li[data-way='key']:global(.lit) .cap:nth-child(2) {
+    animation-delay: 90ms;
+  }
+  :global(html.motion-on) li[data-way='key']:global(.lit) .cap:nth-child(3) {
+    animation-delay: 180ms;
+  }
+  @keyframes press {
+    20%,
+    60% {
+      transform: translateY(2px);
+      box-shadow:
+        0 0 0 1px var(--line-2),
+        0 1px 0 var(--key-edge);
+    }
+  }
+  :global(html.motion-on) li[data-way='link']:global(.lit) .w-link {
+    animation: link-flash 900ms var(--ease) both;
+  }
+  @keyframes link-flash {
+    30% {
+      background: var(--mint-wash);
+    }
+  }
+  :global(html.motion-on) li[data-way='shortcuts']:global(.lit) .sc {
+    animation: pop-in 360ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  }
+  :global(html.motion-on) li[data-way='shortcuts']:global(.lit) .w-row {
+    animation-delay: 260ms;
   }
 
   /* Recording and menu item keys: the real window large beside the words, alternating sides. */
