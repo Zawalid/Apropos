@@ -113,8 +113,9 @@ Imported with `node scripts/import-extra.mjs <folder>`. Where only a dark pictur
 | `send-confirm` | `panel/send-confirm-safari-dark.png` | Send to, beside the destinations |
 | `settings-menu-keys`, `settings-links` | `settings/shortcuts-items-light-1.png`, `settings/integrations-light-1.png` (right 5.5% cropped off) | Your commands |
 | `onboarding-permission`, `onboarding-done` | `onboarding/permission-dark.png`, `onboarding/done-dark.png` | Install |
+| `recording-permission` | `recording/permission-ready-dark.png` | Privacy, tagged Early |
 
-**Rejected, and why**
+**Rejected, and why** (every file was opened and judged by eye; the light panel and Settings sets were re-shot late and never reviewed by the capture session)
 - **Every light scene in the full run except a few Settings pages.** The real desktop showed through: a football match
   in a browser window sits behind the panel (score bar, pitch, a TV channel's Arabic caption). A pixel scan for pitch green
   flagged 134 of the full run's files; on inspection the light `apps/`, `panel/`, `onboarding/`, `recording/` and `menubar/`
@@ -125,8 +126,9 @@ Imported with `node scripts/import-extra.mjs <folder>`. Where only a dark pictur
 - `settings/shortcuts-items-light-1.png` and `settings/integrations-light-1.png` keep a thin strip of the desktop on the
   right edge, so the import crops it off.
 - `onboarding/welcome-*`: the guide's own Continue button shows as a ghost inside the glass.
+- `recording/*-light.png`: the video shows through, like the other light scenes.
 - Not needed for the story (not wrong): error, loading and permission states of the panel, interface sizes and icon
-  styles, the symbol picker states, the recording bar states, the other Settings pages, the tiled halves of tall pages.
+  styles, the symbol picker states, the recording bar states, the other recording permission and review states, the other Settings pages, the tiled halves of tall pages.
 - `panel/usually-next-finder` and the other panel states that repeat a `website-slots` picture.
 
 Missing and replaced by the closest existing picture: a light version of each added picture (the dark one is used in

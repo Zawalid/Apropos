@@ -27,6 +27,7 @@ const map = {
   'settings-links': { light: 'settings/integrations-light-1.png' },
   'onboarding-permission': { dark: 'onboarding/permission-dark.png' },
   'onboarding-done': { dark: 'onboarding/done-dark.png' },
+  'recording-permission': { dark: 'recording/permission-ready-dark.png' },
 };
 
 for (const [slot, files] of Object.entries(map)) {

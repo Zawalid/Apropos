@@ -43,6 +43,7 @@ export const slots = {
   'settings-menu-keys': { alt: 'Settings, Shortcuts: menu items of Finder and Safari with an alias and a shortcut each', want: 'Settings > Shortcuts with menu items' },
   'settings-links': { alt: 'Settings, Integrations: apropos links, control from outside, and a link builder', want: 'Settings > Integrations' },
   'onboarding-permission': { alt: 'The welcome guide asking for Accessibility, with the ring drawn so far', want: 'onboarding permission step' },
+  'recording-permission': { alt: 'Recording needs two permissions: what Accessibility and Input Monitoring allow, why, and what is never kept', want: 'recording permission screen' },
   'onboarding-done': { alt: 'The last step of the welcome guide: Apropos is ready, with Option-Space on the ring', want: 'onboarding done' },
 } as const;
 
