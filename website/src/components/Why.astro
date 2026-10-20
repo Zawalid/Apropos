@@ -1,0 +1,119 @@
+---
+import Shot from './Shot.astro';
+
+const apps = [
+  {
+    id: 'finder',
+    name: 'finder',
+    shot: 'palette-finder',
+    line: 'Three files are selected, so the list reads Copy 3 Items and Compress 3 Items, then Finder’s own menus with their keys.',
+    alt: 'The Apropos panel over Finder with three files selected: Compress 3 Items pinned, then File, Edit and View commands with their keys.',
+  },
+  {
+    id: 'safari',
+    name: 'safari',
+    shot: 'palette-safari',
+    line: 'The same key in Safari lists Safari’s menus: Close Tab, New Private Window, Find. Nothing was set up first.',
+    alt: 'The Apropos panel over Safari: Close Tab pinned, then New Window, New Private Window, Open File, Share and Find with their keys.',
+  },
+  {
+    id: 'xcode',
+    name: 'xcode',
+    shot: 'palette-xcode',
+    line: 'In Xcode it is Jump to Definition, Re-Indent, Run and Test. The menus of the app you are in, and nothing else.',
+    alt: 'The Apropos panel over Xcode: Jump to Definition pinned, then Project, Open Quickly, Find in Project, Re-Indent, Run and Test with their keys.',
+  },
+];
+---
+<section class="why" id="why" aria-labelledby="why-title" data-why>
+  <div class="why-stage">
+    <div class="wrap why-grid">
+      <div class="why-copy">
+        <h2 id="why-title" class="title why-title">one key.<br />a different palette<br />for every app.</h2>
+
+        <div class="why-tabs" role="tablist" aria-label="Apps" data-why-tabs>
+          <span class="why-pearl" data-why-pearl aria-hidden="true"></span>
+          {apps.map((app, i) => (
+            <button
+              class="why-tab"
+              type="button"
+              role="tab"
+              id={`why-tab-${i}`}
+              aria-controls={`why-panel-${i}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              tabindex={i === 0 ? 0 : -1}
+              data-why-tab
+              title={`Show the panel over ${app.name}`}
+            >{app.name}</button>
+          ))}
+        </div>
+
+        <div class="why-lines" aria-live="polite">
+          {apps.map((app, i) => (
+            <p class="why-line lead" data-why-line aria-hidden={i === 0 ? 'false' : 'true'} data-on={i === 0 ? '' : undefined}>{app.line}</p>
+          ))}
+        </div>
+      </div>
+
+      <div class="why-shots">
+        {apps.map((app, i) => (
+          <div class="why-panel" role="tabpanel" id={`why-panel-${i}`} aria-labelledby={`why-tab-${i}`} data-why-panel data-on={i === 0 ? '' : undefined}>
+            <Shot name={app.shot} alt={app.alt} sizes="(max-width: 899px) 94vw, 760px" />
+          </div>
+        ))}
+        <p class="why-note">Renders of the real panel with example data.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .why { position: relative; z-index: 2; background: var(--ink); padding-block: clamp(80px, 11vw, 160px); }
+  .why-grid { display: grid; gap: clamp(32px, 5vw, 64px); align-items: center; }
+  @media (min-width: 900px) { .why-grid { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); } }
+  .why-title { font-size: clamp(2rem, 4vw, 3.7rem); }
+  .why-copy { display: grid; gap: clamp(24px, 4vh, 40px); align-content: center; }
+
+  .why-tabs { position: relative; display: grid; justify-items: start; gap: 2px; padding-left: 34px; }
+  .why-tab {
+    position: relative; appearance: none; border: 0; background: none; padding: 0.02em 0; cursor: pointer; text-align: left;
+    font: 900 clamp(2.6rem, 6.4vw, 5.6rem)/0.98 var(--font-display); letter-spacing: -0.045em; text-transform: lowercase;
+    color: var(--faint);
+    transition: color 260ms var(--ease-out), transform 260ms var(--ease-out);
+  }
+  .why-tab[aria-selected="true"] { color: var(--text); }
+  @media (hover: hover) and (pointer: fine) {
+    .why-tab:hover { color: var(--muted); transform: translateX(4px); }
+    .why-tab[aria-selected="true"]:hover { color: var(--text); }
+  }
+  .why-tab:focus-visible { outline-offset: 4px; }
+  /* The pearl glides to the current app. */
+  .why-pearl {
+    position: absolute; left: 0; top: 0; width: 14px; height: 14px; border-radius: 50%; background: var(--pearl);
+    box-shadow: 0 0 14px 2px color-mix(in srgb, var(--pearl) 45%, transparent);
+    transform: translateY(var(--y, 0.6em)); transition: transform 460ms var(--ease-pearl);
+  }
+
+  .why-lines { display: grid; }
+  .why-line { grid-area: 1 / 1; max-width: 28rem; opacity: 0; transform: translateY(8px); visibility: hidden; transition: opacity 260ms var(--ease-out), transform 260ms var(--ease-out), visibility 0s linear 260ms; }
+  .why-line[data-on] { opacity: 1; transform: none; visibility: visible; transition-delay: 120ms, 120ms, 0s; }
+
+  .why-shots { position: relative; display: grid; }
+  .why-panel { grid-area: 1 / 1; opacity: 0; visibility: hidden; transform: scale(0.985); transition: opacity 360ms var(--ease-out), transform 460ms var(--ease-out), visibility 0s linear 360ms; }
+  .why-panel[data-on] { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+  .why-note { grid-area: 2 / 1; color: var(--faint); font-size: 0.88rem; margin-top: 16px; }
+
+  /* Without scripting every app is shown, one under the other. */
+  :global(html:not(.js)) .why-panel { grid-area: auto; opacity: 1; visibility: visible; transform: none; margin-bottom: 24px; }
+  :global(html:not(.js)) .why-line { grid-area: auto; opacity: 1; visibility: visible; transform: none; margin-bottom: 12px; }
+  :global(html:not(.js)) .why-pearl { display: none; }
+
+  /* Pinned and driven by scroll on a big screen. */
+  @media (min-width: 900px) and (min-height: 600px) {
+    :global(.motion) .why { height: 340svh; padding-block: 0; }
+    :global(.motion) .why-stage { position: sticky; top: 0; height: 100svh; display: grid; align-items: center; padding-top: var(--nav-h); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .why-pearl, .why-panel, .why-line, .why-tab { transition: none; }
+  }
+</style>

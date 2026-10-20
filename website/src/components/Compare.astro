@@ -1,0 +1,63 @@
+---
+const rows: [want: string, reach: 'launcher' | 'apropos'][] = [
+  ['open an app or find a file', 'launcher'],
+  ['paste something I copied an hour ago', 'launcher'],
+  ['run Product > Test in Xcode', 'apropos'],
+  ['compress the three files I selected', 'apropos'],
+  ['turn the selected text into snake_case', 'apropos'],
+  ['send this page to Things', 'apropos'],
+  ['do five steps in a row, in two apps', 'apropos'],
+];
+---
+<section class="raycast" id="raycast" aria-labelledby="raycast-title">
+  <div class="wrap raycast-grid">
+    <div class="raycast-copy">
+      <h2 id="raycast-title" class="title">it sits next to raycast. it does not replace it.</h2>
+      <p class="lead">
+        A launcher answers &ldquo;where do I go&rdquo;. Apropos answers &ldquo;what can I do here&rdquo;. It never launches apps or
+        manages your clipboard, and it opens with its own key, so both can stay installed.
+      </p>
+      <dl class="facts">
+        <div><dt>Different key</dt><dd>Apropos opens with <span class="key">Option</span> <span class="key">Space</span>. Raycast&rsquo;s default is <span class="key">Command</span> <span class="key">Space</span>.</dd></div>
+        <div><dt>They can talk</dt><dd>An <code>apropos://search?q=</code> link opens the panel with a query typed. Raycast quicklinks, Alfred and Terminal can all call it.</dd></div>
+      </dl>
+    </div>
+
+    <table class="pick" data-reveal>
+      <caption class="sr-only">When to reach for a launcher and when for Apropos</caption>
+      <thead><tr><th scope="col">I want to</th><th scope="col">Reach for</th></tr></thead>
+      <tbody>
+        {rows.map(([want, reach]) => (
+          <tr class={reach}>
+            <th scope="row">{want}</th>
+            <td>{reach === 'apropos' ? 'Apropos' : 'your launcher'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<style>
+  .raycast { position: relative; z-index: 2; background: var(--ink-2); padding-block: clamp(80px, 11vw, 160px); }
+  .raycast-grid { display: grid; gap: clamp(40px, 6vw, 88px); align-items: start; }
+  @media (min-width: 960px) { .raycast-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr); } }
+  .raycast-copy { display: grid; gap: 24px; }
+  .raycast-copy .title { max-width: 10.5em; }
+  .raycast-copy .lead { max-width: 32rem; }
+  .facts { display: grid; gap: 22px; margin-top: 8px; max-width: 32rem; }
+  .facts > div { display: grid; gap: 4px; padding-top: 18px; border-top: 1px solid var(--line-strong); }
+  .facts dt { font-weight: 700; }
+  .facts dd { color: var(--muted); }
+  .facts code { color: var(--text); }
+
+  .pick { width: 100%; border-collapse: collapse; font-size: clamp(1.02rem, 1.4vw, 1.2rem); }
+  .pick thead th { text-align: left; padding: 0 0 14px; font: 500 0.85rem var(--font-mono); color: var(--faint); border-bottom: 1px solid var(--line-strong); }
+  .pick thead th:last-child { text-align: right; }
+  .pick tbody th { text-align: left; font-weight: 500; padding: 20px 16px 20px 0; border-bottom: 1px solid var(--line); }
+  .pick td { text-align: right; padding: 20px 0; border-bottom: 1px solid var(--line); font-weight: 700; white-space: nowrap; }
+  .pick .launcher th, .pick .launcher td { color: var(--faint); font-weight: 500; }
+  .pick .apropos td { color: var(--mint); }
+  .pick tbody tr { transition: background-color 200ms var(--ease-out); }
+  @media (hover: hover) and (pointer: fine) { .pick tbody tr:hover { background: var(--ink-3); } }
+</style>

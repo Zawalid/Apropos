@@ -1,0 +1,11 @@
+# Response headers for the static assets.
+# /_astro files are content-hashed, so they can be cached forever.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fonts keep stable file names, so use a long but not immutable lifetime.
+/fonts/*
+  Cache-Control: public, max-age=2592000
+
+/*.png
+  Cache-Control: public, max-age=86400

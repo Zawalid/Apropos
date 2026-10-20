@@ -1,0 +1,58 @@
+---
+import { links, version } from '../data/site';
+const open = 'open "apropos://open"';
+---
+<section class="install" id="install" aria-labelledby="install-title" data-install>
+  <div class="install-panel" data-install-panel>
+    <div class="wrap install-grid">
+      <div class="install-main">
+        <h2 id="install-title" class="display install-title">get apropos.</h2>
+        <p class="install-lead">One download. Version {version} needs macOS 14 or later.</p>
+        <div class="install-actions">
+          <a class="btn btn-ink" href={links.download}>
+            Download for macOS
+            <svg class="i-down" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3.5v11m0 0 4.5-4.5M10 14.5 5.5 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="install-guide link" href={links.releases}>All releases</a>
+        </div>
+      </div>
+
+      <ol class="install-side">
+        <li class="step">
+          <h3>The first launch</h3>
+          <p>Apropos is not notarized yet, so macOS asks you to confirm the first launch. It is the cost of distributing outside the Mac App Store without an Apple Developer account. The source is open if you would rather read it first.</p>
+        </li>
+        <li class="step">
+          <h3>Allow Accessibility</h3>
+          <p>Apropos explains why it needs it, opens the right page of System Settings, and notices the change without a restart. Nothing else is asked for until you use a feature that needs it.</p>
+        </li>
+        <li class="step">
+          <h3>Press Option-Space</h3>
+          <p>Or open the panel from a terminal, which also shows that it works from outside:</p>
+          <div class="cmd"><pre><code>{open}</code></pre><button class="cmd-copy" type="button" data-copy={open} title="Copy the command">Copy</button></div>
+        </li>
+      </ol>
+    </div>
+  </div>
+  <p class="sr-only" aria-live="polite" data-copy-status></p>
+</section>
+
+<style>
+  .install { position: relative; z-index: 2; background: var(--ink); }
+  .install-panel { background: var(--mint); color: var(--mint-ink); padding-block: clamp(80px, 11vw, 160px); }
+  .install-grid { display: grid; gap: clamp(48px, 6vw, 96px); }
+  @media (min-width: 1040px) { .install-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+  .install-main { display: grid; gap: 26px; align-content: start; }
+  .install-title { font-size: clamp(3.4rem, 11vw, 10rem); padding-bottom: 0.1em; }
+  .install-lead { font-size: clamp(1.1rem, 1.5vw, 1.3rem); line-height: 1.5; max-width: 26rem; color: var(--mint-muted); }
+  .install-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; margin-top: 8px; }
+  .install-guide { font-weight: 700; color: var(--mint-ink); }
+  .install-guide:focus-visible { outline-color: var(--mint-ink); }
+
+  .install-side { list-style: none; display: grid; gap: 34px; counter-reset: step; }
+  .step { display: grid; gap: 10px; padding-top: 22px; border-top: 1px solid var(--mint-line); }
+  .step h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; letter-spacing: -0.015em; text-transform: lowercase; }
+  .step p { color: var(--mint-muted); }
+  .step .cmd { margin-top: 4px; border-color: var(--mint-line); }
+  :global(.motion) .install-panel { will-change: clip-path; }
+</style>

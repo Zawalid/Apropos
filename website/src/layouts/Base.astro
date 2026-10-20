@@ -1,0 +1,199 @@
+---
+import '../styles/global.css';
+import icon from '../assets/icon.png';
+import { getImage } from 'astro:assets';
+import { site, links, version } from '../data/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Path of the share image under /public. */
+  image?: string;
+  imageAlt?: string;
+  /** The home page has its sections on the same page; every other page links back to them. */
+  home?: boolean;
+  noindex?: boolean;
+  structuredData?: object[];
+}
+const {
+  title = site.title,
+  description = site.description,
+  image = '/og.png',
+  imageAlt = 'The Apropos panel over Finder: the menu commands of the app in front, with their keys.',
+  home = true,
+  noindex = false,
+  structuredData: pageData,
+} = Astro.props;
+const root = home ? '' : '/';
+const canonical = new URL(Astro.url.pathname, site.url).toString();
+const logo = await getImage({ src: icon, width: 64, height: 64, format: 'webp' });
+const ogImage = new URL(image, site.url).toString();
+
+const appData = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: site.name,
+  description,
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: 'macOS 14 or later',
+  softwareVersion: version,
+  url: site.url,
+  downloadUrl: links.download,
+  image: new URL('/og.png', site.url).toString(),
+  featureList: [
+    'Menu commands of the app in front, searchable from one hotkey',
+    'Actions for the selected text, files or page',
+    'Send a selection to Notes, Things, Reminders, Obsidian, Bear or a Mail draft',
+    'Sequences and your own commands',
+    'Learns what you usually run next, on your Mac only',
+  ],
+  author: { '@type': 'Person', name: 'Walid Zakan', url: links.author },
+  codeRepository: links.repo,
+};
+const jsonLd = pageData ?? [appData];
+const year = new Date().getFullYear();
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f2f5f4" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b1418" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <meta name="robots" content={noindex ? 'noindex' : 'index, follow, max-image-preview:large'} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={imageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@Zawaalid" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <link rel="preload" href="/fonts/Barlow-900.woff2" as="font" type="font/woff2" crossorigin />
+    <script is:inline>
+      (function () {
+        var d = document.documentElement;
+        d.classList.add('js');
+        if (!window.matchMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        d.classList.add('motion');
+        // If the animation module never starts, fall back to the static layout.
+        setTimeout(function () { if (!window.__aproposMotion) d.classList.remove('motion'); }, 6000);
+      })();
+    </script>
+    {jsonLd.map((data) => <script type="application/ld+json" set:html={JSON.stringify(data)} />)}
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the content</a>
+
+    <header class="nav" data-nav>
+      <div class="nav-inner">
+        <a class="brand" href={home ? '#top' : '/'} aria-label={home ? 'Apropos, back to the top' : 'Apropos, home'}>
+          <img src={logo.src} width="30" height="30" alt="" />
+          <span>Apropos</span>
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a class="link" href={`${root}#why`}>Why</a>
+          <a class="link" href={`${root}#tour`}>Tour</a>
+          <a class="link" href={`${root}#apps`}>Apps</a>
+          <a class="link" href={`${root}#raycast`}>Raycast</a>
+          <a class="link" href={`${root}#safety`}>Safety</a>
+          <a class="link" data-keep href={`${root}#install`}>Install</a>
+          <a class="link" href={links.repo}>GitHub</a>
+        </nav>
+        <a class="btn btn-mint btn-sm nav-cta" href={links.download}>Download</a>
+      </div>
+    </header>
+
+    <main id="main"><slot /></main>
+
+    <footer class="foot">
+      <div class="wrap foot-grid">
+        <div class="foot-about">
+          <a class="brand" href={home ? '#top' : '/'} aria-label={home ? 'Apropos, back to the top' : 'Apropos, home'}>
+            <img src={logo.src} width="32" height="32" alt="" loading="lazy" />
+            <span>Apropos</span>
+          </a>
+          <p>A command palette for the Mac app in front of you. Native, local and private.</p>
+          <p class="foot-author">Made by <a class="link strong" href={links.author}>Walid Zakan</a>.</p>
+        </div>
+        <nav class="foot-col" aria-label="Project">
+          <p class="foot-h">Project</p>
+          <a class="link" href={links.download}>Download</a>
+          <a class="link" href={links.repo}>Source code</a>
+          <a class="link" href={links.releases}>Releases</a>
+          <a class="link" href={links.changelog}>Changelog</a>
+          <a class="link" href={links.design}>Design notes</a>
+        </nav>
+        <nav class="foot-col" aria-label="Contact">
+          <p class="foot-h">Contact</p>
+          <a class="link" href={links.issues}>Report an issue</a>
+          <a class="link" href={links.author}>zawalid.com</a>
+          <a class="link" href={links.github}>GitHub</a>
+          <a class="link" href={links.x}>X</a>
+        </nav>
+      </div>
+      <div class="wrap foot-base">
+        <p>Version {version}. This site has no analytics and no cookies, like the app.</p>
+        <p>&copy; {year} Walid Zakan</p>
+      </div>
+      <p class="foot-mark" aria-hidden="true"></p>
+    </footer>
+
+    <script>
+      import '../scripts/main';
+    </script>
+
+    <style>
+      .nav { position: fixed; inset: 0 0 auto 0; z-index: 40; transition: background-color 300ms var(--ease-out), box-shadow 300ms var(--ease-out); }
+      .nav-inner { display: flex; align-items: center; gap: clamp(16px, 3vw, 40px); height: 72px; padding-inline: var(--gutter); max-width: calc(var(--max) + 2 * var(--gutter)); margin-inline: auto; transition: height 300ms var(--ease-out); }
+      .nav.is-scrolled { background: color-mix(in srgb, var(--ink) 92%, transparent); box-shadow: 0 1px 0 var(--line); }
+      .nav.is-scrolled .nav-inner { height: var(--nav-h); }
+      .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; letter-spacing: -0.02em; border-radius: 8px; }
+      .brand img { border-radius: 8px; }
+      .nav-links { display: flex; gap: clamp(14px, 2vw, 28px); margin-left: auto; font-size: 0.98rem; font-weight: 500; }
+      .nav-links a { color: var(--muted); }
+      .nav-links a:hover { color: var(--text); }
+      .nav-cta { transition: opacity 300ms var(--ease-out), transform 300ms var(--ease-out), visibility 300ms, background-color 200ms var(--ease-out); }
+      .js .nav:not(.show-cta) .nav-cta { opacity: 0; transform: translateY(-6px) scale(0.96); visibility: hidden; }
+      @media (max-width: 880px) {
+        .nav-links a:not([data-keep]) { display: none; }
+        .nav-inner { height: 60px; gap: 14px; }
+      }
+
+      .foot { position: relative; overflow: hidden; border-top: 1px solid var(--line); padding-top: clamp(56px, 8vw, 104px); }
+      .foot-grid { display: grid; gap: 40px; grid-template-columns: 1fr; }
+      @media (min-width: 760px) { .foot-grid { grid-template-columns: 2fr 1fr 1fr; } }
+      .foot-about { display: grid; gap: 14px; align-content: start; max-width: 26rem; color: var(--muted); }
+      .foot-about .brand { margin-bottom: 6px; justify-self: start; }
+      .foot-author { color: var(--text); }
+      .strong { font-weight: 700; color: var(--mint); }
+      .foot-col { display: grid; gap: 10px; align-content: start; }
+      .foot-col a { color: var(--muted); justify-self: start; }
+      .foot-col a:hover { color: var(--text); }
+      .foot-h { font: 500 0.85rem var(--font-mono); color: var(--faint); margin-bottom: 6px; }
+      .foot-base { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: clamp(48px, 7vw, 88px); padding-top: 22px; padding-bottom: 22px; border-top: 1px solid var(--line); color: var(--faint); font-size: 0.95rem; }
+      .foot-mark::before { content: "apropos"; }
+      .foot-mark {
+        margin: 0; padding: 0; text-align: center; user-select: none;
+        font-family: var(--font-display); font-weight: 900; text-transform: lowercase; letter-spacing: -0.06em; line-height: 0.74;
+        font-size: clamp(5rem, 24vw, 24rem);
+        color: var(--ink-2);
+        margin-bottom: -0.12em;
+      }
+    </style>
+  </body>
+</html>

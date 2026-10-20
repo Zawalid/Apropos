@@ -1,0 +1,90 @@
+---
+const rows: { when: string; where: string; does: string[] }[] = [
+  {
+    when: 'files selected',
+    where: 'in finder',
+    does: ['Compress to a zip', 'Copy path', 'Copy name', 'Reveal in Finder', 'Open in Terminal here', 'Copy SHA-256', 'Send to a Mail draft', 'Copy or move into a folder'],
+  },
+  {
+    when: 'text selected',
+    where: 'in any app',
+    does: ['UPPERCASE', 'snake_case', 'Title Case', 'Format JSON', 'Base64 encode', 'Sort lines', 'Wrap as a code block', 'Send to Notes, Things or Bear'],
+  },
+  {
+    when: 'a page open',
+    where: 'in your browser',
+    does: ['Copy URL', 'Copy as a Markdown link', 'Copy the title', 'Send the page to Obsidian', 'Send it to Reminders'],
+  },
+  {
+    when: 'a git folder',
+    where: 'in finder or an editor',
+    does: ['Copy the branch name', 'Copy the short commit hash', 'Open in Terminal here', 'Open the repository on its website'],
+  },
+  {
+    when: 'nothing selected',
+    where: 'in any app with a menu bar',
+    does: ['Product > Test in Xcode', 'New Private Window in Safari', 'Show Path Bar in Finder', 'Jump to Definition in Xcode'],
+  },
+  {
+    when: 'your own',
+    where: 'wherever you set them',
+    does: ['Speak the selection', 'A link with the selection in it', 'Run a Shortcut or a program', 'A sequence of the above'],
+  },
+];
+---
+<section class="apps" id="apps" aria-labelledby="apps-title">
+  <div class="wrap">
+    <div class="apps-head">
+      <h2 id="apps-title" class="title">what it offers depends on what you are holding.</h2>
+      <p class="lead">
+        The list changes with the app in front and with what is selected in it. Nothing here needs setting up. These are real
+        examples, not a promise of every app.
+      </p>
+    </div>
+
+    <ul class="rows" aria-label="Examples by situation">
+      {rows.map((row) => (
+        <li class="row" data-row data-reveal>
+          <span class="pearl-mark" aria-hidden="true"></span>
+          <h3 class="row-name">
+            <span class="row-when">{row.when}</span>
+            <span class="row-where">{row.where}</span>
+          </h3>
+          <ul class="does" aria-label={`What it offers with ${row.when} ${row.where}`}>
+            {row.does.map((item) => <li><span class="slash" aria-hidden="true">/</span> {item}</li>)}
+          </ul>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .apps { position: relative; z-index: 2; background: var(--ink); padding-block: clamp(80px, 11vw, 160px); }
+  .apps-head { display: grid; gap: 24px; }
+  @media (min-width: 960px) { .apps-head { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 64px; align-items: end; } }
+  .apps-head .title { max-width: 11em; }
+  .rows { list-style: none; margin-top: clamp(48px, 7vw, 96px); border-top: 1px solid var(--line-strong); }
+  .row {
+    position: relative; display: grid; gap: 18px; padding: clamp(24px, 3.4vw, 40px) 0 clamp(24px, 3.4vw, 40px) 0;
+    border-bottom: 1px solid var(--line-strong);
+  }
+  @media (min-width: 900px) { .row { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr); gap: 56px; align-items: baseline; padding-left: 28px; } }
+  .pearl-mark {
+    position: absolute; left: 0; top: clamp(34px, 4.4vw, 56px); width: 10px; height: 10px; border-radius: 50%; background: var(--pearl);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--pearl) 50%, transparent);
+    opacity: 0; transform: scale(0.4); transition: opacity 240ms var(--ease-out), transform 420ms var(--ease-pearl);
+    display: none;
+  }
+  @media (min-width: 900px) { .pearl-mark { display: block; } }
+  .row-name { display: grid; gap: 4px; font-weight: 400; }
+  .row-when { font-family: var(--font-display); font-weight: 900; font-size: clamp(2rem, 4vw, 3.6rem); line-height: 0.95; letter-spacing: -0.04em; text-transform: lowercase; color: var(--text); }
+  .row-where { color: var(--faint); font-size: 1rem; }
+  .does { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 22px; font: 500 0.95rem/1.5 var(--font-mono); color: var(--muted); }
+  .slash { color: var(--mint); }
+  @media (hover: hover) and (pointer: fine) {
+    .row:hover .pearl-mark { opacity: 1; transform: none; }
+    .row:hover .does { color: var(--text); }
+  }
+  .does { transition: color 240ms var(--ease-out); }
+</style>

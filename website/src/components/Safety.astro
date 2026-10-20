@@ -1,0 +1,94 @@
+---
+import Shot from './Shot.astro';
+import { links } from '../data/site';
+
+const rules = [
+  ['read what is in front of you', 'you open the panel. It reads the app, the selection and the page then, keeps them in memory and never saves them.'],
+  ['skip a password field', 'always. Secure text fields are never read, and the selection inside password managers is dropped.'],
+  ['press a menu item', 'you chose it in the panel, or pressed the key you gave it.'],
+  ['run your command from a link or Shortcuts', 'you allowed that command for outside use and confirmed it the first time. A caller cannot tell whether other commands exist.'],
+  ['send a selection to another app', 'you picked the destination. Mail drafts, file moves and the Share menu need a second Return, and a draft is never sent for you.'],
+  ['learn what you run next', 'it stores command names, apps and times. Never selections, web addresses, document names or what you typed.'],
+];
+const statement = 'no account. no server. nothing you type, select or copy is recorded.';
+const details = [
+  ['Accessibility', 'Needed to read and press menus in the app in front. It is also why Apropos is not in the Mac App Store, which does not allow it.'],
+  ['Automation', 'macOS asks the first time Apropos controls Finder, Notes or Mail. If you say no, the action names the app it could not reach and nothing is lost.'],
+  ['Forget', 'Settings lists what Apropos keeps, with its size, and a Forget button for each. You can pause context or learning for an hour from the menu bar.'],
+];
+---
+<section class="safety" id="safety" aria-labelledby="safety-title">
+  <div class="wrap">
+    <div class="safety-head">
+      <h2 id="safety-title" class="title safety-title" data-scale-in>it only acts when you asked it to.</h2>
+      <p class="lead">
+        Apropos reads other apps through Accessibility, so what it does with that access is written down and tested. A selected
+        piece of text can never become program code: it travels only as data, never as part of a command.
+      </p>
+    </div>
+
+    <dl class="ledger" aria-label="When Apropos acts">
+      {rules.map(([what, when]) => (
+        <div class="row" data-ledger-row>
+          <span class="rule-line" aria-hidden="true"></span>
+          <dt><span class="will">Apropos will</span> {what}</dt>
+          <dd><span class="only">only when</span> {when}</dd>
+        </div>
+      ))}
+    </dl>
+
+    <div class="quiet" data-quiet>
+      <div class="quiet-copy">
+        <h3 class="statement" data-statement>
+          {statement.split(' ').map((w) => (<span class="sw">{w} </span>))}
+        </h3>
+        <dl class="details">
+          {details.map(([term, desc]) => (
+            <div class="detail" data-reveal>
+              <dt>{term}</dt>
+              <dd>{desc}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+      <div class="quiet-shot" data-reveal>
+        <Shot name="settings-privacy-and-data" alt="The Privacy and data page of Apropos: Everything stays on this Mac, no network connections, and which permissions macOS lets it use." sizes="(max-width: 899px) 94vw, 520px" />
+        <p class="quiet-note">The app's own Privacy and data page, rendered from the real app.</p>
+      </div>
+    </div>
+
+    <p class="safety-foot">
+      The rules for what a command may do, in full: <a class="link" href={links.safetyDoc}>the safety notes</a>.
+    </p>
+  </div>
+</section>
+
+<style>
+  .safety { position: relative; z-index: 2; background: var(--ink); padding-block: clamp(96px, 12vw, 180px); }
+  .safety-head { display: grid; gap: 28px; }
+  @media (min-width: 960px) { .safety-head { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 64px; align-items: end; } }
+  .safety-title { max-width: 10.5em; }
+
+  .ledger { margin-top: clamp(48px, 7vw, 96px); }
+  .row { position: relative; display: grid; gap: 8px 40px; padding: 26px 0; }
+  @media (min-width: 900px) { .row { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); align-items: baseline; padding: 30px 0; } }
+  .rule-line { position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--line-strong); transform-origin: 0 50%; }
+  .ledger .row:last-child { border-bottom: 1px solid var(--line-strong); }
+  dt { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.4rem, 2.3vw, 2.1rem); line-height: 1.05; letter-spacing: -0.02em; }
+  .will { color: var(--faint); }
+  dd { color: var(--muted); max-width: 36rem; }
+  .only { font: 500 0.82rem var(--font-mono); color: var(--mint); margin-right: 0.5em; }
+
+  .quiet { display: grid; gap: clamp(40px, 6vw, 80px); margin-top: clamp(80px, 10vw, 160px); align-items: start; }
+  @media (min-width: 960px) { .quiet { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); } }
+  .statement { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.9rem, 3.8vw, 3.5rem); line-height: 1.02; letter-spacing: -0.03em; text-transform: lowercase; }
+  .sw { color: var(--faint); transition: color 260ms var(--ease-out); }
+  :global(html:not(.motion)) .sw, .sw:global(.lit) { color: var(--text); }
+  .details { display: grid; gap: 22px; margin-top: clamp(32px, 4vw, 56px); max-width: 34rem; }
+  .detail { display: grid; gap: 4px; padding-top: 18px; border-top: 1px solid var(--line-strong); }
+  .detail dt { font: 700 1.05rem var(--font-body); letter-spacing: 0; }
+  .detail dd { font-size: 1rem; }
+  .quiet-note { margin-top: 14px; color: var(--faint); font-size: 0.88rem; }
+  .safety-foot { margin-top: clamp(40px, 5vw, 64px); color: var(--muted); }
+  .safety-foot a { color: var(--mint); font-weight: 700; }
+</style>

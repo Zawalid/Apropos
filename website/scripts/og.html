@@ -1,0 +1,20 @@
+<!doctype html>
+<meta charset="utf-8" />
+<style>
+  @font-face { font-family: "Barlow"; font-weight: 900; src: url("../public/fonts/Barlow-900.woff2") format("woff2"); }
+  @font-face { font-family: "Barlow"; font-weight: 800; src: url("../public/fonts/Barlow-800.woff2") format("woff2"); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1200px; height: 630px; background: #0b1418; overflow: hidden; }
+  body { position: relative; font-family: "Barlow", ui-sans-serif, system-ui, sans-serif; color: #eaf3f1; }
+  .brand { position: absolute; left: 64px; top: 56px; display: flex; align-items: center; gap: 14px; font-weight: 800; font-size: 34px; letter-spacing: -0.02em; }
+  .brand img { width: 48px; height: 48px; border-radius: 11px; }
+  h1 { position: absolute; left: 64px; top: 140px; margin: 0; font-weight: 900; font-size: 82px; line-height: 0.92; letter-spacing: -0.045em; text-transform: lowercase; }
+  h1 span { color: #ff8a4c; }
+  .sub { position: absolute; left: 66px; top: 402px; width: 480px; font-size: 26px; line-height: 1.4; color: #a6b6b3; }
+  .panel { position: absolute; left: 690px; top: 130px; width: 700px; transform: rotate(-3deg); box-shadow: 0 40px 80px -20px rgba(0,0,0,.8); border-radius: 27px; }
+  .panel img { display: block; width: 100%; border-radius: 27px; }
+</style>
+<div class="brand"><img src="../src/assets/icon.png" alt="" />Apropos</div>
+<h1>the right<br />command<br />for the moment<span>.</span></h1>
+<p class="sub">A Mac command palette for the app in front of you. Press Option-Space.</p>
+<div class="panel"><img src="../src/assets/shots/palette-finder-dark.png" alt="" /></div>
