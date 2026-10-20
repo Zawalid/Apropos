@@ -42,7 +42,11 @@
 
         init(enableElectronTree: Bool) { self.enableElectronTree = enableElectronTree }
 
-        static var reportURL: URL { SettingsStore.supportDirectory.appendingPathComponent("ax-probe.txt") }
+        /// One file per mode, in Apropos's own support folder, so the two runs never overwrite each other.
+        var reportURL: URL {
+            SettingsStore.supportDirectory.appendingPathComponent(
+                "Apropos/ax-probe-\(enableElectronTree ? "electron" : "plain").txt")
+        }
 
         func toggle() {
             if isRunning { finish("stopped by you") } else { start() }
@@ -113,8 +117,8 @@
         private func write(_ header: String, _ lines: [String]) {
             let text = ([header, ""] + lines).joined(separator: "\n") + "\n"
             try? FileManager.default.createDirectory(
-                at: Self.reportURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try? text.write(to: Self.reportURL, atomically: true, encoding: .utf8)
+                at: reportURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? text.write(to: reportURL, atomically: true, encoding: .utf8)
         }
 
         // MARK: Reading the Accessibility tree
