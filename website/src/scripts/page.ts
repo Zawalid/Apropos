@@ -326,6 +326,53 @@ if (keyTile && motion) {
   ).observe(keyTile);
 }
 
+// Questions: each answer slides open and closed instead of jumping. The details element keeps its native behaviour
+// (keyboard, find in page, no script); the script only animates the height between the two states and fades the answer.
+// With reduced motion it opens at once.
+const accordionMs = 260;
+for (const item of $$<HTMLDetailsElement>('details[data-q]')) {
+  const summary = $<HTMLElement>('summary', item);
+  const answer = $<HTMLElement>('.a', item);
+  if (!summary || !answer) continue;
+  let running: Animation | null = null;
+  let fade: Animation | null = null;
+  summary.addEventListener('click', (e) => {
+    if (!motion) return;
+    e.preventDefault();
+    const opening = !item.open || item.dataset.closing === '1';
+    const from = item.getBoundingClientRect().height;
+    running?.cancel();
+    if (opening) {
+      delete item.dataset.closing;
+      item.open = true;
+    }
+    const to = opening ? summary.offsetHeight + answer.offsetHeight : summary.offsetHeight;
+    if (!opening) item.dataset.closing = '1';
+    item.style.overflow = 'hidden';
+    running = item.animate([{ height: `${from}px` }, { height: `${to}px` }], {
+      duration: accordionMs,
+      easing: 'cubic-bezier(0.23, 1, 0.32, 1)',
+    });
+    fade?.cancel();
+    fade = answer.animate(
+      opening
+        ? [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }]
+        : [{ opacity: 1 }, { opacity: 0 }],
+      { duration: opening ? accordionMs : accordionMs * 0.6, easing: 'ease-out', fill: 'forwards' },
+    );
+    running.onfinish = () => {
+      running = null;
+      item.style.overflow = '';
+      if (item.dataset.closing === '1') {
+        delete item.dataset.closing;
+        item.open = false;
+      }
+      fade?.cancel();
+      fade = null;
+    };
+  });
+}
+
 // Questions: filter as you type.
 const faq = $<HTMLElement>('[data-faq]');
 if (faq) {

@@ -62,6 +62,17 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
   const current = await page.evaluate(() => document.querySelector('[data-nav] a[aria-current="true"]')?.dataset.for);
   check(current === 'holding', `${label}: the nav marks ${current} while reading holding`);
 
+  // FAQ: a click opens an answer (animated with motion) and a second click closes it.
+  const q = page.locator('details[data-q]').first();
+  await q.scrollIntoViewIfNeeded();
+  await q.locator('summary').click();
+  await page.waitForTimeout(400);
+  const openH = await q.evaluate((d) => (d.open ? d.getBoundingClientRect().height : 0));
+  check(openH > 80, `${label}: the first answer did not open (${openH}px)`);
+  await q.locator('summary').click();
+  await page.waitForTimeout(400);
+  check(!(await q.evaluate((d) => d.open)), `${label}: the first answer did not close`);
+
   // FAQ: typing filters, a miss says so.
   const search = page.locator('[data-faq-search]');
   await search.scrollIntoViewIfNeeded();
