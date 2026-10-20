@@ -1,8 +1,10 @@
 # Apropos website
 
-The marketing site for Apropos, version 2 ("pearl and paper"). Astro, static output, deployed on Cloudflare with Wrangler.
-Only the tooling is shared with the Lopper site (Astro, wrangler, the check scripts). Layout, type, colour, motion and copy are
-Apropos's own, from `docs/identity/brand.md`.
+The marketing site for Apropos, version 3 ("One key, slowed down"). Astro, static output, deployed on Cloudflare with
+Wrangler. Only the tooling is shared with the Lopper site (Astro, wrangler, the check scripts). The direction and why it
+looks the way it does: [docs/inspiration.md](docs/inspiration.md) (eight reference sites scrolled end to end with
+Playwright, the primitives taken from each) and [docs/direction.md](docs/direction.md) (the story arc, layout language and
+motion grammar).
 
 ```bash
 cd website
@@ -16,8 +18,8 @@ With the preview running in another terminal:
 
 ```bash
 npm run check:seo    # titles, descriptions, canonicals, share image, JSON-LD, sitemap, robots, dashes, emoji, 375px overflow
-npm run check:ui     # Option-Space demo, app dock and explorer keys, nav pearl, FAQ search, copy; with and without motion
-npm run check:a11y   # axe on every page, light and dark, 1440 and 375 wide
+npm run check:ui     # Option-Space, the scenes' states, app switcher, selection actions, tally, command ways, install, nav, FAQ, copy; with and without motion
+npm run check:a11y   # axe on every page, light and dark, 1440 and 375, with and without motion
 npm run shots        # one screenshot per viewport down every section of every page, light and dark, into .shots/
 npm run og           # redraws public/og.png from scripts/og.html
 npm run ring         # re-renders the hero ring and pearl from the app icon's 3D scene
@@ -29,55 +31,42 @@ Astro strips types at build, so `npm run build` is the gate.
 
 ## Art direction
 
-- Paper `#F3F5F4` and ink `#0E1A1D` in light, the brand teal-black `#0B1418` in dark. Both themes follow the system.
-- SF Pro (the system font) only, 600 and 700, sentence case, tight tracking at display sizes. No web fonts are loaded.
-- Ink pills for the one main action per view (paper pills in dark). Mint only for matched letters and links. The pearl is the
-  one "now" marker: it leaves the hero ring as you scroll, docks under the section you are reading in the nav, rides the line in
-  the Send to story, and marks the selected app in the dock. It is never decoration.
-- The hero object is the ring from `docs/identity/app-icon/index.html` (hero camera), rendered by `scripts/render-ring.mjs`
-  into a ring layer (light and dark shadows) and a separate pearl layer, so the pearl can move on its own.
-- Motion (`src/scripts/motion.ts`, styles at the end of `global.css`): each section arrives its own way, so the page reads as
-  scenes. Hero: the ring turns in and the pearl drops into its gap, words rise from masks, the keys press once. Actions: the
-  playground wipes open, the three kinds fan up, a highlight glides between actions, results type themselves in. Story:
-  panels hand over in depth while a mint line fills down the rail. Apps: the headline falls in, the dock icons pop up in a
-  wave, the panel flips through all 14 apps once and lands on Finder; the dock magnifies under the pointer. Your
-  commands: the file slides in and types its lines, the four ways come from the right and each acts itself out; the
-  recording and menu item windows swing in from their side. Compare: tool icons drop onto their columns, the table
-  wipes open, marks pop in, the column under the pointer lights. Privacy: Your Mac opens from its middle, data dots run
-  along the wires into Apropos and out to its files, "Nothing." lands like a stamp. Install: the screen turns on from a
-  line, the popover drops from the menu bar, a timer shows when the next step comes. Page changes use view transitions.
-  Only transform, opacity and clip-path; with reduced motion all of it is off and everything is simply there.
-  the flight, the lighting words, the folding wall, the cycling text and the marquee.
-
-### Primitives taken from the reference sites (technique only)
-
-From the contact sheets of every section of these sites (`/private/tmp/claude-501/ref/full`):
-- Raycast: a real product frame with dock-like tabs that swap the screen (One key section); words that light as you
-  scroll (the gap statement); pressable key caps (hero, Make your own).
-- Apple macOS page: the claim plus one sentence rhythm, a section nav with a current marker, footnotes for measured numbers.
-- CleanShot: bento tiles that each do one small thing (alias, key press, copy link); alternating picture and text blocks.
-- Droppy: one art direction around every picture (all captures over the same wallpaper), a moving wall of app icons to
-  show breadth, a searchable FAQ.
+- **The page is paper lying on the night desktop the app was captured on.** The desk (`wallpaper-night.webp`, the wallpaper
+  behind the glass in every capture) is fixed behind the whole page. Day scenes are sheets of paper with rounded ends;
+  night scenes are the desk showing between them. In dark mode the paper is the brand teal-black, so day and night still
+  differ. The header capsules take the light of whatever scene is under them.
+- Paper `#F3F5F4` and ink `#0E1A1D`, teal-black `#0B1418` in dark. SF Pro only, 600 and 700, sentence case. Mint only for
+  matched letters and links. The pearl only for "now": the section you are reading in the nav, the current app in the
+  switcher, the Usually next row, the install step you are reading.
+- **Keys look like real keys** (`src/components/Key.astro`): a skirt you see below the top face, a lit, slightly dished top
+  set into it, Mac legends (the option sign top right, "option" bottom left), a shadow on the desk, and the pair tilted a
+  little away like keys on a desk. Pressing moves only the top face. The same keycap, in one element, is `.kbd` for keys
+  inside text. White keys on paper, space grey keys in dark and on the desk.
+- No section template. Each scene has one verb, its own layout and its own direction of motion (table in
+  docs/direction.md). Scenes that tell a moment are pinned: the scene is taller than the screen, its stage sticks, and
+  `src/scripts/scenes.ts` turns the scroll inside it into a progress value that each scene turns into transforms. Only
+  `transform`, `opacity` and `clip-path` move. With reduced motion nothing is pinned and every scene is laid out in its
+  finished state; every control still works.
 
 ## What is on each page
 
 ### Home `/`
 
-The idea: **the page is your desktop.** Every picture of the app is a real window, cut out of a real capture, floating on
-the page with a shadow the page draws. No framed screenshots, no captions under pictures: the words sit beside the windows,
-and the stories are told by pressing keys and scrolling.
+| # | Scene (`src/components/scenes/`) | Light | What happens | Pictures |
+|---|---|---|---|---|
+| 0 | Press (`#top`) | day to night | Two real looking keys under the headline. Scrolling presses them (so does a click, or Option-Space on your keyboard, which plays the moment), a circle of night opens out of the space bar and the real panel rises through it, then types n and f: New Folder first | `hero-open`, `hero-n`, `hero-nf` |
+| 1 | Deep (`#deep`) | night | Xcode's menu bar, then Debug, View Debugging, Rendering, Color Hits Green and Misses Red open as a staircase of type down and right while the camera follows; then the staircase folds into its row in the real panel after typing clean | `deep-xcode` |
+| 2 | Slip (`#slip`) | day | s h w o across the whole width; the w and o jump over each other, the word becomes show in mint, the real results for shwo rise | `slip` |
+| 3 | Apps (`#apps`) | day | The first sideways scene: the real panel over 14 apps passes as a strip, the app names slide behind at another speed, an app switcher moves the pearl; click an icon or use the arrow keys | `app-*` |
+| 4 | Holding (`#holding`) | day | One big paragraph. Select any words and an action list opens at your selection; pick one and the page's own words change in place, the old ones struck and lifted away (the app's functions, `src/scripts/textTools.ts`). A phrase is marked for you until you select. Then files, page and folder or repository beside the real panel holding a page and a selection | `holding` |
+| 5 | Send (`#send`) | night | A dotted route crosses the desk; a chip with a Safari selection rides it, turns to capitals past UPPERCASE, and waits at the Mail draft for a second Return. Each station shows its real window | `send-list`, `sequence`, `confirm` |
+| 6 | Next (`#next`) | day | A tally: twelve marks arrive, nine fill, the numeral counts to 9, and the pearl drops onto the Usually next row of the real panel, whose reason says the same | `usually-next` |
+| 7 | Yours (`#yours`) | night | Radial: the command file in the middle, the four ways to run it at its corners, flying out from it; each in turn lights the lines it comes from and acts itself out. Then recording and keys for menu items, both Early | `recording-review`, `alias-popover` |
+| 8 | Compare (`#compare`) | day | The sourced table, revealed by a mint scan line as it scrolls up; marks pop as the line passes; the column under the pointer lights. Phones pick one tool | none |
+| 9 | Private (`#private`) | night | The app icon's ring arrives large and settles into "Apropos makes 0 network connections" as its zero; the promise lights word by word. Then what is read, kept (real file names) and never kept, and the permissions, beside the real Privacy and data page scrolling in its window | `privacy-page` |
+| 10 | Install (`#install`) | day | The keys come back; the space bar is the download. Three steps on one line, the pearl on the step you are reading. Then the questions, searchable | none |
 
-| Section | What happens | Windows |
-|---|---|---|
-| Hero | Headline, the ring with its pearl, key caps. Pressing them, or Option-Space, opens the real panel over the page where the app puts it; typing n then f steps it to New Folder first, with the caps lighting as you type | `hero-open`, `hero-n`, `hero-nf` |
-| Gap (`#gap`) | A statement that lights word by word; measured numbers and the folding wall once `apps.json` exists | none |
-| How it works (`#how`) | Pinned on wide screens: one panel stays while seven chapters scroll past and it changes to the state each one is about; the pearl travels down a line beside the words. On phones each chapter is its words then its window | `deep-xcode`, `slip`, `holding`, `send-list`, `sequence`, `confirm`, `usually-next` |
-| Actions (`#holding`) | A working playground: type or pick a sample selection, choose any of the 22 text actions and see the result. The functions are ported line for line from `TextTools.swift` (`src/scripts/textTools.ts`), and actions that do not fit the text are dimmed with the reason, as in the app. Then files, page and folder or repository with one result each and their actions | none |
-| Apps (`#apps`) | An app switcher: a dock of 14 real app icons, the panel jumps to that app's real menu bar; it moves on by itself while on screen until you pick one | `app-*` (13 from the capture run, Safari from the website slots) |
-| Your commands (`#yours`) | One real command file (`docs/user-commands.md` format) beside its four ways to run it: alias, key, link, Shortcuts. Pointing at a way lights the lines it comes from; it walks through them by itself while on screen. Then recording and keys for menu items as two large feature rows (both Early) | `recording-review`, `alias-popover` |
-| Compare (`#compare`) | The sourced table | none |
-| Privacy (`#private`) | A "Your Mac" boundary: what is read flows into Apropos, what is kept flows out to the real file names in `~/Library/Application Support/Apropos` (from `docs/data-layer.md`), and under it "Leaves your Mac: Nothing" with what is never kept. Then the permissions beside the real Privacy and data page scrolling inside its window, with the recording permission window over it | `privacy-page` (light and dark), `recording-permission` |
-| Install (`#install`) | Download, then a stepper beside a small Mac screen: the capture wallpaper (paper or night), a drawn menu bar, and each step's real window on it: the menu bar popover hanging from the Apropos icon, the welcome guide asking for Accessibility, then the panel itself. Then the FAQ, whose answers slide open | `menubar-popover`, `onboarding-permission`, `hero-nf`; wallpapers from the capture spike |
+Footer: on the desk, the ring and the links.
 
 ### Other pages
 
@@ -122,8 +111,8 @@ menu) and command titles. Titles under menus that can hold your own content (His
 mailboxes, Share, Services and similar) are counted but never written. Review the file before committing it.
 
 It needs a terminal that has Accessibility. The agent shell that built this site does not, so **apps.json does not exist yet**
-and the page shows no numbers: the Gap section is the statement only, One key shows no shortcut keys, the explorer and `/apps/`
-are hidden. `node scripts/harvest-apps.mjs --launch` also opens missing apps hidden (`open -gj`) and quits only those it opened.
+and `/apps/` shows icons only. The v3 home page shows no measured numbers at all; once the file exists, the counts belong
+in `/apps/` (and could become a scene of their own, for example a count under the Deep staircase). `node scripts/harvest-apps.mjs --launch` also opens missing apps hidden (`open -gj`) and quits only those it opened.
 
 ## Where each claim comes from
 
@@ -183,10 +172,11 @@ The global hotkey on a real Mac, live Accessibility reading (the pictures use sa
 - **Deploy.** `deploy-workflow.yml.example` is ready to move to `.github/workflows/website.yml` with the two Cloudflare secrets.
   Nothing has been pushed or deployed.
 
-## Quality gates (last run 2026-10-20, the "page is your desktop" redesign, without measured data)
+## Quality gates (last run 2026-10-20, v3 "One key, slowed down", without measured data)
 
-- `npm run build`, `check:seo`, `check:ui` (demo, story, app switcher, install steps, nav, FAQ, copy; with and without
-  motion) and `check:a11y` (axe, light and dark, 1440 and 375) pass.
-- Lighthouse 12, home page: mobile 99/100/100/100 (LCP 2.0 s, 267 KiB), desktop 100/100/100/100.
-- Nothing scrolls sideways at 375 px: the windows that run off the edge on phones are clipped by their section.
-- Section screenshots of the home page, desktop and 375 px, light and dark, were taken with Playwright and reviewed.
+- `npm run build`, `check:seo`, `check:ui` (with and without motion) and `check:a11y` (axe, light and dark, 1440 and 375,
+  with and without motion) pass.
+- Lighthouse 13, home page: mobile 99/100/100/100 (LCP 2.0 s, CLS 0, 243 KiB), desktop 100/100/100/100 (LCP 0.5 s).
+- Nothing scrolls sideways at 375 px.
+- Every scene was captured with Playwright still and mid-scroll, desktop and 375 px, light and dark, and the frames were
+  reviewed; the reduced motion page was captured top to bottom.

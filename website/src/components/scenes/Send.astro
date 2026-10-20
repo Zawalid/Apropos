@@ -1,0 +1,331 @@
+---
+/**
+ * Scene 5, Send. A route crosses the night desk from left to right in a wave. A chip holding a selection from Safari
+ * rides it: past UPPERCASE it turns to capitals, at Notes it is dropped in, and at the Mail draft it stops and waits for
+ * a second Return. At each station the real panel shows that step: the Send selection to list, the sequence draft, and
+ * the Mail draft waiting with its one-line preview. Claims from docs/destinations.md and docs/sequences.md.
+ */
+import { Image } from 'astro:assets';
+import Window from '../Window.astro';
+import safari from '../../assets/apps/safari.png';
+import notes from '../../assets/apps/notes.png';
+import mail from '../../assets/apps/mail.png';
+
+const stations = [
+  {
+    at: 0.06,
+    icon: safari,
+    name: 'Safari',
+    win: 'send-list' as const,
+    title: 'Send it where it belongs.',
+    line: 'Notes, Reminders, Things, Obsidian, Bear, a Mail draft, a folder or the Share menu. Each shows only when its app is installed.',
+  },
+  {
+    at: 0.5,
+    icon: notes,
+    name: 'UPPERCASE, then Notes',
+    win: 'sequence' as const,
+    title: 'Chain steps across apps.',
+    line: 'Command-K adds any row to a draft. Each step gets the result of the one before, so Notes receives the capitals, not the original.',
+  },
+  {
+    at: 0.92,
+    icon: mail,
+    name: 'Mail draft',
+    win: 'confirm' as const,
+    title: 'Nothing leaves without a second Return.',
+    line: 'Anything that leaves a trace waits with a one-line preview of what will go. A Mail draft never sends itself.',
+  },
+];
+const phrase = 'Quarterly numbers look good';
+---
+<section class="scene send night" id="send" aria-labelledby="send-title" data-pin data-scene="send" data-light="night" style="--len: 340svh">
+  <div class="stage">
+    <h2 id="send-title" class="claim title">Pass it on.</h2>
+
+    <div class="route" data-route aria-hidden="true">
+      <svg class="wave" viewBox="0 0 1000 120" preserveAspectRatio="none" data-wave>
+        <path d="M0 60 C 120 0, 220 0, 330 60 S 540 120, 660 60 S 880 0, 1000 60" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" stroke-dasharray="2 8" stroke-linecap="round" />
+      </svg>
+      <svg class="wave lit" viewBox="0 0 1000 120" preserveAspectRatio="none" data-lit>
+        <path d="M0 60 C 120 0, 220 0, 330 60 S 540 120, 660 60 S 880 0, 1000 60" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" data-path />
+      </svg>
+      <span class="mark upper" style="--x:0.33">UPPERCASE</span>
+      <span class="chip" data-chip><span data-chip-text>{phrase}</span></span>
+      <span class="ret kbd" data-ret>&#8617;</span>
+    </div>
+
+    <ol class="stations">
+      {stations.map((s, i) => (
+        <li class="station" style={`--x:${s.at}`} data-station={i}>
+          <div class="above">
+            <p class="who"><Image src={s.icon} alt="" width={28} height={28} densities={[1, 2]} /><span>{s.name}</span></p>
+            <div class="win"><Window id={s.win} width={420} /></div>
+          </div>
+          <div class="below">
+            <h3>{s.title}</h3>
+            <p class="line">{s.line}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .stage {
+    display: grid;
+    gap: 40px;
+    padding: clamp(96px, 12vw, 150px) var(--gutter);
+  }
+  .title {
+    font-size: clamp(40px, 6vw, 88px);
+  }
+  .route {
+    display: none;
+  }
+  .stations {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 48px 32px;
+  }
+  .station {
+    display: grid;
+    gap: 14px;
+    align-content: start;
+  }
+  .who {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+  .who img {
+    width: 28px;
+    height: 28px;
+  }
+  .station h3 {
+    font-family: var(--display);
+    font-size: clamp(22px, 2vw, 28px);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+  .station .line {
+    color: var(--ink-2);
+    font-size: 16px;
+    max-width: 26em;
+  }
+
+  /* Live: the route runs across the middle, the stations hang above and below it. */
+  :global(html.live) .send .stage {
+    display: block;
+    padding: 0;
+  }
+  :global(html.live) .send .title {
+    position: absolute;
+    left: var(--gutter);
+    top: clamp(84px, 11vh, 112px);
+    opacity: var(--t, 1);
+  }
+  :global(html.live) .send .route {
+    display: block;
+    position: absolute;
+    left: var(--gutter);
+    right: var(--gutter);
+    top: 62%;
+    height: 120px;
+    translate: 0 -50%;
+    color: var(--on-night-3);
+  }
+  .wave {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .wave.lit {
+    color: var(--night-mint);
+    clip-path: inset(-20px calc(100% - var(--reach, 0%)) -20px -20px);
+  }
+  .mark {
+    position: absolute;
+    left: calc(var(--x) * 100%);
+    top: 50%;
+    translate: -50% -50%;
+    background: #0b1a1f;
+    font: 600 12px/1 var(--mono);
+    letter-spacing: 0.06em;
+    color: var(--on-night-2);
+    padding: 6px 9px;
+    border: 1px solid var(--night-line);
+    border-radius: 999px;
+  }
+  .chip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: #eaf3f1;
+    color: #0b1418;
+    font-weight: 600;
+    font-size: 15px;
+    white-space: nowrap;
+    translate: -50% -50%;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+    will-change: transform;
+  }
+  .ret {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    translate: 18px -50%;
+    font-size: 22px;
+    transition: transform 120ms var(--ease);
+  }
+  .ret.hit {
+    transform: translateY(2px);
+    color: var(--night-mint);
+  }
+  .station,
+  .above,
+  .below {
+    display: grid;
+    gap: 14px;
+    align-content: start;
+  }
+  :global(html.live) .send .stations {
+    display: block;
+  }
+  :global(html.live) .send .station {
+    position: absolute;
+    inset: 0 auto 0 calc(var(--gutter) + (100% - var(--gutter) * 2) * var(--x));
+    width: min(34vw, 500px);
+    translate: -50% 0;
+    display: block;
+  }
+  :global(html.live) .send .station[data-station='0'] {
+    translate: -10% 0;
+  }
+  :global(html.live) .send .station[data-station='2'] {
+    translate: -90% 0;
+  }
+  :global(html.live) .send .above,
+  :global(html.live) .send .below {
+    position: absolute;
+    left: 0;
+    right: 0;
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  :global(html.live) .send .above {
+    bottom: calc(38% + 74px);
+  }
+  :global(html.live) .send .below {
+    top: calc(62% + 84px);
+    gap: 8px;
+  }
+  :global(html.live) .send .station .line {
+    font-size: 14px;
+  }
+  :global(html.live) .send .station h3 {
+    font-size: clamp(18px, 1.6vw, 24px);
+  }
+  @media (max-width: 860px) {
+    :global(html.live) .send .route {
+      left: 24px;
+      right: 24px;
+    }
+    :global(html.live) .send .station {
+      left: 50%;
+      width: min(86vw, 420px);
+      translate: -50% 0 !important;
+    }
+    :global(html.live) .send .station .line {
+      display: none;
+    }
+    .chip {
+      font-size: 13px;
+    }
+  }
+</style>
+
+<script>
+  import { onScene, span, easeInOut, easeOut } from '../../scripts/scenes';
+
+  const scene = document.querySelector<HTMLElement>('[data-scene="send"]');
+  const route = scene?.querySelector<HTMLElement>('[data-route]');
+  const lit = scene?.querySelector<HTMLElement>('[data-lit]');
+  const path = scene?.querySelector<SVGPathElement>('[data-path]');
+  const chip = scene?.querySelector<HTMLElement>('[data-chip]');
+  const chipText = scene?.querySelector<HTMLElement>('[data-chip-text]');
+  const ret = scene?.querySelector<HTMLElement>('[data-ret]');
+  const stations = [...(scene?.querySelectorAll<HTMLElement>('[data-station]') ?? [])];
+  const title = scene?.querySelector<HTMLElement>('.title');
+  const phrase = chipText?.textContent ?? '';
+
+  // Where on the path a given x (0 to 1) is, found once by walking the path.
+  let table: Array<[number, number, number]> = [];
+  const build = () => {
+    if (!path) return;
+    const len = path.getTotalLength();
+    table = [];
+    for (let i = 0; i <= 200; i++) {
+      const pt = path.getPointAtLength((len * i) / 200);
+      table.push([pt.x / 1000, pt.y / 120, i / 200]);
+    }
+  };
+  build();
+  const yAt = (x: number) => {
+    let best = table[0] ?? [0, 0.5, 0];
+    for (const t of table) if (Math.abs(t[0] - x) < Math.abs(best[0] - x)) best = t;
+    return best[1];
+  };
+
+  onScene(scene ?? null, (p) => {
+    if (!route || !lit || !chip || !chipText || !ret) return;
+    // The chip leaves Safari at .1 and reaches the Return key at .86.
+    const x = easeInOut(span(p, 0.1, 0.84));
+    const w = route.clientWidth;
+    const h = route.clientHeight;
+    // The chip rides from 4% to 94% of the route, so it never hangs off the screen.
+    const along = 0.04 + x * 0.9;
+    const half = chip.offsetWidth / 2;
+    const cx = Math.max(half - 12, Math.min(w - half + 12, along * w));
+    const cy = yAt(along) * h;
+    chip.style.transform = `translate(${cx.toFixed(1)}px, ${cy.toFixed(1)}px)`;
+    lit.style.setProperty('--reach', `${(along * 100).toFixed(2)}%`);
+    chipText.textContent = along > 0.33 ? phrase.toUpperCase() : phrase;
+    const hit = p > 0.9;
+    ret.classList.toggle('hit', hit);
+    chip.style.opacity = String(1 - span(p, 0.9, 0.96));
+
+    // Each station shows while the chip is near it.
+    const near = [
+      [0, 0.34],
+      [0.3, 0.68],
+      [0.64, 1.01],
+    ];
+    stations.forEach((s, i) => {
+      const [a, b] = near[i] as [number, number];
+      const inn = easeOut(span(x, a, a + 0.08));
+      const out = i < 2 ? span(x, b - 0.06, b) : 0;
+      const o = (inn * (1 - out)).toFixed(3);
+      const up = s.querySelector<HTMLElement>('.above');
+      const down = s.querySelector<HTMLElement>('.below');
+      if (up) {
+        up.style.opacity = o;
+        up.style.transform = `translateY(${((1 - inn) * 28 - out * 20).toFixed(1)}px) scale(${(0.94 + 0.06 * inn).toFixed(3)})`;
+      }
+      if (down) {
+        down.style.opacity = o;
+        down.style.transform = `translateY(${((1 - inn) * -16 + out * 12).toFixed(1)}px)`;
+      }
+    });
+    title?.style.setProperty('--t', String(1 - span(p, 0.04, 0.1)));
+  });
+  window.addEventListener('resize', build);
+</script>

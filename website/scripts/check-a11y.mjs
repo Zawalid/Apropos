@@ -1,5 +1,6 @@
 // Runs axe on every page in light and dark, at 1440 and 375 wide, after scrolling through the page so lazy pictures
-// and scroll states are in place. Fails on any violation.
+// and scroll states are in place, then again with reduced motion, where every scene is laid out in its finished state so
+// all of its text is measured. Fails on any violation.
 //   npx astro preview --port 4321 &   then   node scripts/check-a11y.mjs [http://localhost:4321]
 import { chromium } from 'playwright-core';
 import { readFileSync } from 'node:fs';
@@ -12,9 +13,10 @@ const sitemap = await (await fetch(`${base}/sitemap.xml`)).text();
 const pages = [...sitemap.matchAll(/<loc>https?:\/\/[^/]+(\/[^<]*)<\/loc>/g)].map((m) => m[1]).concat('/404/');
 const browser = await chromium.launch({ channel: 'chrome' });
 let failures = 0;
+for (const reducedMotion of ['no-preference', 'reduce'])
 for (const colorScheme of ['light', 'dark']) {
   for (const width of [1440, 375]) {
-    const context = await browser.newContext({ viewport: { width, height: 900 }, colorScheme });
+    const context = await browser.newContext({ viewport: { width, height: 900 }, colorScheme, reducedMotion });
     const page = await context.newPage();
     for (const path of pages) {
       await page.goto(base + path, { waitUntil: 'networkidle' });
@@ -34,7 +36,7 @@ for (const colorScheme of ['light', 'dark']) {
       });
       if (result.length) {
         failures += result.length;
-        console.log(`${path} ${colorScheme} ${width}:`);
+        console.log(`${path} ${colorScheme} ${width}${reducedMotion === 'reduce' ? ' reduced motion' : ''}:`);
         for (const line of result) console.log('  ' + line);
       }
     }
@@ -46,4 +48,4 @@ if (failures) {
   console.log(`\n${failures} violation(s)`);
   process.exit(1);
 }
-console.log(`OK: axe found nothing on ${pages.length} pages, light and dark, 1440 and 375.`);
+console.log(`OK: axe found nothing on ${pages.length} pages, light and dark, 1440 and 375, with and without motion.`);

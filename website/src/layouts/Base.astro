@@ -4,6 +4,9 @@ import { Image } from 'astro:assets';
 import icon from '../assets/icon.png';
 import { links, site, version } from '../data/site';
 import Footer from '../components/Footer.astro';
+import { getImage } from 'astro:assets';
+import wallpaper from '../assets/wallpaper-night.webp';
+const desk = await getImage({ src: wallpaper, width: 1800, format: 'webp', quality: 70 });
 
 interface Props {
   title?: string;
@@ -22,11 +25,12 @@ const ogImage = new URL('/og.png', site.url).toString();
 const at = home ? '' : '/';
 
 const nav = [
-  { id: 'gap', label: 'Why' },
-  { id: 'how', label: 'How it works' },
-  { id: 'holding', label: 'Actions' },
+  { id: 'deep', label: 'Menus' },
   { id: 'apps', label: 'Apps' },
-  { id: 'yours', label: 'Your commands' },
+  { id: 'holding', label: 'Selection' },
+  { id: 'send', label: 'Send' },
+  { id: 'next', label: 'Learns' },
+  { id: 'yours', label: 'Yours' },
   { id: 'compare', label: 'Compare' },
   { id: 'private', label: 'Privacy' },
 ];
@@ -78,8 +82,9 @@ const jsonLd = [
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
+    <div class="desk" aria-hidden="true"><img src={desk.src} alt="" width="1800" height="1164" decoding="async" /></div>
     <header class="top" data-top>
-      <div class="wrap bar">
+      <div class="bar">
         <a class="brand" href="/" aria-label="Apropos home">
           <Image src={icon} alt="" width={28} height={28} densities={[1, 2, 3]} loading="eager" />
           <span>Apropos</span>
@@ -92,52 +97,53 @@ const jsonLd = [
           </ul>
           <span class="nav-bead" data-nav-bead aria-hidden="true"></span>
         </nav>
-        <a class="get" href={`${at}#install`} data-get>Download</a>
+        <a class="get" href={`${at}#install`}>Download</a>
       </div>
     </header>
     <main id="main">
-      <slot />
+      {home ? <slot /> : <div class="sheet page-sheet" data-light="day"><slot /></div>}
     </main>
     <Footer />
     <script>
-      import '../scripts/motion';
-      import '../scripts/page';
+      import '../scripts/site';
     </script>
   </body>
 </html>
 
 <style>
+  /* The header floats over both lights: a capsule that takes the colours of whatever scene is under it. */
   .top {
-    position: sticky;
-    top: 0;
+    position: fixed;
+    inset: 0 0 auto;
     z-index: 50;
-    background: color-mix(in srgb, var(--paper) 88%, transparent);
-    border-bottom: 1px solid transparent;
-    transition: border-color 200ms var(--ease);
-  }
-  @supports (backdrop-filter: blur(1px)) {
-    .top {
-      background: color-mix(in srgb, var(--paper) 78%, transparent);
-      backdrop-filter: saturate(1.4) blur(14px);
-    }
-  }
-  :global(html.scrolled) .top {
-    border-bottom-color: var(--line);
+    padding: 12px var(--gutter) 0;
+    pointer-events: none;
   }
   .bar {
     display: flex;
     align-items: center;
-    gap: 20px;
-    height: 64px;
+    justify-content: space-between;
+    gap: 16px;
+    max-width: calc(var(--max) + 48px);
+    margin-inline: auto;
+  }
+  .brand,
+  .sections,
+  .get {
+    pointer-events: auto;
   }
   .brand {
     display: inline-flex;
     align-items: center;
     gap: 9px;
+    height: 44px;
+    padding: 0 14px 0 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--paper) 90%, transparent);
     color: var(--ink);
     text-decoration: none;
     font-weight: 700;
-    font-size: 17px;
+    font-size: 16px;
     letter-spacing: -0.02em;
     flex: none;
   }
@@ -147,32 +153,29 @@ const jsonLd = [
   }
   .sections {
     position: relative;
-    flex: 1;
     min-width: 0;
-    display: flex;
-    justify-content: center;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--paper) 90%, transparent);
   }
   .sections ul {
     display: flex;
     gap: 2px;
     overflow-x: auto;
     scrollbar-width: none;
-    padding: 6px 2px 10px;
-    margin-bottom: -4px;
+    padding: 4px;
   }
   .sections ul::-webkit-scrollbar {
     display: none;
   }
   .sections a {
     display: block;
-    padding: 6px 11px;
+    padding: 8px 12px;
     border-radius: 999px;
     color: var(--ink-2);
     font-size: 14px;
     font-weight: 500;
     text-decoration: none;
     white-space: nowrap;
-    transition: color 160ms var(--ease);
   }
   .sections a:hover,
   .sections a[aria-current='true'] {
@@ -181,10 +184,10 @@ const jsonLd = [
   .nav-bead {
     position: absolute;
     left: 0;
-    bottom: 2px;
-    width: 6px;
-    height: 6px;
-    margin-left: -3px;
+    bottom: 3px;
+    width: 5px;
+    height: 5px;
+    margin-left: -2.5px;
     border-radius: 50%;
     background: var(--pearl);
     box-shadow: 0 0 8px var(--pearl-glow);
@@ -202,34 +205,32 @@ const jsonLd = [
     flex: none;
     display: inline-flex;
     align-items: center;
-    min-height: 36px;
-    padding: 0 16px;
+    height: 44px;
+    padding: 0 18px;
     border-radius: 999px;
     background: var(--pill);
     color: var(--pill-ink);
     font-size: 14px;
     font-weight: 600;
     text-decoration: none;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-4px);
-    transition:
-      opacity 200ms var(--ease),
-      transform 200ms var(--ease),
-      visibility 0s linear 200ms;
   }
-  :global(html.past-hero) .get {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-    transition-delay: 0s;
+  /* Over a night scene the capsules turn to night. */
+  :global(html.under-night) .top {
+    --paper: #0b1418;
+    --ink: #eaf3f1;
+    --ink-2: rgba(234, 243, 241, 0.72);
+    --pill: #eaf3f1;
+    --pill-ink: #0b1418;
+    --pearl: #ff8a4c;
   }
-  @media (max-width: 860px) {
+  /* Every other page is one sheet of paper on the desk. */
+  .page-sheet {
+    padding: 72px 0 clamp(80px, 10vw, 140px);
+    border-radius: 0 0 var(--sheet-r) var(--sheet-r);
+  }
+  @media (max-width: 900px) {
     .sections {
       display: none;
-    }
-    .bar {
-      justify-content: space-between;
     }
   }
 </style>

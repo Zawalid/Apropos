@@ -1,0 +1,427 @@
+---
+/**
+ * Scene 7, Yours. Radial, on the night desk: one command file in the middle (the format and example of
+ * docs/user-commands.md) and the four ways to run it at its four corners, joined to it by lines. They fly out from the
+ * file when the scene arrives; each in turn lights the lines of the file it comes from and acts itself out. Pointing at
+ * or focusing a way does the same. Then recording and keys for menu items, both tagged Early.
+ */
+import Window from '../Window.astro';
+
+const link = 'apropos://run?command=say&text=hello';
+
+// The file, line by line. `for` ties a line to the way of running it that it enables.
+const file: { t: string; for?: string }[] = [
+  { t: '{' },
+  { t: '  "command": {' },
+  { t: '    "title": "Speak selection",' },
+  { t: '    "requires": ["selectedText"],' },
+  { t: '    "backend": { "type": "shell",' },
+  { t: '      "executable": "/usr/bin/say",' },
+  { t: '      "stdin": "text" }' },
+  { t: '  },' },
+  { t: '  "aliases": ["say"],', for: 'alias' },
+  { t: '  "hotkey": { "keyCode": 1,', for: 'key' },
+  { t: '    "modifiers": ["control", "option"] },', for: 'key' },
+  { t: '  "allowFromURL": true', for: 'link shortcuts' },
+  { t: '}' },
+];
+---
+<section class="scene yours night" id="yours" aria-labelledby="yours-title" data-scene="yours" data-light="night">
+  <div class="wrap">
+    <div class="head">
+      <h2 id="yours-title" class="claim">Make your own.</h2>
+      <p class="line">
+        A link, a Shortcut or a program becomes a row in the list. Write it once, reach it four ways. It asks before its
+        first run, and it can say what it needs, like selected text.
+      </p>
+    </div>
+
+    <div class="radial" data-radial>
+      <figure class="file">
+        <figcaption>commands/speak-selection.json</figcaption>
+        <pre tabindex="0" aria-label="The command file"><code>{file.map((l) => <span class="ln" data-for={l.for}>{l.t}{'\n'}</span>)}</code></pre>
+      </figure>
+
+      <svg class="wires" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M30 22 L12 10" /><path d="M70 22 L88 10" /><path d="M30 78 L12 90" /><path d="M70 78 L88 90" />
+      </svg>
+
+      <ol class="ways">
+        <li class="way nw" data-way="alias" tabindex="0">
+          <p class="demo" aria-hidden="true"><span class="typed" data-typed>say</span><span class="alias">say</span><span class="row">Speak selection</span></p>
+          <h3>Type its alias</h3>
+          <p>The alias puts it first, whatever else matches.</p>
+        </li>
+        <li class="way ne" data-way="key" tabindex="0">
+          <p class="demo" aria-hidden="true"><span class="kbd">&#8963;</span><span class="kbd">&#8997;</span><span class="kbd">S</span></p>
+          <h3>Press its key</h3>
+          <p>From any app. A key that macOS, the panel or another command uses is flagged.</p>
+        </li>
+        <li class="way sw" data-way="link" tabindex="0">
+          <p class="demo"><code>{link}</code><button class="copy" type="button" data-copy={link}>Copy</button></p>
+          <h3>Open its link</h3>
+          <p>From a Raycast quicklink, Alfred or a script, once you allow it from outside.</p>
+        </li>
+        <li class="way se" data-way="shortcuts" tabindex="0">
+          <p class="demo" aria-hidden="true"><span class="sc">Run Apropos Command</span><span class="row">Speak selection</span></p>
+          <h3>Use it in Shortcuts</h3>
+          <p>The Run Apropos Command action lists the commands you allowed.</p>
+        </li>
+      </ol>
+    </div>
+
+    <div class="early-pair">
+      <div class="ep ep-rec">
+        <Window id="recording-review" width={460} />
+        <div class="ep-words">
+          <h3>Record it once <span class="early">Early</span></h3>
+          <p>
+            Choose Record and use the menus of any app, then stop with Control-Option-Command-R. The review lists every
+            step in plain words with how sturdy it is, tries each one against the apps without pressing anything, and saves
+            it as a command. Typed text is never recorded.
+          </p>
+        </div>
+      </div>
+      <div class="ep ep-keys">
+        <Window id="alias-popover" width={560} />
+        <div class="ep-words">
+          <h3>Keys for any menu item <span class="early">Early</span></h3>
+          <p>
+            Command-K on a menu item gives it an alias and a shortcut of its own. One key can serve items in different
+            apps, since it runs the item of the app in front.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .yours {
+    padding-block: clamp(120px, 13vw, 200px) clamp(96px, 10vw, 160px);
+  }
+  .head {
+    display: grid;
+    justify-items: center;
+    gap: 16px;
+    text-align: center;
+  }
+  .claim {
+    font-size: clamp(44px, 7vw, 104px);
+  }
+  .line {
+    color: var(--ink-2);
+    max-width: 32em;
+    font-size: clamp(17px, 1.4vw, 20px);
+  }
+
+  .radial {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 560px) 1fr;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      'nw file ne'
+      'sw file se';
+    gap: 48px clamp(24px, 3vw, 48px);
+    align-items: center;
+    margin-top: clamp(56px, 7vw, 96px);
+  }
+  .file {
+    grid-area: file;
+    position: relative;
+    z-index: 1;
+    border-radius: 18px;
+    background: #071014;
+    box-shadow:
+      0 0 0 1px var(--night-line),
+      0 40px 80px -30px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+  }
+  figcaption {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--night-line);
+    font: 500 13px/1 var(--mono);
+    color: var(--on-night-3);
+  }
+  pre {
+    padding: 16px 0 20px;
+    overflow-x: auto;
+    font: 500 clamp(12px, 1.05vw, 14.5px) / 1.75 var(--mono);
+    color: var(--on-night-2);
+  }
+  .ln {
+    display: block;
+    padding-inline: 18px;
+    position: relative;
+  }
+  .ln::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(140, 242, 204, 0.1);
+    box-shadow: inset 2px 0 0 var(--night-mint);
+    opacity: 0;
+    transition: opacity 200ms var(--ease);
+  }
+  .ln.lit {
+    color: var(--on-night);
+  }
+  .ln.lit::before {
+    opacity: 1;
+  }
+  .wires {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: var(--night-line);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+  }
+  .wires path {
+    vector-effect: non-scaling-stroke;
+  }
+  .ways {
+    display: contents;
+  }
+  .way {
+    display: grid;
+    gap: 8px;
+    align-content: start;
+    padding: 18px;
+    border-radius: 16px;
+    outline-offset: 4px;
+    transition: transform 240ms var(--ease);
+  }
+  .way.on {
+    transform: scale(1.03);
+  }
+  .nw {
+    grid-area: nw;
+  }
+  .ne {
+    grid-area: ne;
+  }
+  .sw {
+    grid-area: sw;
+  }
+  .se {
+    grid-area: se;
+  }
+  .way h3 {
+    font-family: var(--display);
+    font-size: clamp(20px, 1.7vw, 24px);
+    letter-spacing: -0.02em;
+  }
+  .way > p:not(.demo) {
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  .demo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    font-size: 15px;
+  }
+  .demo .kbd {
+    font-size: 20px;
+    transition: transform 100ms var(--ease);
+  }
+  .way.on .demo .kbd {
+    transform: translateY(2px);
+    color: var(--night-mint);
+  }
+  .typed {
+    font: 600 17px/1 var(--sans);
+    min-width: 2.4ch;
+  }
+  .alias {
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(140, 242, 204, 0.16);
+    color: var(--night-mint);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .row,
+  .sc {
+    font-weight: 600;
+  }
+  .sc {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 13px;
+  }
+  .demo code {
+    font: 500 13px/1.4 var(--mono);
+    color: var(--on-night-2);
+    overflow-wrap: anywhere;
+  }
+  .copy {
+    padding: 5px 12px;
+    border: 1px solid var(--night-line);
+    border-radius: 999px;
+    background: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .early-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(32px, 5vw, 80px);
+    margin-top: clamp(96px, 11vw, 160px);
+    align-items: start;
+  }
+  .ep {
+    display: grid;
+    gap: 24px;
+  }
+  .ep-keys {
+    margin-top: clamp(40px, 8vw, 120px);
+  }
+  .ep-rec :global(.win) {
+    width: min(100%, 460px);
+  }
+  .ep-words {
+    display: grid;
+    gap: 10px;
+    max-width: 30em;
+  }
+  .ep-words h3 {
+    font-family: var(--display);
+    font-size: clamp(22px, 2vw, 28px);
+    letter-spacing: -0.025em;
+  }
+  .ep-words p {
+    color: var(--ink-2);
+    font-size: 16px;
+  }
+
+  /* Live: the ways fly out from the file, the wires draw from the centre. */
+  :global(html.live) .yours .way {
+    opacity: 0;
+    transition:
+      opacity 400ms var(--ease) var(--d, 0ms),
+      transform 700ms var(--ease) var(--d, 0ms);
+  }
+  :global(html.live) .yours .nw {
+    transform: translate(40%, 40%) scale(0.7);
+    --d: 0ms;
+  }
+  :global(html.live) .yours .ne {
+    transform: translate(-40%, 40%) scale(0.7);
+    --d: 80ms;
+  }
+  :global(html.live) .yours .sw {
+    transform: translate(40%, -40%) scale(0.7);
+    --d: 160ms;
+  }
+  :global(html.live) .yours .se {
+    transform: translate(-40%, -40%) scale(0.7);
+    --d: 240ms;
+  }
+  :global(html.live) .yours .radial.out .way {
+    opacity: 1;
+    transform: none;
+  }
+  :global(html.live) .yours .radial.out .way.on {
+    transform: scale(1.03);
+    transition-delay: 0ms;
+  }
+  :global(html.live) .yours .wires {
+    clip-path: inset(50% 50% 50% 50%);
+    transition: clip-path 900ms var(--ease) 200ms;
+  }
+  :global(html.live) .yours .radial.out .wires {
+    clip-path: inset(0 0 0 0);
+  }
+
+  @media (max-width: 960px) {
+    .radial {
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        'file file'
+        'nw ne'
+        'sw se';
+      gap: 16px;
+    }
+    .wires {
+      display: none;
+    }
+    .way {
+      padding: 12px 0;
+    }
+    .early-pair {
+      grid-template-columns: 1fr;
+    }
+    .ep-keys {
+      margin-top: 0;
+    }
+  }
+  @media (max-width: 560px) {
+    .radial {
+      grid-template-columns: 1fr;
+      grid-template-areas: 'file' 'nw' 'ne' 'sw' 'se';
+    }
+  }
+</style>
+
+<script>
+  import { motion } from '../../scripts/scenes';
+
+  const radial = document.querySelector<HTMLElement>('[data-radial]');
+  const ways = [...(radial?.querySelectorAll<HTMLElement>('[data-way]') ?? [])];
+  const lines = [...(radial?.querySelectorAll<HTMLElement>('.ln') ?? [])];
+  const typed = radial?.querySelector<HTMLElement>('[data-typed]');
+
+  function light(way: HTMLElement | null) {
+    for (const w of ways) w.classList.toggle('on', w === way);
+    const key = way?.dataset.way ?? '';
+    for (const l of lines) l.classList.toggle('lit', !!key && (l.dataset.for ?? '').split(' ').includes(key));
+    if (typed && way?.dataset.way === 'alias' && motion) {
+      typed.textContent = '';
+      'say'.split('').forEach((c, i) => setTimeout(() => (typed.textContent += c), 120 * (i + 1)));
+    }
+  }
+
+  if (radial) {
+    let touched = false;
+    let i = 0;
+    let timer = 0;
+    for (const w of ways) {
+      w.addEventListener('pointerenter', () => {
+        touched = true;
+        light(w);
+      });
+      w.addEventListener('focus', () => {
+        touched = true;
+        light(w);
+      });
+    }
+    new IntersectionObserver(
+      ([e]) => {
+        if (e?.isIntersecting) {
+          radial.classList.add('out');
+          if (!motion || timer) return;
+          // Walk through the four ways on its own until someone points at one.
+          timer = window.setInterval(() => {
+            if (touched) return window.clearInterval(timer);
+            light(ways[i % ways.length] ?? null);
+            i++;
+          }, 2200);
+          setTimeout(() => !touched && light(ways[0] ?? null), 900);
+          i = 1;
+        }
+      },
+      { threshold: 0.3 },
+    ).observe(radial);
+  }
+</script>

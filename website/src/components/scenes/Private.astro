@@ -1,0 +1,297 @@
+---
+/**
+ * Scene 9, Private. Full bleed on the night desk. The ring of the app icon arrives large and settles into a sentence as
+ * its zero: "Apropos makes 0 network connections." Then the promise lights word by word. Below, what is read, what is
+ * kept (the real file names) and what never is, beside the real Privacy and data page, which scrolls with this page, and
+ * each macOS permission with its reason. Claims: the app's Privacy and data page, docs/context-actions.md,
+ * docs/prediction.md, docs/recorder.md and docs/data-layer.md.
+ */
+import Ring from '../Ring.astro';
+import Window from '../Window.astro';
+
+const reads = ['The menus of the app in front', 'Your selection', 'The page address and title', 'The folder and git branch', 'Selected files in Finder'];
+
+// The files in ~/Library/Application Support/Apropos, from docs/data-layer.md and the docs it links.
+const kept = [
+  { file: 'usage.json', what: 'Which commands you run, pins, aliases' },
+  { file: 'sequence.json', what: 'What you ran after what, for Usually next' },
+  { file: 'settings.json', what: 'Your choices in Settings' },
+  { file: 'send-folders.json', what: 'Folders you send files to' },
+  { file: 'commands/', what: 'Your own commands, one file each' },
+  { file: 'destinations/', what: 'Your own places to send to' },
+];
+
+const never = ['What you selected or sent', 'Web addresses and document names', 'Anything you typed while recording', 'Secure fields, which are never read'];
+
+const permissions = [
+  { name: 'Accessibility', when: 'Needed', why: 'Reads the menus of the app in front and presses the item you choose.' },
+  { name: 'Automation of Finder', when: 'The first time you act on files', why: 'Asks Finder which files are selected. macOS asks you once.' },
+  { name: 'Input Monitoring', when: 'Only to record', why: 'Lets a recording notice the menu items and shortcuts you use. Nothing is requested until you press Allow.', early: true },
+];
+
+const promise = 'No account, no analytics, no server. Nothing about your screen or your selection leaves your Mac.';
+---
+<section class="scene private night" id="private" aria-labelledby="private-title" data-pin data-scene="private" data-light="night" style="--len: 230svh">
+  <div class="stage">
+    <h2 id="private-title" class="zero">
+      <span class="w" data-w>Apropos makes</span>
+      <span class="ring-slot" data-slot><span class="visually-hidden">0</span><span class="ring-fly" data-fly aria-hidden="true"><Ring width={300} night /></span></span>
+      <span class="w" data-w>network connections.</span>
+    </h2>
+    <p class="note" data-note>The update check is off until you turn it on.</p>
+    <p class="promise" data-promise>
+      {promise.split(' ').map((w) => <span class="pw">{w} </span>)}
+    </p>
+  </div>
+</section>
+
+<section class="scene private-detail night" aria-label="What Apropos reads, keeps and asks for" data-scene="private-detail" data-light="night">
+  <div class="wrap grid">
+    <div class="page-win" data-page-win>
+      <div class="page-clip">
+        <div class="page-scroll" data-page-scroll><Window id="privacy-page" width={520} /></div>
+      </div>
+      <p class="small cap">Settings, Privacy and data: what is kept with its size, Forget for each, Export all my data.</p>
+    </div>
+
+    <div class="ledger">
+      <div class="block">
+        <h3>Read when you open the panel</h3>
+        <ul>{reads.map((r) => <li>{r}</li>)}</ul>
+        <p class="small">Held in memory while the list is open, then dropped.</p>
+      </div>
+      <div class="block">
+        <h3>Kept, as small files you can read</h3>
+        <ul class="files">{kept.map((k) => <li><code>{k.file}</code><span>{k.what}</span></li>)}</ul>
+        <p class="small">In ~/Library/Application Support/Apropos, each with Reveal and Forget.</p>
+      </div>
+      <div class="block">
+        <h3>Never kept</h3>
+        <ul class="never">{never.map((n) => <li>{n}</li>)}</ul>
+      </div>
+      <div class="block perms">
+        <h3>What it asks macOS for</h3>
+        <dl>
+          {permissions.map((p) => (
+            <div>
+              <dt>{p.name} <span class="when">{p.when}</span>{p.early && <span class="early">Early</span>}</dt>
+              <dd>{p.why}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .stage {
+    display: grid;
+    gap: 28px;
+    align-content: center;
+    padding: clamp(120px, 14vw, 200px) var(--gutter) clamp(64px, 8vw, 120px);
+    text-align: center;
+    justify-items: center;
+  }
+  .zero {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(44px, 8.4vw, 136px);
+    line-height: 1;
+    letter-spacing: -0.05em;
+    max-width: 12ch;
+    text-wrap: balance;
+  }
+  .ring-slot {
+    position: relative;
+    display: inline-block;
+    width: 0.92em;
+    height: 0.97em;
+    margin: 0 0.04em;
+    vertical-align: -0.16em;
+  }
+  .ring-fly {
+    position: absolute;
+    inset: 0;
+    display: block;
+    transform-origin: 50% 50%;
+    will-change: transform;
+  }
+  .ring-fly :global(.ring) {
+    width: 100%;
+  }
+  .note {
+    color: var(--ink-2);
+    font-size: clamp(17px, 1.4vw, 20px);
+  }
+  .promise {
+    max-width: 22em;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(24px, 3vw, 44px);
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+  }
+
+  /* Live: the ring flies in and settles, then the promise lights word by word. */
+  :global(html.live) .private .promise,
+  :global(html.live) .private .note {
+    opacity: 0;
+  }
+  :global(html.live) .private .pw {
+    opacity: 0.22;
+    transition: opacity 160ms linear;
+  }
+  :global(html.live) .private .pw.lit {
+    opacity: 1;
+  }
+
+  .private-detail {
+    padding-block: clamp(40px, 6vw, 80px) clamp(120px, 14vw, 200px);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(40px, 6vw, 96px);
+    align-items: start;
+  }
+  .page-win {
+    position: sticky;
+    top: 96px;
+    display: grid;
+    gap: 14px;
+  }
+  .page-clip {
+    height: min(70vh, 640px);
+    overflow: hidden;
+    border-radius: 22px;
+    box-shadow: 0 0 0 1px var(--night-line);
+  }
+  .page-scroll {
+    will-change: transform;
+  }
+  .page-scroll :global(img) {
+    filter: none;
+  }
+  .ledger {
+    display: grid;
+    gap: clamp(40px, 5vw, 64px);
+  }
+  .block {
+    display: grid;
+    gap: 14px;
+  }
+  .block h3 {
+    font-family: var(--display);
+    font-size: clamp(24px, 2.4vw, 34px);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+  .block ul {
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+  .block li {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-2);
+  }
+  .files li {
+    display: grid;
+    grid-template-columns: minmax(9em, auto) 1fr;
+    gap: 16px;
+  }
+  .files code {
+    font: 500 14px/1.6 var(--mono);
+    color: var(--night-mint);
+  }
+  .never li {
+    text-decoration: line-through;
+    text-decoration-color: var(--night-pearl);
+    text-decoration-thickness: 2px;
+  }
+  .perms dl {
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+  .perms dl > div {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .perms dt {
+    font-weight: 600;
+  }
+  .when {
+    margin-left: 8px;
+    font-weight: 400;
+    font-size: 14px;
+    color: var(--ink-3);
+  }
+  .perms .early {
+    margin-left: 8px;
+  }
+  .perms dd {
+    margin: 4px 0 0;
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  @media (max-width: 860px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+    .page-win {
+      position: relative;
+      top: 0;
+    }
+    .page-clip {
+      height: 60vh;
+    }
+  }
+</style>
+
+<script>
+  import { onScene, span, easeInOut, eachFrame, motion } from '../../scripts/scenes';
+
+  const scene = document.querySelector<HTMLElement>('[data-scene="private"]');
+  const fly = scene?.querySelector<HTMLElement>('[data-fly]');
+  const words = [...(scene?.querySelectorAll<HTMLElement>('[data-w]') ?? [])];
+  const note = scene?.querySelector<HTMLElement>('[data-note]');
+  const pws = [...(scene?.querySelectorAll<HTMLElement>('.pw') ?? [])];
+  const promiseEl = scene?.querySelector<HTMLElement>('[data-promise]');
+
+  onScene(scene ?? null, (p) => {
+    if (!fly || !note) return;
+    // .0 to .32: the ring comes in big from the middle of the screen and settles into its slot as the zero.
+    const slot = fly.parentElement?.getBoundingClientRect();
+    const settle = easeInOut(span(p, 0.04, 0.32));
+    if (slot) {
+      const dx = window.innerWidth / 2 - (slot.left + slot.width / 2);
+      const dy = window.innerHeight / 2 - (slot.top + slot.height / 2);
+      const big = Math.min(window.innerWidth, window.innerHeight) * 0.6 / Math.max(1, slot.width);
+      const s = big + (1 - big) * settle;
+      fly.style.transform = `translate(${(dx * (1 - settle)).toFixed(1)}px, ${(dy * (1 - settle)).toFixed(1)}px) scale(${s.toFixed(4)})`;
+    }
+    const wordsIn = span(p, 0.24, 0.34);
+    for (const w of words) {
+      w.style.opacity = wordsIn.toFixed(3);
+    }
+    note.style.opacity = span(p, 0.34, 0.42).toFixed(3);
+    if (promiseEl) promiseEl.style.opacity = span(p, 0.36, 0.46).toFixed(3);
+    // .45 to .85: the promise lights word by word.
+    const lit = span(p, 0.45, 0.85) * pws.length;
+    pws.forEach((w, i) => w.classList.toggle('lit', i < lit));
+  });
+
+  // The Privacy and data page scrolls inside its window as this part of the page passes.
+  const detail = document.querySelector<HTMLElement>('[data-scene="private-detail"]');
+  const clip = detail?.querySelector<HTMLElement>('.page-clip');
+  const inner = detail?.querySelector<HTMLElement>('[data-page-scroll]');
+  if (detail && clip && inner && motion) {
+    eachFrame(() => {
+      const r = detail.getBoundingClientRect();
+      const t = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - window.innerHeight)));
+      const travel = Math.max(0, inner.offsetHeight - clip.offsetHeight);
+      inner.style.transform = `translateY(${(-t * travel).toFixed(1)}px)`;
+    });
+  }
+</script>

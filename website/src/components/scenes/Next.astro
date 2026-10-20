@@ -1,0 +1,218 @@
+---
+/**
+ * Scene 6, Next. A tally: twelve times you ran Duplicate 3 Items in Finder, and nine of those times you went on to Move 3
+ * Items to Trash. The marks arrive one by one and nine fill, the numeral counts to nine, and the pearl, the brand's
+ * Usually next marker, drops onto that row in the real panel, whose reason says exactly this. The example and its numbers
+ * are the capture's own (sample data in a stage build); the behaviour is docs/prediction.md.
+ */
+import Window from '../Window.astro';
+
+const runs = [1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1];
+---
+<section class="scene next sheet" id="next" aria-labelledby="next-title" data-scene="next" data-light="day">
+  <div class="tally" data-tally>
+    <p class="big">
+      <span class="visually-hidden">9 of 12 times</span>
+      <span class="n" data-n aria-hidden="true">9</span><span class="of" aria-hidden="true">of 12</span>
+    </p>
+    <ol class="marks" aria-hidden="true">
+      {runs.map((r, i) => <li class:list={['mark', { chose: r === 1 }]} style={`--i:${i}`}></li>)}
+    </ol>
+    <p class="reason">
+      After <strong>Duplicate 3 Items</strong> in Finder, you chose <strong>Move 3 Items to Trash</strong> 9 of 12 times.
+    </p>
+  </div>
+
+  <div class="win" data-win>
+    <Window id="usually-next" width={760} />
+    <span class="pearl" aria-hidden="true"></span>
+  </div>
+
+  <div class="words">
+    <h2 id="next-title" class="claim">It learns what comes next. On this Mac.</h2>
+    <p class="line">
+      From command names, apps and times only, never your selection, addresses or documents. It says why, and
+      Command-Return runs it. Settings, Prediction lists what it learned, with Forget for each.
+    </p>
+  </div>
+</section>
+
+<style>
+  .next {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    grid-template-areas:
+      'tally win'
+      'words win';
+    column-gap: clamp(32px, 5vw, 80px);
+    row-gap: 40px;
+    align-items: center;
+    padding: clamp(96px, 11vw, 160px) 0 clamp(80px, 9vw, 140px) var(--gutter);
+    overflow: clip;
+  }
+  .tally {
+    grid-area: tally;
+    display: grid;
+    gap: 20px;
+  }
+  .big {
+    display: flex;
+    align-items: baseline;
+    gap: 0.12em;
+    font-family: var(--display);
+    font-weight: 700;
+    letter-spacing: -0.06em;
+    line-height: 0.8;
+    margin-left: -0.06em;
+  }
+  .n {
+    font-size: clamp(160px, 24vw, 380px);
+    font-variant-numeric: tabular-nums;
+  }
+  .of {
+    font-size: clamp(40px, 5vw, 80px);
+    letter-spacing: -0.04em;
+    color: var(--ink-3);
+  }
+  .marks {
+    display: flex;
+    gap: 8px;
+  }
+  .mark {
+    position: relative;
+    width: clamp(16px, 1.8vw, 26px);
+    aspect-ratio: 1;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 1.5px var(--line-2);
+  }
+  .mark.chose::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--ink);
+  }
+  .reason {
+    color: var(--ink-2);
+    font-size: clamp(16px, 1.3vw, 19px);
+    max-width: 28em;
+  }
+  .reason strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .win {
+    grid-area: win;
+    position: relative;
+    margin-right: -14vw;
+  }
+  .pearl {
+    position: absolute;
+    left: -1.8%;
+    top: 35.4%;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    border-radius: 50%;
+    background: var(--pearl);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--pearl) 20%, transparent),
+      0 0 18px var(--pearl-glow);
+  }
+  .words {
+    grid-area: words;
+    display: grid;
+    gap: 16px;
+    align-self: start;
+  }
+  .claim {
+    font-size: clamp(32px, 4vw, 56px);
+  }
+  .line {
+    color: var(--ink-2);
+    max-width: 30em;
+  }
+
+  /* Live: counted when it comes into view. */
+  :global(html.live) .next .mark {
+    opacity: 0;
+    transform: translateY(10px) scale(0.6);
+    transition:
+      opacity 200ms var(--ease) calc(var(--i) * 70ms),
+      transform 320ms var(--spring) calc(var(--i) * 70ms);
+  }
+  :global(html.live) .next .mark.chose::after {
+    transform: scale(0);
+    transition: transform 260ms var(--spring) calc(var(--i) * 70ms + 900ms);
+  }
+  :global(html.live) .next.on .mark {
+    opacity: 1;
+    transform: none;
+  }
+  :global(html.live) .next.on .mark.chose::after {
+    transform: none;
+  }
+  :global(html.live) .next .pearl {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.4);
+    transition:
+      opacity 200ms var(--ease) 1.9s,
+      transform 520ms var(--spring) 1.9s;
+  }
+  :global(html.live) .next.on .pearl {
+    opacity: 1;
+    transform: none;
+  }
+  :global(html.live) .next .win {
+    opacity: 0;
+    transform: translateX(60px);
+    transition:
+      opacity 500ms var(--ease) 200ms,
+      transform 900ms var(--ease) 200ms;
+  }
+  :global(html.live) .next.on .win {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (max-width: 860px) {
+    .next {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        'tally'
+        'win'
+        'words';
+      padding-right: var(--gutter);
+    }
+    .win {
+      margin-right: calc(var(--gutter) * -1 - 30vw);
+    }
+  }
+</style>
+
+<script>
+  import { motion } from '../../scripts/scenes';
+
+  const scene = document.querySelector<HTMLElement>('[data-scene="next"]');
+  const n = scene?.querySelector<HTMLElement>('[data-n]');
+  const marks = [...(scene?.querySelectorAll<HTMLElement>('.mark') ?? [])];
+
+  if (scene && n && motion) {
+    n.textContent = '0';
+    new IntersectionObserver(
+      ([e], obs) => {
+        if (!e?.isIntersecting) return;
+        obs.disconnect();
+        scene.classList.add('on');
+        // The numeral counts the filled marks as they fill.
+        let count = 0;
+        marks.forEach((m, i) => {
+          if (!m.classList.contains('chose')) return;
+          setTimeout(() => (n.textContent = String(++count)), i * 70 + 900);
+        });
+      },
+      { threshold: 0.35 },
+    ).observe(scene);
+  }
+</script>

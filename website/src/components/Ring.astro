@@ -15,10 +15,12 @@ interface Props {
   eager?: boolean;
   /** The hero ring: tilts with the pointer and its pearl travels. */
   hero?: boolean;
+  /** On the night desk: the dark render in both themes. */
+  night?: boolean;
   class?: string;
 }
 
-const { width, eager = false, hero = false, class: className } = Astro.props;
+const { width, eager = false, hero = false, night = false, class: className } = Astro.props;
 const steps = [width, Math.round(width * 1.5), width * 2].filter((w) => w <= ringLight.width);
 const make = async (src: typeof ringLight) => {
   const out = await Promise.all(steps.map((w) => getImage({ src, width: w, format: 'webp', quality: 86 })));
@@ -33,8 +35,8 @@ const sizes = `(max-width: 700px) 80vw, ${width}px`;
 <div class:list={['ring', className]} data-ring={hero ? 'hero' : 'still'} style={`--ring-ratio:${place.ratio}`}>
   <div class="tilt" data-tilt>
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset={dark.srcset} sizes={sizes} />
-      <img class="ring-img" src={light.src} srcset={light.srcset} sizes={sizes} width={ringLight.width} height={ringLight.height} alt="" loading={eager ? 'eager' : 'lazy'} fetchpriority={eager ? 'high' : 'auto'} decoding="async" />
+      {!night && <source media="(prefers-color-scheme: dark)" srcset={dark.srcset} sizes={sizes} />}
+      <img class="ring-img" src={(night ? dark : light).src} srcset={(night ? dark : light).srcset} sizes={sizes} width={ringLight.width} height={ringLight.height} alt="" loading={eager ? 'eager' : 'lazy'} fetchpriority={eager ? 'high' : 'auto'} decoding="async" />
     </picture>
   </div>
   <img

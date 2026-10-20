@@ -1,6 +1,7 @@
-// Checks the interactive parts against the built site, with motion allowed and with reduced motion: the Option-Space
-// demo opens from the keyboard and steps through its frames, the app dock and the explorer answer arrow keys, the FAQ
-// filters, the copy button copies, the nav pearl docks after the hero, and every control has a name.
+// Checks the interactive parts of the scenes against the built site, with motion allowed and with reduced motion:
+// Option-Space plays the opening, the scenes reach their states when scrolled, the app switcher answers arrow keys, a
+// selection in the Holding paragraph opens its actions and changes the words, the ways of running a command light their
+// lines, the install steps and the FAQ answer, the copy button copies, the nav pearl docks, and every control has a name.
 //   npm run build && npx astro preview --port 4321 &   then   node scripts/check-ui.mjs [http://localhost:4321]
 import { chromium } from 'playwright-core';
 
@@ -11,69 +12,117 @@ const check = (ok, message) => {
 };
 const browser = await chromium.launch({ channel: 'chrome' });
 
+/** Scrolls a pinned or plain scene to progress p, in steps so scroll-linked code runs as it would. */
+async function goTo(page, scene, p) {
+  const y = await page.evaluate(
+    ([scene, p]) => {
+      const el = document.querySelector(`[data-scene="${scene}"]`) ?? document.querySelector(scene);
+      return el.getBoundingClientRect().top + window.scrollY + (el.offsetHeight - window.innerHeight) * p;
+    },
+    [scene, p],
+  );
+  const from = await page.evaluate(() => window.scrollY);
+  for (let i = 1; i <= 8; i++) {
+    await page.evaluate((v) => window.scrollTo(0, v), from + ((y - from) * i) / 8);
+    await page.waitForTimeout(30);
+  }
+  await page.waitForTimeout(350);
+}
+
 for (const reducedMotion of ['no-preference', 'reduce']) {
   const label = reducedMotion === 'reduce' ? 'reduced motion' : 'motion';
+  const motion = reducedMotion !== 'reduce';
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion, permissions: ['clipboard-read', 'clipboard-write'] });
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto(base, { waitUntil: 'networkidle' });
 
-  // Demo: Option-Space opens it, n then f step the frames, Escape closes it.
+  // Press: Option-Space plays the opening and lands on the panel after n, f.
   await page.keyboard.press('Alt+Space');
-  await page.waitForTimeout(250);
-  check(await page.evaluate(() => document.querySelector('[data-demo]').open), `${label}: Option-Space did not open the demo`);
-  await page.keyboard.press('n');
-  await page.keyboard.press('f');
-  const frame = await page.evaluate(() => [...document.querySelectorAll('[data-frame]')].findIndex((f) => f.classList.contains('on')));
-  check(frame === 2, `${label}: after typing nf the demo shows frame ${frame}, expected 2`);
-  await page.keyboard.press('Escape');
-  await page.waitForTimeout(150);
-  check(!(await page.evaluate(() => document.querySelector('[data-demo]').open)), `${label}: Escape did not close the demo`);
-  await page.locator('.key-opt').click();
-  await page.waitForTimeout(150);
-  check(await page.evaluate(() => document.querySelector('[data-demo]').open), `${label}: the option key did not open the demo`);
-  await page.locator('[data-demo-close]').click();
+  await page.waitForTimeout(1800);
+  check((await page.evaluate(() => window.scrollY)) > 200, `${label}: Option-Space did not move to the panel`);
+  if (motion) {
+    const frame = await page.evaluate(() => [...document.querySelectorAll('[data-frame]')].findIndex((f) => f.classList.contains('on')));
+    check(frame === 2, `${label}: after Option-Space the panel shows frame ${frame}, expected 2 (nf)`);
+  }
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(200);
 
-  // App switcher: arrow keys move the selection and show one panel.
-  await page.locator('#apps').scrollIntoViewIfNeeded();
-  await page.locator('#sw-tab-0').focus();
-  await page.keyboard.press('ArrowRight');
-  const sel = await page.evaluate(() => document.querySelector('#sw-tab-1').getAttribute('aria-selected'));
-  check(sel === 'true', `${label}: ArrowRight in the app switcher did not select the second app`);
-  await page.keyboard.press('End');
-  const shown = await page.evaluate(() => [...document.querySelectorAll('[data-switcher] [data-panel]')].filter((p) => !p.hidden).length);
-  check(shown === 1, `${label}: ${shown} app panels are shown, expected 1`);
-
-  // Install steps: clicking a step shows its window.
-  await page.locator('#step-tab-2').scrollIntoViewIfNeeded();
-  await page.locator('#step-tab-2').click();
-  const step = await page.evaluate(() => !document.getElementById('step-2').hidden && document.getElementById('step-0').hidden);
-  check(step, `${label}: clicking step 3 did not show its window`);
-
-  // Story: scrolling into the middle of the track turns on a later chapter (wide screens).
-  await page.evaluate(() => {
-    const t = document.querySelector('[data-story] .track');
-    window.scrollTo(0, t.getBoundingClientRect().top + window.scrollY + t.offsetHeight * 0.5);
-  });
-  await page.waitForTimeout(400);
-  const on = await page.evaluate(() => [...document.querySelectorAll('[data-chapter]')].findIndex((c) => c.classList.contains('on')));
-  check(on >= 2, `${label}: halfway down the story the chapter on is ${on}`);
-
-  // Explorer, when there is measured data.
-  if (await page.locator('[data-explorer]').count()) {
-    await page.locator('#app-tab-0').focus();
-    await page.keyboard.press('ArrowDown');
-    const ex = await page.evaluate(() => document.querySelector('#app-tab-1').getAttribute('aria-selected'));
-    check(ex === 'true', `${label}: ArrowDown in the explorer did not select the second app`);
+  if (motion) {
+    // Deep folds into the panel; Slip ends on "show" in mint; Send turns the chip to capitals; Private lights its promise.
+    await goTo(page, 'deep', 0.9);
+    check(await page.evaluate(() => document.querySelector('[data-scene="deep"]').classList.contains('folded')), `${label}: the menu staircase did not fold`);
+    await goTo(page, 'slip', 0.6);
+    const mint = await page.evaluate(() => document.querySelector('[data-l="0"]').style.color);
+    check(mint.includes('mint'), `${label}: the slipped word did not turn mint`);
+    await goTo(page, 'send', 0.6);
+    const chip = await page.evaluate(() => document.querySelector('[data-chip-text]').textContent);
+    check(chip === chip.toUpperCase(), `${label}: past UPPERCASE the chip reads "${chip}"`);
+    await goTo(page, 'private', 0.95);
+    const unlit = await page.evaluate(() => document.querySelectorAll('.private .pw:not(.lit)').length);
+    check(unlit === 0, `${label}: ${unlit} words of the privacy promise are not lit`);
   }
 
-  // Nav pearl docks once the hero is gone (with motion it flies there; without, it is simply there).
+  // Apps: arrow keys on the switcher move to the next app.
+  await goTo(page, 'apps', 0);
+  await page.locator('[data-to="0"]').focus();
+  await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(1600);
+  const pressed = await page.evaluate(() => document.querySelector('[data-to="1"]').getAttribute('aria-pressed'));
+  check(pressed === 'true', `${label}: ArrowRight in the app switcher did not move to the second app`);
+
+  // Holding: a selection in the paragraph opens the actions; UPPERCASE changes the words; the words come back.
+  await goTo(page, 'holding', 0);
+  await page.evaluate(() => {
+    const p = document.querySelector('[data-copytext]');
+    const node = p.firstChild;
+    const at = node.textContent.indexOf('Mail or Safari');
+    const r = document.createRange();
+    r.setStart(node, at);
+    r.setEnd(node, at + 'Mail or Safari'.length);
+    const s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+  });
+  await page.waitForTimeout(300);
+  check(await page.evaluate(() => !document.querySelector('[data-pop]').hidden), `${label}: selecting words did not open the actions`);
+  await page.locator('[data-pop-list] button', { hasText: 'UPPERCASE' }).first().click();
+  await page.waitForTimeout(200);
+  check(await page.evaluate(() => document.querySelector('[data-essay]').textContent.includes('MAIL OR SAFARI')), `${label}: UPPERCASE did not change the selected words`);
+  await page.locator('[data-reset]').click();
+  await page.waitForTimeout(100);
+  check(await page.evaluate(() => document.querySelector('[data-essay]').textContent.includes('Mail or Safari')), `${label}: Put the words back did not restore them`);
+
+  // Next: the tally counts to nine.
+  await goTo(page, 'next', 0.2);
+  await page.waitForTimeout(2200);
+  check((await page.evaluate(() => document.querySelector('[data-n]').textContent)) === '9', `${label}: the tally did not reach 9`);
+
+  // Yours: pointing at a way lights the lines of the file it comes from.
+  await page.locator('[data-way="key"]').scrollIntoViewIfNeeded();
+  await page.locator('[data-way="key"]').hover();
+  await page.waitForTimeout(200);
+  const lit = await page.evaluate(() => [...document.querySelectorAll('.ln.lit')].map((l) => l.dataset.for));
+  check(lit.length === 2 && lit.every((f) => f === 'key'), `${label}: pointing at Press its key lit ${JSON.stringify(lit)}`);
+
+  // Install: the space bar is the download, and the pearl moves along the steps as they pass.
+  check((await page.locator('#install .k-get').getAttribute('href'))?.includes('Apropos.dmg'), `${label}: the space bar is not the download link`);
+  await page.locator('[data-steps]').scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollBy(0, -window.innerHeight * 0.4));
+  await page.waitForTimeout(200);
+  const first = await page.evaluate(() => [...document.querySelectorAll('[data-step]')].findIndex((s) => s.classList.contains('now')));
+  await page.evaluate(() => window.scrollBy(0, window.innerHeight * 0.6));
+  await page.waitForTimeout(200);
+  const later = await page.evaluate(() => [...document.querySelectorAll('[data-step]')].findIndex((s) => s.classList.contains('now')));
+  check(first >= 0 && later > first, `${label}: the install pearl went from step ${first} to ${later} while scrolling`);
+
+  // Nav pearl: docked under the section being read.
   await page.evaluate(() => document.getElementById('holding').scrollIntoView());
-  await page.waitForTimeout(700);
+  await page.waitForTimeout(500);
   check(await page.evaluate(() => document.documentElement.classList.contains('docked')), `${label}: the nav pearl did not dock`);
   const current = await page.evaluate(() => document.querySelector('[data-nav] a[aria-current="true"]')?.dataset.for);
-  check(current === 'holding', `${label}: the nav marks ${current} while reading the actions`);
+  check(current === 'holding', `${label}: the nav marks ${current} while reading the selection scene`);
 
   // FAQ: a click opens an answer (animated with motion) and a second click closes it.
   const q = page.locator('details[data-q]').first();
@@ -81,7 +130,7 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
   await q.locator('summary').click();
   await page.waitForTimeout(400);
   const openH = await q.evaluate((d) => (d.open ? d.getBoundingClientRect().height : 0));
-  check(openH > 80, `${label}: the first answer did not open (${openH}px)`);
+  check(openH > 70, `${label}: the first answer did not open (${openH}px)`);
   await q.locator('summary').click();
   await page.waitForTimeout(400);
   check(!(await q.evaluate((d) => d.open)), `${label}: the first answer did not close`);
@@ -133,4 +182,4 @@ if (problems.length) {
   for (const p of problems) console.log(' - ' + p);
   process.exit(1);
 }
-console.log('\nOK: demo, story, app switcher, install steps, nav, FAQ, copy and control names checked, with and without motion.');
+console.log('\nOK: opening, scenes, app switcher, selection, tally, command ways, install steps, nav, FAQ, copy and control names checked, with and without motion.');

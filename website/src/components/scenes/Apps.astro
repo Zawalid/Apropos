@@ -1,0 +1,349 @@
+---
+/**
+ * Scene 3, Apps. The first sideways motion of the page: the real panel over 14 apps passes as a film strip, the app
+ * names travel behind it at another speed, and an app switcher under it moves the pearl from icon to icon. Click an
+ * icon (or use the arrow keys on the switcher) to jump to that app. Without motion the strip is a row you swipe.
+ * Every list is that app's own menu bar, read on a real Mac (the capture run of 2026-10-20).
+ */
+import { Image } from 'astro:assets';
+import Window from '../Window.astro';
+import type { WindowId } from '../../data/windows';
+
+const icons = import.meta.glob<{ default: ImageMetadata }>('../../assets/apps/*.png', { eager: true });
+const icon = (slug: string) => icons[`../../assets/apps/${slug}.png`].default;
+
+const apps: { name: string; slug: string; win: WindowId }[] = [
+  { name: 'Finder', slug: 'finder', win: 'app-finder' },
+  { name: 'Mail', slug: 'mail', win: 'app-mail' },
+  { name: 'Notes', slug: 'notes', win: 'app-notes' },
+  { name: 'Calendar', slug: 'calendar', win: 'app-calendar' },
+  { name: 'Reminders', slug: 'reminders', win: 'app-reminders' },
+  { name: 'Music', slug: 'music', win: 'app-music' },
+  { name: 'Photos', slug: 'photos', win: 'app-photos' },
+  { name: 'Maps', slug: 'maps', win: 'app-maps' },
+  { name: 'Preview', slug: 'preview', win: 'app-preview' },
+  { name: 'TextEdit', slug: 'textedit', win: 'app-textedit' },
+  { name: 'Terminal', slug: 'terminal', win: 'app-terminal' },
+  { name: 'Xcode', slug: 'xcode', win: 'app-xcode' },
+  { name: 'System Settings', slug: 'system-settings', win: 'app-systemsettings' },
+  { name: 'Safari', slug: 'safari', win: 'app-safari' },
+];
+---
+<section class="scene apps sheet" id="apps" aria-labelledby="apps-title" data-pin data-scene="apps" data-light="day" style={`--n:${apps.length}`}>
+  <div class="stage">
+    <div class="words">
+      <h2 id="apps-title" class="claim">It opens on the app in front.</h2>
+      <p class="line">
+        If an app has a menu bar, Apropos reads it. No plugin per app, no waiting for anyone to add support. Fourteen of
+        them pass here; every other app with a menu bar works the same way.
+      </p>
+    </div>
+
+    <p class="names" aria-hidden="true" data-names>
+      {apps.map((a) => <span>{a.name}</span>)}
+    </p>
+
+    <ol class="strip" data-strip aria-label="Apropos over 14 apps" tabindex="0">
+      {apps.map((a, i) => (
+        <li class="slot" data-slot id={`app-${a.slug}`} aria-label={a.name}>
+          <Window id={a.win} width={720} eager={i < 2} />
+        </li>
+      ))}
+    </ol>
+
+    <div class="switcher" role="toolbar" aria-label="Jump to an app" data-switcher>
+      {apps.map((a, i) => (
+        <button type="button" class="sw" data-to={i} aria-label={a.name} title={a.name} aria-pressed={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}>
+          <Image src={icon(a.slug)} alt="" width={44} height={44} densities={[1, 2]} />
+        </button>
+      ))}
+      <span class="sw-bead" data-sw-bead aria-hidden="true"></span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .apps {
+    z-index: 1;
+    border-radius: 0 0 var(--sheet-r) var(--sheet-r);
+  }
+  .stage {
+    display: grid;
+    gap: 40px;
+    padding: clamp(96px, 12vw, 150px) 0 clamp(64px, 8vw, 96px);
+  }
+  .words {
+    display: grid;
+    gap: 16px;
+    padding-inline: var(--gutter);
+    max-width: calc(var(--max) + var(--gutter) * 2);
+    margin-inline: auto;
+    width: 100%;
+  }
+  .claim {
+    font-size: clamp(36px, 5vw, 68px);
+  }
+  .line {
+    color: var(--ink-2);
+    font-size: clamp(17px, 1.4vw, 20px);
+    max-width: 36em;
+  }
+  .names {
+    display: none;
+  }
+  .strip {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 12px var(--gutter) 24px;
+    scrollbar-width: none;
+  }
+  .strip::-webkit-scrollbar {
+    display: none;
+  }
+  .slot {
+    flex: none;
+    width: min(78vw, 720px);
+    scroll-snap-align: center;
+  }
+  .switcher {
+    position: relative;
+    justify-self: center;
+    display: flex;
+    gap: 2px;
+    max-width: calc(100vw - 32px);
+    overflow-x: auto;
+    padding: 8px 10px 14px;
+    border-radius: 22px;
+    background: #0e1a1d;
+    box-shadow: 0 0 0 1px var(--line-2), 0 20px 40px -20px rgba(6, 11, 14, 0.6);
+    scrollbar-width: none;
+  }
+  .switcher::-webkit-scrollbar {
+    display: none;
+  }
+  .sw {
+    flex: none;
+    padding: 4px;
+    border: 0;
+    border-radius: 12px;
+    background: none;
+    cursor: pointer;
+    transition: transform 160ms var(--ease);
+  }
+  .sw img {
+    width: 44px;
+    height: 44px;
+  }
+  .sw:hover {
+    transform: translateY(-2px);
+  }
+  .sw[aria-pressed='true'] {
+    background: rgba(234, 243, 241, 0.16);
+  }
+  .sw-bead {
+    position: absolute;
+    left: 0;
+    bottom: 5px;
+    width: 5px;
+    height: 5px;
+    margin-left: -2.5px;
+    border-radius: 50%;
+    background: var(--night-pearl);
+    box-shadow: 0 0 8px rgba(255, 138, 76, 0.6);
+    transform: translateX(var(--x, 36px));
+    transition: transform 420ms var(--spring);
+  }
+
+  /* Live: pinned, the strip moves sideways with the scroll, the names behind it at another speed. */
+  :global(html.live) .apps .stage {
+    display: block;
+    padding: 0;
+  }
+  :global(html.live) .apps .words {
+    position: absolute;
+    top: clamp(84px, 11vh, 112px);
+    left: 0;
+    right: 0;
+    z-index: 2;
+    grid-template-columns: auto minmax(0, 30em);
+    align-items: end;
+    justify-content: space-between;
+    column-gap: 48px;
+  }
+  :global(html.live) .apps .claim {
+    font-size: clamp(32px, 3.6vw, 52px);
+    max-width: 11ch;
+  }
+  :global(html.live) .apps .line {
+    font-size: 16px;
+  }
+  :global(html.live) .apps .names {
+    position: absolute;
+    left: 0;
+    top: 56%;
+    display: flex;
+    gap: 6vw;
+    margin: 0;
+    white-space: nowrap;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(120px, 19vw, 300px);
+    letter-spacing: -0.06em;
+    line-height: 1;
+    color: var(--ink);
+    opacity: 0.06;
+    translate: 0 -40%;
+    will-change: transform;
+  }
+  :global(html.live) .apps .strip {
+    position: absolute;
+    left: 0;
+    top: 53%;
+    overflow: visible;
+    padding: 0;
+    gap: var(--gap);
+    translate: 0 -42%;
+    will-change: transform;
+  }
+  :global(html.live) .apps .slot {
+    width: var(--slot);
+    will-change: transform, opacity;
+  }
+  :global(html.live) .apps .switcher {
+    position: absolute;
+    left: 0;
+    right: 0;
+    width: max-content;
+    margin-inline: auto;
+    bottom: clamp(20px, 4vh, 40px);
+    z-index: 2;
+  }
+  :global(html.live) .apps {
+    --slot: min(60vw, 760px, calc((100svh - 420px) * 1.5));
+    --gap: clamp(24px, 4vw, 64px);
+  }
+  @media (max-width: 760px) {
+    :global(html.live) .apps {
+      --slot: 84vw;
+      --gap: 16px;
+    }
+    :global(html.live) .apps .words {
+      grid-template-columns: 1fr;
+      row-gap: 10px;
+    }
+    :global(html.live) .apps .line {
+      font-size: 15px;
+    }
+    .switcher {
+      padding: 6px 6px 12px;
+      gap: 0;
+    }
+    .sw {
+      padding: 2px;
+      border-radius: 7px;
+    }
+    .sw img {
+      width: 20px;
+      height: 20px;
+    }
+  }
+</style>
+
+<script>
+  import { onScene, span, scrollFor, motion } from '../../scripts/scenes';
+
+  const scene = document.querySelector<HTMLElement>('[data-scene="apps"]');
+  const strip = scene?.querySelector<HTMLElement>('[data-strip]');
+  const names = scene?.querySelector<HTMLElement>('[data-names]');
+  const slots = [...(scene?.querySelectorAll<HTMLElement>('[data-slot]') ?? [])];
+  const buttons = [...(scene?.querySelectorAll<HTMLButtonElement>('[data-to]') ?? [])];
+  const bead = scene?.querySelector<HTMLElement>('[data-sw-bead]');
+  const n = slots.length;
+
+  let current = -1;
+  function mark(i: number) {
+    if (i === current || !bead) return;
+    current = i;
+    buttons.forEach((b, k) => {
+      b.setAttribute('aria-pressed', String(k === i));
+      b.tabIndex = k === i ? 0 : -1;
+    });
+    const b = buttons[i];
+    const box = bead.parentElement;
+    if (!b || !box) return;
+    // The switcher may scroll on narrow screens: keep the current icon in view.
+    if (b.offsetLeft < box.scrollLeft || b.offsetLeft + b.offsetWidth > box.scrollLeft + box.clientWidth) {
+      box.scrollLeft = b.offsetLeft - box.clientWidth / 2 + b.offsetWidth / 2;
+    }
+    bead.style.setProperty('--x', `${b.offsetLeft + b.offsetWidth / 2}px`);
+  }
+  mark(0);
+
+  // Pinned, the strip moves with the page; only the plain swipe row needs to take focus to scroll.
+  if (motion) strip?.removeAttribute('tabindex');
+
+  // The scene's length follows the strip: one screen plus the distance the strip travels.
+  let slot = 0;
+  let gap = 0;
+  const size = () => {
+    if (!scene || !slots[0] || !motion) return;
+    slot = slots[0].getBoundingClientRect().width;
+    gap = parseFloat(getComputedStyle(strip as HTMLElement).columnGap) || 0;
+    const travel = (n - 1) * (slot + gap);
+    scene.style.setProperty('--len', `${Math.round(window.innerHeight + travel * 1.1 + window.innerHeight * 0.5)}px`);
+  };
+  size();
+  window.addEventListener('resize', size);
+
+  onScene(scene ?? null, (p) => {
+    if (!strip || !names) return;
+    const t = span(p, 0.08, 0.92) * (n - 1);
+    const vw = window.innerWidth;
+    const x = vw / 2 - slot / 2 - t * (slot + gap);
+    strip.style.transform = `translateX(${x.toFixed(1)}px)`;
+    // The names run slower than the strip, so they slide against it.
+    const nameW = names.scrollWidth;
+    names.style.transform = `translateX(${(vw * 0.08 - (t / (n - 1)) * (nameW - vw * 0.7)).toFixed(1)}px)`;
+    slots.forEach((s, k) => {
+      const d = Math.min(1, Math.abs(k - t));
+      s.style.transform = `scale(${(1 - d * 0.14).toFixed(4)})`;
+      s.style.opacity = (1 - d * 0.3).toFixed(3);
+    });
+    mark(Math.round(t));
+  });
+
+  // Jumping: in the pinned strip, scroll the page to that app; in the plain row, scroll the row.
+  const jump = (i: number) => {
+    if (!scene || !strip) return;
+    if (motion) {
+      const p = 0.08 + (i / (n - 1)) * 0.84;
+      window.scrollTo({ top: scrollFor(scene, p), behavior: 'smooth' });
+    } else {
+      slots[i]?.scrollIntoView({ block: 'nearest', inline: 'center' });
+      mark(i);
+    }
+  };
+  buttons.forEach((b, i) => {
+    b.addEventListener('click', () => jump(i));
+    b.addEventListener('keydown', (e) => {
+      const k = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!k) return;
+      e.preventDefault();
+      const next = Math.max(0, Math.min(n - 1, i + k));
+      buttons[next]?.focus();
+      jump(next);
+    });
+  });
+  if (!motion && strip) {
+    strip.addEventListener('scroll', () => {
+      const mid = strip.scrollLeft + strip.clientWidth / 2;
+      let best = 0;
+      slots.forEach((s, k) => {
+        if (Math.abs(s.offsetLeft + s.offsetWidth / 2 - mid) < Math.abs((slots[best]?.offsetLeft ?? 0) + (slots[best]?.offsetWidth ?? 0) / 2 - mid)) best = k;
+      });
+      mark(best);
+    }, { passive: true });
+  }
+</script>

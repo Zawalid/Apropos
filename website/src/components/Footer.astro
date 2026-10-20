@@ -3,10 +3,10 @@ import Ring from './Ring.astro';
 import { links, version } from '../data/site';
 import { measurement } from '../data/apps';
 ---
-<footer class="foot">
+<footer class="foot night" data-light="night">
   <div class="wrap inner">
     <div class="art">
-      <Ring width={220} />
+      <Ring width={220} night />
       <p class="sign">The ring is the place, the pearl is the moment.</p>
     </div>
     <nav class="cols" aria-label="Footer">
@@ -42,9 +42,7 @@ import { measurement } from '../data/apps';
 
 <style>
   .foot {
-    margin-top: clamp(120px, 14vw, 200px);
-    padding-block: clamp(48px, 6vw, 80px) 40px;
-    border-top: 1px solid var(--line);
+    padding-block: clamp(96px, 12vw, 160px) 40px;
   }
   .inner {
     display: grid;

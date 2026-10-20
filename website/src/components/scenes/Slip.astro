@@ -1,0 +1,149 @@
+---
+/**
+ * Scene 2, Slip. Four letters across the whole width, typed with a slip: s h w o. Scrolling makes the w and the o jump
+ * over each other and the word becomes show, its letters turning mint as they match; then the real results for "shwo"
+ * come up under it. The rule is the app's own (docs/ranking.md: one swap of neighbouring letters is forgiven).
+ */
+import Window from '../Window.astro';
+
+const letters = ['s', 'h', 'w', 'o'];
+---
+<section class="scene slip sheet" id="slip" aria-labelledby="slip-title" data-pin data-scene="slip" data-light="day" style="--len: 240svh">
+  <div class="stage">
+    <p class="word" aria-hidden="true" data-word>
+      {letters.map((l, i) => <span class="l" data-l={i}>{l}</span>)}
+    </p>
+    <div class="words">
+      <h2 id="slip-title" class="claim">Slips are fine.</h2>
+      <p class="line">
+        Typing shwo still finds Show. Two letters swapped are forgiven, accents and capitals never matter, and the short
+        names you type often are remembered.
+      </p>
+    </div>
+    <div class="result" data-result>
+      <Window id="slip" width={640} />
+    </div>
+  </div>
+</section>
+
+<style>
+  .slip {
+    z-index: 1;
+    border-radius: var(--sheet-r) var(--sheet-r) 0 0;
+    box-shadow: none;
+  }
+  .stage {
+    display: grid;
+    gap: 40px;
+    padding: clamp(80px, 10vw, 140px) var(--gutter) 40px;
+    justify-items: center;
+  }
+  .word {
+    display: flex;
+    justify-content: center;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(120px, 30vw, 460px);
+    line-height: 0.8;
+    letter-spacing: -0.06em;
+    color: var(--ink);
+  }
+  .l {
+    display: inline-block;
+    will-change: transform;
+  }
+  .words {
+    display: grid;
+    gap: 14px;
+    justify-items: center;
+    text-align: center;
+  }
+  .claim {
+    font-size: clamp(36px, 5vw, 68px);
+  }
+  .line {
+    color: var(--ink-2);
+    max-width: 32em;
+    font-size: clamp(17px, 1.4vw, 20px);
+  }
+  .result {
+    width: min(100%, 640px);
+  }
+  /* Without motion the word is already fixed. */
+  :global(html:not(.live)) .l[data-l='2'] {
+    order: 3;
+  }
+  :global(html:not(.live)) .l {
+    color: var(--mint);
+  }
+
+  :global(html.live) .slip .stage {
+    display: block;
+    padding: 0;
+  }
+  :global(html.live) .slip .word {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    translate: 0 -58%;
+  }
+  :global(html.live) .slip .words {
+    position: absolute;
+    left: var(--gutter);
+    right: var(--gutter);
+    bottom: clamp(32px, 7vh, 72px);
+    opacity: 0;
+  }
+  :global(html.live) .slip .result {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(640px, 86vw, calc((100svh - 300px) * 1.5));
+    translate: -50% -62%;
+    opacity: 0;
+  }
+  @media (max-width: 760px) {
+    :global(html.live) .slip .word {
+      top: 42%;
+    }
+  }
+</style>
+
+<script>
+  import { onScene, span, easeOut, easeInOut } from '../../scripts/scenes';
+
+  const scene = document.querySelector<HTMLElement>('[data-scene="slip"]');
+  const word = scene?.querySelector<HTMLElement>('[data-word]');
+  const ls = [...(scene?.querySelectorAll<HTMLElement>('[data-l]') ?? [])];
+  const words = scene?.querySelector<HTMLElement>('.words');
+  const result = scene?.querySelector<HTMLElement>('[data-result]');
+
+  onScene(scene ?? null, (p) => {
+    if (!word || !words || !result || ls.length < 4) return;
+    const [, , w, o] = ls as [HTMLElement, HTMLElement, HTMLElement, HTMLElement];
+    // .0 to .22: typed in one by one. .3 to .5: w and o jump over each other. .5: mint. .6 to .8: the results rise.
+    ls.forEach((l, i) => {
+      const t = easeOut(span(p, 0.02 + i * 0.05, 0.08 + i * 0.05));
+      l.style.opacity = String(t);
+      if (i < 2) l.style.transform = `translateY(${((1 - t) * 0.12).toFixed(3)}em)`;
+    });
+    const sw = easeInOut(span(p, 0.3, 0.5));
+    const ww = w.offsetWidth;
+    const ow = o.offsetWidth;
+    const lift = Math.sin(sw * Math.PI) * 0.22;
+    const tw = easeOut(span(p, 0.17, 0.23));
+    w.style.transform = `translate(${(sw * ow).toFixed(1)}px, ${(-lift + (1 - tw) * 0.12).toFixed(3)}em)`;
+    o.style.transform = `translate(${(-sw * ww).toFixed(1)}px, ${(lift).toFixed(3)}em)`;
+    const matched = p > 0.5;
+    for (const l of ls) l.style.color = matched ? 'var(--mint)' : '';
+
+    const up = easeOut(span(p, 0.58, 0.78));
+    word.style.transform = `translateY(${(-up * 22).toFixed(2)}vh) scale(${(1 - up * 0.55).toFixed(4)})`;
+    word.style.opacity = String(1 - span(p, 0.7, 0.8) * 0.88);
+    result.style.opacity = String(up);
+    result.style.transform = `translateY(${((1 - up) * 60).toFixed(1)}px)`;
+    words.style.opacity = String(easeOut(span(p, 0.52, 0.66)));
+    words.style.transform = `translateY(${((1 - span(p, 0.52, 0.66)) * 16).toFixed(1)}px)`;
+  });
+</script>

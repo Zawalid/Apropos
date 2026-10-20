@@ -1,0 +1,384 @@
+---
+/**
+ * Scene 10, Install. The page ends where it began, on the two keys, and this time the space bar is the download. Under
+ * them, the three steps on one line; the pearl marks the step you are reading as the line passes. Then the questions.
+ */
+import { Image } from 'astro:assets';
+import Key from '../Key.astro';
+import icon from '../../assets/icon.png';
+import { links, site, version } from '../../data/site';
+import { faq } from '../../data/faq';
+---
+<section class="scene install sheet" id="install" aria-labelledby="install-title" data-scene="install" data-light="day">
+  <div class="wrap">
+    <div class="finale">
+      <h2 id="install-title" class="claim">From download to the first Option-Space.</h2>
+      <div class="keys">
+        <Key wide={1.62} glyph="⌥" word="option" aria-hidden="true" />
+        <Key as="a" wide={5.1} href={links.download} class="k-get">
+          <span class="get-label">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v9m0 0L4.5 7M8 10.5 11.5 7M2.5 13.5h11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            Download for Mac
+          </span>
+        </Key>
+      </div>
+      <p class="small meta">Version {version}, macOS {site.minimumMacOS} or later. <a href={links.changelog}>What changed</a></p>
+    </div>
+
+    <div class="steps" data-steps>
+      <span class="line" aria-hidden="true"><span class="bead-run" data-run></span></span>
+      <ol class="step-row">
+      <li class="step" data-step>
+        <span class="n">1</span>
+        <h3>Open the download</h3>
+        <p>Move Apropos to Applications and open it. It lives in the menu bar <Image src={icon} alt="" width={20} height={20} densities={[1, 2]} class="inline-icon" />, with no Dock icon.</p>
+      </li>
+      <li class="step" data-step>
+        <span class="n">2</span>
+        <h3>Allow Accessibility</h3>
+        <p>The welcome guide says why, opens <span class="path">System Settings, Privacy &amp; Security, Accessibility</span>, and notices the change without a restart.</p>
+      </li>
+      <li class="step" data-step>
+        <span class="n">3</span>
+        <h3>Press Option-Space</h3>
+        <p>In any app. Type a few letters of what you want, press Return. Escape closes it.</p>
+        <p class="mini-keys" aria-hidden="true"><Key wide={1.62} glyph="⌥" word="option" /><Key wide={4} /></p>
+      </li>
+      </ol>
+    </div>
+
+    <div class="faq" id="faq">
+      <div class="faq-head">
+        <h2 class="faq-title">Questions</h2>
+        <label class="search">
+          <span class="visually-hidden">Search the questions</span>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="m10.5 10.5 3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+          <input type="search" placeholder="Search the questions" autocomplete="off" data-faq-search />
+        </label>
+      </div>
+      <div class="qs" data-qs>
+        {faq.map((q) => (
+          <details data-q>
+            <summary><span class="q" data-q-text>{q.q}</span><span class="ret" aria-hidden="true">&#8617;</span></summary>
+            <div class="a" set:html={q.a} />
+          </details>
+        ))}
+        <p class="small none" data-faq-none hidden>No question matches. <a href={links.issues}>Ask on GitHub</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .install {
+    margin-top: 16px;
+    padding-block: clamp(110px, 12vw, 180px) clamp(80px, 9vw, 140px);
+  }
+  .finale {
+    display: grid;
+    justify-items: center;
+    gap: clamp(32px, 4vw, 52px);
+    text-align: center;
+  }
+  .claim {
+    font-size: clamp(44px, 7vw, 108px);
+    max-width: 12ch;
+  }
+  .keys {
+    /* Seen a little from above, like keys on a desk. */
+    transform: perspective(900px) rotateX(24deg);
+    transform-origin: 50% 100%;
+    --u: min(8.6vw, 124px);
+    display: flex;
+    gap: calc(var(--u) * 0.14);
+    padding-bottom: calc(var(--u) * 0.1);
+  }
+  .get-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    font-size: calc(var(--u) * 0.2);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .get-label svg {
+    width: 0.9em;
+    height: 0.9em;
+  }
+  .keys :global(.k-get:hover) {
+    --press: 0.3;
+  }
+  .keys :global(.k-get:active) {
+    --press: 1;
+  }
+
+  /* The steps on one line. The pearl sits on the step being read. */
+  .steps {
+    position: relative;
+    margin-top: clamp(96px, 11vw, 160px);
+    padding-top: 40px;
+  }
+  .step-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(24px, 4vw, 64px);
+  }
+  .step:not(:global(.now)) h3 {
+    color: var(--ink-2);
+  }
+  .line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 6px;
+    height: 1px;
+    background: var(--line-2);
+  }
+  .bead-run {
+    position: absolute;
+    top: -5.5px;
+    left: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--pearl);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--pearl) 18%, transparent),
+      0 0 14px var(--pearl-glow);
+    transform: translateX(var(--x, 0px));
+    transition: transform 520ms var(--spring);
+  }
+  .step {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+  }
+  .n {
+    font: 600 13px/1 var(--mono);
+    color: var(--ink-3);
+  }
+  .step h3 {
+    font-family: var(--display);
+    font-size: clamp(24px, 2.2vw, 32px);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+  .step p {
+    color: var(--ink-2);
+    max-width: 24em;
+  }
+  .inline-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    vertical-align: -4px;
+  }
+  .path {
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .mini-keys {
+    --u: 34px;
+    display: flex;
+    gap: 5px;
+    margin-top: 6px;
+    padding-bottom: 4px;
+  }
+
+  /* Questions: a search field and results, like the panel. */
+  .faq {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 32px clamp(32px, 5vw, 80px);
+    margin-top: clamp(120px, 13vw, 200px);
+    align-items: start;
+  }
+  .faq-head {
+    position: sticky;
+    top: 96px;
+    display: grid;
+    gap: 22px;
+  }
+  .faq-title {
+    font-family: var(--display);
+    font-size: clamp(40px, 5vw, 72px);
+    letter-spacing: -0.045em;
+    line-height: 1;
+  }
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 52px;
+    padding: 0 16px;
+    border-radius: 14px;
+    background: var(--paper-2);
+    box-shadow: inset 0 0 0 1px var(--line);
+    color: var(--ink-3);
+  }
+  .search svg {
+    width: 16px;
+    height: 16px;
+    flex: none;
+  }
+  .search input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 17px;
+  }
+  .search input:focus {
+    outline: none;
+  }
+  .search:focus-within {
+    box-shadow: inset 0 0 0 2px var(--mint);
+  }
+  .qs {
+    border-top: 1px solid var(--line);
+  }
+  details {
+    border-bottom: 1px solid var(--line);
+  }
+  summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 4px;
+    font-weight: 600;
+    font-size: clamp(17px, 1.4vw, 19px);
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  .ret {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 24px;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 1px var(--line-2);
+    color: var(--ink-3);
+    font-size: 13px;
+    transition: transform 200ms var(--ease);
+  }
+  details[open] .ret {
+    transform: rotate(-90deg);
+  }
+  .a {
+    padding: 0 4px 22px;
+    color: var(--ink-2);
+    max-width: 38em;
+    animation: a-in 260ms var(--ease);
+  }
+  @keyframes a-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+  .a :global(code) {
+    font: 500 0.92em var(--mono);
+  }
+  .none {
+    padding-top: 16px;
+  }
+
+  @media (max-width: 860px) {
+    .keys {
+      --u: 14vw;
+    }
+    .keys :global(.key:first-child) {
+      --kw: 1.4;
+    }
+    .keys :global(.k-get) {
+      --kw: 4.2;
+    }
+    .get-label {
+      font-size: calc(var(--u) * 0.24);
+    }
+    .steps {
+      padding-top: 0;
+      padding-left: 22px;
+    }
+    .step-row {
+      grid-template-columns: 1fr;
+      gap: 36px;
+    }
+    .line {
+      left: 5px;
+      right: auto;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      height: auto;
+    }
+    .bead-run {
+      top: 0;
+      left: -5.5px;
+      transform: translateY(var(--y, 0px));
+    }
+    .faq {
+      grid-template-columns: 1fr;
+    }
+    .faq-head {
+      position: relative;
+      top: 0;
+    }
+  }
+</style>
+
+<script>
+  import { eachFrame } from '../../scripts/scenes';
+
+  // The pearl sits on the step at the reading line, and moves on as the steps pass.
+  const steps = document.querySelector<HTMLElement>('[data-steps]');
+  const items = [...(steps?.querySelectorAll<HTMLElement>('[data-step]') ?? [])];
+  const run = steps?.querySelector<HTMLElement>('[data-run]');
+  if (steps && run) {
+    let cur = -1;
+    const place = (i: number) => {
+      const it = items[i];
+      if (!it) return;
+      run.style.setProperty('--x', `${it.offsetLeft}px`);
+      run.style.setProperty('--y', `${it.offsetTop + 8}px`);
+      items.forEach((s, k) => s.classList.toggle('now', k === i));
+    };
+    eachFrame(() => {
+      const r = steps.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const t = Math.min(1, Math.max(0, (vh * 0.75 - r.top) / Math.max(1, r.height + vh * 0.25)));
+      const i = Math.min(items.length - 1, Math.floor(t * items.length));
+      if (i !== cur) {
+        cur = i;
+        place(i);
+      }
+    });
+    window.addEventListener('resize', () => place(Math.max(0, cur)));
+  }
+
+  // Questions: filter as you type.
+  const search = document.querySelector<HTMLInputElement>('[data-faq-search]');
+  const qs = [...document.querySelectorAll<HTMLDetailsElement>('[data-q]')];
+  const none = document.querySelector<HTMLElement>('[data-faq-none]');
+  search?.addEventListener('input', () => {
+    const q = search.value.trim().toLowerCase();
+    let shown = 0;
+    for (const d of qs) {
+      const hit = !q || (d.textContent ?? '').toLowerCase().includes(q);
+      d.hidden = !hit;
+      if (hit) shown++;
+    }
+    if (none) none.hidden = shown > 0;
+  });
+</script>

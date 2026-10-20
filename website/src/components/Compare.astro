@@ -24,10 +24,10 @@ const groups = (['Does', 'Setup and price'] as const).filter((g) => rows.some((r
 const markWord: Record<Mark, string> = { yes: 'Yes', some: 'Partly', no: 'No' };
 const sourceOf = (tool: string, label: string) => `Source for ${tool}, ${label.toLowerCase()}`;
 ---
-<section id="compare" class="section compare" aria-labelledby={heading ? 'compare-title' : undefined}>
+<section id="compare" class:list={['compare', { 'scene sheet home-compare': heading }]} aria-labelledby={heading ? 'compare-title' : undefined} data-light={heading ? 'day' : undefined}>
   <div class="wrap">
     {heading && (
-      <div class="section-head">
+      <div class="head">
         <h2 id="compare-title" class="claim">Keep your launcher.</h2>
         <p class="lede">
           Apropos does not launch apps, search files or keep your clipboard. Raycast, Alfred and Spotlight do that well,
@@ -36,7 +36,8 @@ const sourceOf = (tool: string, label: string) => `Source for ${tool}, ${label.t
       </div>
     )}
 
-    <div class="wide">
+    <div class="wide" data-scan>
+      <span class="scan" aria-hidden="true"></span>
       <table>
         <caption class="visually-hidden">Apropos compared with Raycast, Spotlight, Alfred and the Help menu</caption>
         <thead>
@@ -318,32 +319,60 @@ const sourceOf = (tool: string, label: string) => `Source for ${tool}, ${label.t
   }
 
   /* Pointing at a column lights it from top to bottom (motion.ts sets .col-on). */
-  th,
-  td {
-    transition: background-color 200ms var(--ease);
+  .home-compare {
+    margin-top: 16px;
+    padding-block: clamp(96px, 11vw, 160px) clamp(72px, 8vw, 120px);
+  }
+  .head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 30em);
+    gap: 24px 64px;
+    align-items: end;
+    margin-bottom: clamp(48px, 6vw, 88px);
+  }
+  .head .claim {
+    font-size: clamp(44px, 7vw, 104px);
+    max-width: 8ch;
+  }
+  @media (max-width: 860px) {
+    .head {
+      grid-template-columns: 1fr;
+    }
   }
   :global(.col-on):not(.us) {
     background: color-mix(in srgb, var(--paper-2) 70%, transparent);
   }
-  /* Marks pop in row by row the first time the table is seen. */
-  :global(html.motion-on) .wide .mark {
+  /* The scan: the table is revealed by a line passing down it as it scrolls into view, and each row's marks pop as the
+     line passes them. Without motion the table is simply there. */
+  .wide {
+    position: relative;
+  }
+  .scan {
+    display: none;
+  }
+  :global(html.live) .wide table {
+    clip-path: inset(0 0 calc(100% - var(--scan, 0%)) 0);
+  }
+  :global(html.live) .wide .scan {
+    display: block;
+    position: absolute;
+    left: -12px;
+    right: -12px;
+    top: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--mint);
+    box-shadow: 0 0 14px var(--mint-wash);
+    transform: translateY(var(--scan-y, 0px));
+    opacity: var(--scan-o, 1);
+    pointer-events: none;
+  }
+  :global(html.live) .wide .mark {
     transform: scale(0);
-    transition: transform 420ms cubic-bezier(0.34, 1.6, 0.64, 1);
+    transition: transform 420ms var(--spring);
   }
-  :global(html.motion-on) .wide table:global(.marks-in) .mark {
+  :global(html.live) .wide tr:global(.in) .mark {
     transform: none;
-  }
-  :global(html.motion-on) .wide tbody tr:nth-child(2) .mark {
-    transition-delay: 80ms;
-  }
-  :global(html.motion-on) .wide tbody tr:nth-child(3) .mark {
-    transition-delay: 160ms;
-  }
-  :global(html.motion-on) .wide tbody tr:nth-child(4) .mark {
-    transition-delay: 240ms;
-  }
-  :global(html.motion-on) .wide tbody tr:nth-child(5) .mark {
-    transition-delay: 320ms;
   }
   .legend {
     display: flex;
@@ -452,3 +481,64 @@ const sourceOf = (tool: string, label: string) => `Source for ${tool}, ${label.t
     }
   }
 </style>
+
+<script>
+  import { eachFrame, motion } from '../scripts/scenes';
+
+  // Phones: pick a tool, read it against Apropos.
+  for (const group of document.querySelectorAll<HTMLElement>('.compare [data-tabs]')) {
+    const tabs = [...group.querySelectorAll<HTMLButtonElement>('[data-tab]')];
+    const panels = [...group.querySelectorAll<HTMLElement>('[data-panel]')];
+    const pick = (i: number, focus = false) => {
+      tabs.forEach((t, k) => {
+        t.setAttribute('aria-selected', String(k === i));
+        t.tabIndex = k === i ? 0 : -1;
+      });
+      panels.forEach((p, k) => (p.hidden = k !== i));
+      if (focus) tabs[i]?.focus();
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => pick(i));
+      t.addEventListener('keydown', (e) => {
+        const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        pick((i + d + tabs.length) % tabs.length, true);
+      });
+    });
+  }
+
+  // Wide: the column under the pointer lights from top to bottom.
+  const table = document.querySelector<HTMLTableElement>('.compare .wide table');
+  if (table) {
+    table.addEventListener('pointerover', (e) => {
+      const cell = (e.target as HTMLElement).closest('td, th');
+      if (!cell || !(cell instanceof HTMLTableCellElement)) return;
+      const col = cell.cellIndex;
+      for (const row of table.rows) {
+        for (const c of row.cells) c.classList.toggle('col-on', col > 0 && c.cellIndex === col && row.cells.length > 2);
+      }
+    });
+    table.addEventListener('pointerleave', () => {
+      for (const c of table.querySelectorAll('.col-on')) c.classList.remove('col-on');
+    });
+  }
+
+  // The scan line runs down the table as it comes up the screen.
+  const wide = document.querySelector<HTMLElement>('.compare [data-scan]');
+  if (wide && table && motion) {
+    const rows = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')];
+    eachFrame(() => {
+      const r = wide.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const reach = Math.min(1, Math.max(0, (vh * 0.82 - r.top) / (r.height * 0.9)));
+      const y = reach * r.height;
+      wide.style.setProperty('--scan', `${(reach * 100).toFixed(2)}%`);
+      wide.style.setProperty('--scan-y', `${y.toFixed(1)}px`);
+      wide.style.setProperty('--scan-o', reach >= 1 ? '0' : '1');
+      for (const row of rows) {
+        row.classList.toggle('in', row.offsetTop + 20 < y || reach >= 1);
+      }
+    });
+  }
+</script>

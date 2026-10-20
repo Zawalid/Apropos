@@ -1,14 +1,16 @@
 ---
 import Base from '../layouts/Base.astro';
-import Hero from '../components/Hero.astro';
-import Gap from '../components/Gap.astro';
-import Story from '../components/Story.astro';
-import Holding from '../components/Holding.astro';
-import Yours from '../components/Yours.astro';
-import Apps from '../components/Apps.astro';
+import Press from '../components/scenes/Press.astro';
+import Deep from '../components/scenes/Deep.astro';
+import Apps from '../components/scenes/Apps.astro';
+import Slip from '../components/scenes/Slip.astro';
+import Holding from '../components/scenes/Holding.astro';
+import Send from '../components/scenes/Send.astro';
+import Next from '../components/scenes/Next.astro';
+import Yours from '../components/scenes/Yours.astro';
 import Compare from '../components/Compare.astro';
-import Private from '../components/Private.astro';
-import Install from '../components/Install.astro';
+import Private from '../components/scenes/Private.astro';
+import Install from '../components/scenes/Install.astro';
 import { faq } from '../data/faq';
 
 const faqLd = {
@@ -22,11 +24,13 @@ const faqLd = {
 };
 ---
 <Base home extraJsonLd={[faqLd]}>
-  <Hero />
-  <Gap />
-  <Story />
-  <Holding />
+  <Press />
+  <Deep />
+  <Slip />
   <Apps />
+  <Holding />
+  <Send />
+  <Next />
   <Yours />
   <Compare />
   <Private />
