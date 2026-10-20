@@ -4,7 +4,6 @@
  * shows what the action leaves in your hands (the output), not a drawing of the app.
  */
 import { actionCount, titlesFor } from '../data/actions';
-import Shot from './Shot.astro';
 
 const text = titlesFor('selectedText');
 const files = titlesFor('selectedFiles');
@@ -24,10 +23,10 @@ const turns = [
 <section id="holding" class="section holding" aria-labelledby="holding-title">
   <div class="wrap">
     <div class="section-head">
-      <h2 id="holding-title" class="claim">It sees what you are holding.</h2>
+      <h2 id="holding-title" class="claim">{actionCount} things to do with what you selected.</h2>
       <p class="lede">
-        Select text, files, a page or a folder, and the list adds what you can do with it, in any app. {actionCount} actions ship
-        built in. They run on your Mac, and a selection is never run as code.
+        Built in, in any app, grouped by what you hold: text, files, the page in your browser, a folder or a repository.
+        They run on your Mac, and a selection is never run as code.
       </p>
     </div>
 
@@ -73,20 +72,6 @@ const turns = [
         </p>
         <ul class="names">{folder.map((t) => <li>{t}</li>)}</ul>
       </article>
-    </div>
-    <div class="seen">
-      <figure>
-        <Shot id="ctx-files" ratio={4 / 3} zoom={1.3} zoomSmall={1.35} sizes="(max-width: 900px) 120vw, 520px" />
-        <figcaption class="small">Finder, three files selected: the folder and the count as chips, and the actions for files.</figcaption>
-      </figure>
-      <figure>
-        <Shot id="ctx-page" ratio={4 / 3} zoom={1.3} zoomSmall={1.35} sizes="(max-width: 900px) 120vw, 520px" />
-        <figcaption class="small">Safari, a page with text selected: Send selection to sits beside Safari’s own commands.</figcaption>
-      </figure>
-      <figure>
-        <Shot id="ctx-git" ratio={4 / 3} zoom={1.3} zoomSmall={1.35} sizes="(max-width: 900px) 120vw, 520px" />
-        <figcaption class="small">Terminal in a repository: the folder and the branch.</figcaption>
-      </figure>
     </div>
     <p class="small after">
       Secure fields are never read, and password managers never give up their selection. You can switch each kind of
@@ -207,25 +192,11 @@ const turns = [
     letter-spacing: -0.02em;
     overflow-wrap: anywhere;
   }
-  .seen {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-    margin-top: 16px;
-  }
-  .seen figure {
-    display: grid;
-    gap: 10px;
-    align-content: start;
-  }
   .after {
     margin-top: 22px;
     max-width: 64ch;
   }
   @media (max-width: 900px) {
-    .seen {
-      grid-template-columns: 1fr;
-    }
     .t-text,
     .t-files,
     .t-page,

@@ -1,22 +1,30 @@
 ---
 /**
- * Works with your apps: a moving wall of real app icons, then an explorer of the measured apps. Without apps.json the
- * explorer is left out and the wall stays, since every icon is an app the list reads through its menu bar.
+ * Works with your apps: the real panel over 14 apps, switched from a dock of their icons (it moves on by itself while
+ * on screen), then every other app as a quiet row of icons, then the explorer of measured apps when apps.json exists.
  */
 import { Image } from 'astro:assets';
-import { fmt, iconFor, measurement, wallApps, type MeasuredApp } from '../data/apps';
-import Shot from './Shot.astro';
-import type { SlotId } from '../data/shots';
+import { fmt, iconFor, measurement, type MeasuredApp } from '../data/apps';
+import Window from './Window.astro';
+import type { WindowId } from '../data/windows';
 
-// Real panels over real apps (stage captures; the menus are each app's real menu bar, the rest is sample data).
-const gallery: { slot: SlotId; app: string }[] = [
-  ['music', 'Music'], ['calendar', 'Calendar'], ['photos', 'Photos'], ['maps', 'Maps'], ['preview', 'Preview'],
-  ['reminders', 'Reminders'], ['terminal', 'Terminal'], ['textedit', 'TextEdit'], ['systemsettings', 'System Settings'],
-  ['finder', 'Finder'], ['mail', 'Mail'], ['notes', 'Notes'], ['xcode', 'Xcode'],
-].map(([k, app]) => ({ slot: `app-${k}` as SlotId, app }));
-
-const half = Math.ceil(wallApps.length / 2);
-const rows = [wallApps.slice(0, half), wallApps.slice(half)];
+// Real panels (stage captures): each list is that app's own menu bar, read on a real Mac.
+const dock: { id: WindowId; app: string }[] = [
+  { id: 'app-finder', app: 'Finder' },
+  { id: 'app-safari', app: 'Safari' },
+  { id: 'app-mail', app: 'Mail' },
+  { id: 'app-notes', app: 'Notes' },
+  { id: 'app-calendar', app: 'Calendar' },
+  { id: 'app-reminders', app: 'Reminders' },
+  { id: 'app-music', app: 'Music' },
+  { id: 'app-photos', app: 'Photos' },
+  { id: 'app-maps', app: 'Maps' },
+  { id: 'app-preview', app: 'Preview' },
+  { id: 'app-textedit', app: 'TextEdit' },
+  { id: 'app-terminal', app: 'Terminal' },
+  { id: 'app-xcode', app: 'Xcode' },
+  { id: 'app-systemsettings', app: 'System Settings' },
+];
 const apps = measurement?.apps ?? [];
 
 function sample(app: MeasuredApp) {
@@ -43,46 +51,32 @@ function topMenus(app: MeasuredApp) {
     <div class="section-head">
       <h2 id="apps-title" class="claim">Works in the apps you already have.</h2>
       <p class="lede">
-        If an app has a menu bar, Apropos reads it. No plugin per app, no waiting for anyone to add support.
+        If an app has a menu bar, Apropos reads it. No plugin per app, and no waiting for anyone to add support. Pick one.
       </p>
     </div>
-  </div>
 
-  <div class="marquee">
-    {rows.map((row, r) => (
-      <div class:list={['row', { reverse: r === 1 }]}>
-        <ul class="belt">
-          {[...row, ...row].map((name, i) => {
-            const icon = iconFor(name);
-            return (
-              <li aria-hidden={i >= row.length ? 'true' : undefined}>
-                {icon && <Image src={icon} alt="" width={64} height={64} densities={[1, 2]} />}
-                <span>{name}</span>
-              </li>
-            );
-          })}
-        </ul>
+    <div class="switcher" data-switcher>
+      <div class="sw-panels">
+        {dock.map((d, i) => (
+          <div class="sw-panel" id={`sw-panel-${i}`} role="tabpanel" aria-labelledby={`sw-tab-${i}`} hidden={i !== 0} data-panel>
+            <Window id={d.id} width={760} eager={i === 0} class="bleed" />
+          </div>
+        ))}
       </div>
-    ))}
-  </div>
+      <div class="sw-dock" role="tablist" aria-label="Show Apropos over">
+        {dock.map((d, i) => {
+          const icon = iconFor(d.app);
+          return (
+            <button type="button" role="tab" id={`sw-tab-${i}`} aria-controls={`sw-panel-${i}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} aria-label={d.app} title={d.app} data-tab>
+              {icon && <Image src={icon} alt="" width={48} height={48} densities={[1, 2]} />}
+            </button>
+          );
+        })}
+      </div>
+    </div>
 
-  <div class="wrap gallery-head">
-    <p class="small">The same key over {gallery.length} apps. Each list is that app’s own menu bar, with its shortcuts.</p>
+    <p class="small others">Fourteen of them here. Every other app with a menu bar works the same way.</p>
   </div>
-  <ul class="gallery" aria-label="Apropos over other apps" tabindex="0">
-    {gallery.map((g) => {
-      const icon = iconFor(g.app);
-      return (
-        <li>
-          <Shot id={g.slot} ratio={4 / 3} zoom={1.3} zoomSmall={1.3} sizes="(max-width: 700px) 110vw, 720px" />
-          <p class="g-cap">
-            {icon && <Image src={icon} alt="" width={22} height={22} densities={[1, 2]} />}
-            {g.app}
-          </p>
-        </li>
-      );
-    })}
-  </ul>
 
   {apps.length > 0 && measurement && (
     <div class="wrap explorer" data-explorer>
@@ -141,88 +135,84 @@ function topMenus(app: MeasuredApp) {
 </section>
 
 <style>
-  .marquee {
-    display: grid;
-    gap: 18px;
-    overflow: hidden;
-    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  .apps {
+    overflow-x: clip;
   }
-  .belt {
-    display: flex;
-    gap: 28px;
-    width: max-content;
-    animation: belt 70s linear infinite;
-  }
-  .reverse .belt {
-    animation-direction: reverse;
-    animation-duration: 80s;
-  }
-  .marquee:hover .belt {
-    animation-play-state: paused;
-  }
-  @keyframes belt {
-    to {
-      transform: translateX(-50%);
-    }
-  }
-  .belt li {
+  .switcher {
     display: grid;
     justify-items: center;
-    gap: 6px;
-    width: 92px;
-    font-size: 12px;
-    color: var(--ink-3);
+    gap: 28px;
+  }
+  .sw-panels {
+    display: grid;
+    width: min(100%, 760px);
+  }
+  @media (max-width: 600px) {
+    .switcher {
+      justify-items: start;
+    }
+    .sw-dock {
+      justify-self: stretch;
+    }
+  }
+  .sw-panel {
+    grid-area: 1 / 1;
+  }
+  .sw-panel[hidden] {
+    display: block;
+    visibility: hidden;
+  }
+  .sw-dock {
+    display: flex;
+    gap: 4px;
+    max-width: 100%;
+    padding: 8px 10px;
+    overflow-x: auto;
+    border-radius: 22px;
+    background: var(--card);
+    box-shadow:
+      0 0 0 1px var(--line),
+      0 18px 40px -24px rgba(0, 0, 0, 0.35);
+    scrollbar-width: none;
+  }
+  .sw-dock button {
+    position: relative;
+    flex: none;
+    padding: 4px 4px 10px;
+    border: 0;
+    border-radius: 12px;
+    background: none;
+    cursor: pointer;
+  }
+  .sw-dock img {
+    width: 48px;
+    height: 48px;
+    transition: transform 200ms var(--ease);
+  }
+  .sw-dock button:hover img {
+    transform: translateY(-4px) scale(1.06);
+  }
+  .sw-dock button[aria-selected='true']::after {
+    content: '';
+    position: absolute;
+    bottom: 1px;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    border-radius: 50%;
+    background: var(--pearl);
+    box-shadow: 0 0 8px var(--pearl-glow);
+  }
+  .others {
+    margin-top: 18px;
     text-align: center;
   }
-  .belt img {
-    width: 64px;
-    height: 64px;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .belt {
-      animation: none;
-      flex-wrap: wrap;
-      justify-content: center;
-      width: auto;
+  @media (max-width: 560px) {
+    .sw-dock img {
+      width: 40px;
+      height: 40px;
     }
-    .belt li[aria-hidden] {
-      display: none;
-    }
-    .reverse {
-      display: none;
-    }
-  }
-
-  .gallery-head {
-    margin-top: clamp(48px, 6vw, 80px);
-    margin-bottom: 18px;
-  }
-  .gallery {
-    display: flex;
-    gap: 18px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: max(var(--gutter), calc((100vw - var(--max)) / 2));
-    padding: 4px max(var(--gutter), calc((100vw - var(--max)) / 2)) 22px;
-    scrollbar-width: thin;
-  }
-  .gallery li {
-    flex: none;
-    width: min(560px, 84vw);
-    scroll-snap-align: start;
-    display: grid;
-    gap: 10px;
-  }
-  .g-cap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 15px;
-    font-weight: 600;
-  }
-  .g-cap img {
-    width: 22px;
-    height: 22px;
   }
   .explorer {
     margin-top: clamp(56px, 7vw, 96px);

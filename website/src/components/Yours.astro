@@ -3,7 +3,7 @@
  * Make your own: aliases, keys, links, Shortcuts, programs, and recording (early). Each tile does one small thing when
  * you touch it, and the features that are not yet checked on a real Mac carry the Early tag.
  */
-import Shot from './Shot.astro';
+import Window from './Window.astro';
 
 const link = 'apropos://run?command=up&text=hello%20world';
 ---
@@ -44,43 +44,30 @@ const link = 'apropos://run?command=up&text=hello%20world';
         <p>Links run the commands you allow, from a Raycast quicklink, Alfred or any script. Shortcuts has a Run Apropos Command action for the same commands.</p>
       </article>
 
-      <article class="b b-record">
-        <div class="b-text">
+    </div>
+
+    <div class="desk" data-desk>
+      <div class="desk-wins" aria-hidden="false">
+        <div class="w-review" data-drift="-0.06"><Window id="recording-review" width={500} /></div>
+        <div class="w-alias" data-drift="0.05"><Window id="alias-popover" width={600} /></div>
+      </div>
+      <div class="desk-text">
+        <div class="note">
           <h3>Record it once <span class="early">Early</span></h3>
           <p>
-            Choose Record, use the menus of any app, stop with Control-Option-Command-R. A review lists every step in plain
-            words with how sturdy it is, tries each one against the apps without pressing anything, and saves it as a
-            command. Typed text is never recorded.
+            Choose Record and use the menus of any app. Stop with Control-Option-Command-R. The review lists every step in
+            plain words with how sturdy it is, tries each one against the apps without pressing anything, and saves it as
+            a command. Typed text is never recorded.
           </p>
         </div>
-        <Shot id="recording-review" ratio={1.3} zoom={1.3} zoomSmall={1.6} sizes="(max-width: 700px) 160vw, (min-width: 1000px) 760px, 130vw" />
-      </article>
-
-      <article class="b b-menu">
-        <div class="b-text">
+        <div class="note">
           <h3>Keys for any menu item <span class="early">Early</span></h3>
           <p>
             Command-K on a menu item gives it an alias and a shortcut of its own. One key can serve items in different
             apps, since it runs the item of the app in front.
           </p>
         </div>
-        <Shot id="alias-popover" ratio={1.3} zoom={1.2} zoomSmall={1.45} sizes="(max-width: 700px) 145vw, (min-width: 1000px) 700px, 120vw" />
-      </article>
-
-      <figure class="b b-page">
-        <Shot id="settings-menu-keys" ratio={0.77} sizes="(max-width: 1000px) 100vw, 600px" />
-        <figcaption>
-          <strong>Settings, Shortcuts.</strong> Every key in one place: the panel’s, your commands’, and the menu items you
-          gave an alias or a key, with the app each belongs to.
-        </figcaption>
-      </figure>
-      <figure class="b b-page">
-        <Shot id="settings-links" ratio={0.77} sizes="(max-width: 1000px) 100vw, 600px" />
-        <figcaption>
-          <strong>Settings, Integrations.</strong> Which commands may run from outside, a link builder, and copyable
-          links for Raycast, Alfred or a script.
-        </figcaption>
-      </figure>
+      </div>
     </div>
   </div>
 </section>
@@ -116,26 +103,6 @@ const link = 'apropos://run?command=up&text=hello%20world';
   }
   .b-link {
     grid-column: span 4;
-  }
-  .b-page {
-    grid-column: span 6;
-    margin: 0;
-  }
-  .b-page figcaption {
-    color: var(--ink-2);
-    font-size: 15px;
-  }
-  .b-page strong {
-    color: var(--ink);
-  }
-  .b-record,
-  .b-menu {
-    grid-column: span 6;
-    align-content: space-between;
-  }
-  .b-text {
-    display: grid;
-    gap: 12px;
   }
 
   .alias-demo {
@@ -245,10 +212,7 @@ const link = 'apropos://run?command=up&text=hello%20world';
     .b-key {
       grid-column: span 6;
     }
-    .b-link,
-    .b-record,
-    .b-menu,
-    .b-page {
+    .b-link {
       grid-column: 1 / -1;
     }
   }
@@ -256,6 +220,57 @@ const link = 'apropos://run?command=up&text=hello%20world';
     .b-alias,
     .b-key {
       grid-column: 1 / -1;
+    }
+  }
+  /* Two real windows overlapping like on a desktop, drifting apart a little as the page scrolls. */
+  .desk {
+    margin-top: clamp(56px, 7vw, 104px);
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(32px, 5vw, 72px);
+    align-items: center;
+  }
+  .desk-wins {
+    position: relative;
+    aspect-ratio: 1.12;
+  }
+  .w-review {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 66%;
+    transform: translateY(var(--drift, 0px));
+  }
+  .w-alias {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 74%;
+    transform: translateY(var(--drift, 0px));
+  }
+  .desk-text {
+    display: grid;
+    gap: 36px;
+  }
+  .note {
+    display: grid;
+    gap: 10px;
+  }
+  .note h3 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+  .note p {
+    color: var(--ink-2);
+    max-width: 44ch;
+  }
+  @media (max-width: 900px) {
+    .desk {
+      grid-template-columns: 1fr;
+    }
+    .desk-wins {
+      aspect-ratio: 0.95;
     }
   }
 </style>

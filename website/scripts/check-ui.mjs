@@ -35,17 +35,30 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
   check(await page.evaluate(() => document.querySelector('[data-demo]').open), `${label}: the option key did not open the demo`);
   await page.locator('[data-demo-close]').click();
 
-  // Dock: arrow keys move the selection and show one panel.
-  await page.locator('#onekey').scrollIntoViewIfNeeded();
-  await page.locator('#onekey-tab-mail').focus();
+  // App switcher: arrow keys move the selection and show one panel.
+  await page.locator('#apps').scrollIntoViewIfNeeded();
+  await page.locator('#sw-tab-0').focus();
   await page.keyboard.press('ArrowRight');
-  const sel = await page.evaluate(() => [...document.querySelectorAll('#onekey [data-tab]')].map((t) => t.getAttribute('aria-selected')).join());
-  check(sel === 'false,true,false,false,false', `${label}: ArrowRight in the dock gave ${sel}`);
+  const sel = await page.evaluate(() => document.querySelector('#sw-tab-1').getAttribute('aria-selected'));
+  check(sel === 'true', `${label}: ArrowRight in the app switcher did not select the second app`);
   await page.keyboard.press('End');
-  const lastOn = await page.evaluate(() => document.querySelector('#onekey-tab-finder').getAttribute('aria-selected'));
-  check(lastOn === 'true', `${label}: End did not select the last app`);
-  const shown = await page.evaluate(() => [...document.querySelectorAll('#onekey [data-panel]')].filter((p) => !p.hidden).length);
-  check(shown === 1, `${label}: ${shown} dock panels are shown, expected 1`);
+  const shown = await page.evaluate(() => [...document.querySelectorAll('[data-switcher] [data-panel]')].filter((p) => !p.hidden).length);
+  check(shown === 1, `${label}: ${shown} app panels are shown, expected 1`);
+
+  // Install steps: clicking a step shows its window.
+  await page.locator('#step-tab-2').scrollIntoViewIfNeeded();
+  await page.locator('#step-tab-2').click();
+  const step = await page.evaluate(() => !document.getElementById('step-2').hidden && document.getElementById('step-0').hidden);
+  check(step, `${label}: clicking step 3 did not show its window`);
+
+  // Story: scrolling into the middle of the track turns on a later chapter (wide screens).
+  await page.evaluate(() => {
+    const t = document.querySelector('[data-story] .track');
+    window.scrollTo(0, t.getBoundingClientRect().top + window.scrollY + t.offsetHeight * 0.5);
+  });
+  await page.waitForTimeout(400);
+  const on = await page.evaluate(() => [...document.querySelectorAll('[data-chapter]')].findIndex((c) => c.classList.contains('on')));
+  check(on >= 2, `${label}: halfway down the story the chapter on is ${on}`);
 
   // Explorer, when there is measured data.
   if (await page.locator('[data-explorer]').count()) {
@@ -60,7 +73,7 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
   await page.waitForTimeout(700);
   check(await page.evaluate(() => document.documentElement.classList.contains('docked')), `${label}: the nav pearl did not dock`);
   const current = await page.evaluate(() => document.querySelector('[data-nav] a[aria-current="true"]')?.dataset.for);
-  check(current === 'holding', `${label}: the nav marks ${current} while reading holding`);
+  check(current === 'holding', `${label}: the nav marks ${current} while reading the actions`);
 
   // FAQ: a click opens an answer (animated with motion) and a second click closes it.
   const q = page.locator('details[data-q]').first();
@@ -120,4 +133,4 @@ if (problems.length) {
   for (const p of problems) console.log(' - ' + p);
   process.exit(1);
 }
-console.log('\nOK: demo, dock, nav, FAQ, copy and control names checked, with and without motion.');
+console.log('\nOK: demo, story, app switcher, install steps, nav, FAQ, copy and control names checked, with and without motion.');

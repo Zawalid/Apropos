@@ -1,0 +1,231 @@
+---
+/**
+ * The story of one key: on wide screens the panel stays in place while the chapters scroll past, and it changes to the
+ * real state each chapter talks about. The pearl travels down the line beside the words. On phones each chapter is its
+ * words and then its window, in order.
+ */
+import Window from './Window.astro';
+import type { WindowId } from '../data/windows';
+
+interface Chapter {
+  window: WindowId;
+  claim: string;
+  line: string;
+  keys: string[];
+  early?: boolean;
+}
+
+const chapters: Chapter[] = [
+  {
+    window: 'deep-xcode',
+    claim: 'Every command, however deep.',
+    line: 'Commands three menus down come up next to the top ones, each with its path and its shortcut, so you learn the keys on the way.',
+    keys: ['c', 'l', 'e', 'a', 'n'],
+  },
+  {
+    window: 'slip',
+    claim: 'Slips are fine.',
+    line: 'Two letters swapped still find it. Accents and capitals never matter, and the short names you type often are remembered.',
+    keys: ['s', 'h', 'w', 'o'],
+  },
+  {
+    window: 'holding',
+    claim: 'It sees what you are holding.',
+    line: 'A page and a selection in Safari become chips under the search, and the list adds what you can do with them.',
+    keys: ['⌥', 'Space'],
+  },
+  {
+    window: 'send-list',
+    claim: 'Send it where it belongs.',
+    line: 'Notes, Reminders, Things, Obsidian, Bear, a Mail draft, a folder or the Share menu. Each shows only when its app is installed.',
+    keys: ['↩'],
+  },
+  {
+    window: 'sequence',
+    claim: 'Chain steps across apps.',
+    line: 'Command-K adds any row to a draft. Each step gets the result of the one before, so Notes receives the capitals, not the original.',
+    keys: ['⌘', 'K'],
+  },
+  {
+    window: 'confirm',
+    claim: 'Nothing leaves without a second Return.',
+    line: 'Anything that leaves a trace waits with a one-line preview of what will go. A Mail draft never sends itself.',
+    keys: ['↩', 'esc'],
+  },
+  {
+    window: 'usually-next',
+    claim: 'It learns what comes next. On this Mac.',
+    line: 'From command names, apps and times only, never your selection, addresses or documents. It says why, and Command-Return runs it.',
+    keys: ['⌘', '↩'],
+  },
+];
+---
+<section id="how" class="story" aria-labelledby="how-title" data-story style={`--n:${chapters.length}`}>
+  <div class="wrap head">
+    <h2 id="how-title" class="claim">One key. Then a few letters.</h2>
+  </div>
+
+  <div class="track">
+    <div class="stage wrap">
+      <div class="words">
+        <div class="rail" aria-hidden="true"><span class="bead" data-story-bead></span></div>
+        <ol class="chapters">
+          {chapters.map((c, i) => (
+            <li class:list={['chapter', { on: i === 0 }]} data-chapter={i}>
+              <h3>{c.claim}</h3>
+              <p>{c.line}</p>
+              <p class="keys" aria-hidden="true">
+                {c.keys.map((k) => <span class="kbd">{k}</span>)}
+              </p>
+              <div class="flow-win"><Window id={c.window} width={680} decorative class="bleed" /></div>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div class="panes" aria-hidden="true">
+        {chapters.map((c, i) => (
+          <div class:list={['pane', { on: i === 0 }]} data-pane={i}>
+            <Window id={c.window} width={760} decorative eager={i === 0} />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .story {
+    padding-top: clamp(96px, 13vw, 176px);
+    /* Clips the phone windows that run off the edge; clip, unlike hidden, keeps the stage sticky. */
+    overflow-x: clip;
+  }
+  .head {
+    margin-bottom: clamp(24px, 4vw, 48px);
+  }
+
+  /* Wide screens: the stage sticks while the track scrolls; one chapter and one pane are on at a time. */
+  .track {
+    height: calc(var(--n) * 78vh + 20vh);
+  }
+  .stage {
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    display: grid;
+    grid-template-columns: minmax(0, 4.5fr) minmax(0, 7.5fr);
+    gap: clamp(32px, 4vw, 64px);
+    align-items: center;
+  }
+  .words {
+    position: relative;
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 22px;
+    align-items: center;
+  }
+  .rail {
+    position: relative;
+    width: 2px;
+    height: min(52vh, 420px);
+    margin-left: 11px;
+    border-radius: 2px;
+    background: var(--line-2);
+  }
+  .rail .bead {
+    position: absolute;
+    left: -3px;
+    top: -4px;
+    transform: translateY(var(--y, 0px));
+    transition: transform 420ms var(--spring);
+  }
+  .chapters {
+    display: grid;
+  }
+  .chapter {
+    grid-area: 1 / 1;
+    display: grid;
+    gap: 18px;
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+      opacity 260ms var(--ease),
+      transform 260ms var(--ease);
+    pointer-events: none;
+  }
+  .chapter.on {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  .chapter h3 {
+    font-family: var(--display);
+    font-size: clamp(34px, 3.6vw, 52px);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+  .chapter p {
+    color: var(--ink-2);
+    font-size: 18px;
+    max-width: 34ch;
+  }
+  .keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 20px;
+  }
+  .flow-win {
+    display: none;
+  }
+  .panes {
+    display: grid;
+    align-items: center;
+  }
+  .pane {
+    grid-area: 1 / 1;
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+    transition:
+      opacity 280ms var(--ease),
+      transform 420ms var(--ease);
+  }
+  .pane.on {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Phones and narrow windows: no pinning, each chapter reads in order with its own window. */
+  @media (max-width: 1023px) {
+    .track {
+      height: auto;
+    }
+    .stage {
+      position: static;
+      height: auto;
+      display: block;
+    }
+    .words {
+      display: block;
+    }
+    .rail,
+    .panes {
+      display: none;
+    }
+    .chapters {
+      gap: 72px;
+    }
+    .chapter,
+    .chapter.on {
+      grid-area: auto;
+      opacity: 1;
+      transform: none;
+      pointer-events: auto;
+    }
+    .flow-win {
+      display: block;
+      margin-top: 8px;
+    }
+  }
+</style>

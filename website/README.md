@@ -53,19 +53,21 @@ From the contact sheets of every section of these sites (`/private/tmp/claude-50
 
 ### Home `/`
 
-| Section | Idea | Pictures (slot ids) | Data |
-|---|---|---|---|
-| Hero | Headline, download pill, the ring and pearl, key caps that open the demo; Option-Space on the page opens it too | demo: `demo-open`, `demo-n`, `demo-nf` | version from `App/project.yml` |
-| Gap (`#gap`) | A statement that lights as you read, then measured counts per app and a wall of real menu titles that folds into one field | none | `apps.json` (numbers and wall appear only when it exists) |
-| One key (`#onekey`) | Dock of real app icons swapping one capture per app, with a typed example per app | `finder`, `safari`, `mail`, `notes`, `xcode` | shortcuts shown only from `apps.json`; the build warns if a named menu item is not in it |
-| Holding (`#holding`) | Text, files, page, folder and git: what each action leaves in your hands, and every action name | none | `Sources/Apropos/Resources/ActionPacks/builtin.json`, read at build |
-| Reach (`#reach`) | Send to and sequences as a four step story with the pearl on a line, then the built in destinations | `send-list`, `sequence-draft` | |
-| Learns (`#learns`) | Usually next with its reason, what it learns from and never keeps | `usually-next` | |
-| Your commands (`#yours`) | Alias, key, link (copy), Shortcuts, recording and menu item keys (both tagged Early) | `recording-review`, `alias-popover` | |
-| Apps (`#apps`) | Marquee of 31 real app icons, then an explorer of measured apps | none | icons from `scripts/app-icons.swift`; explorer needs `apps.json` |
-| Compare (`#compare`) | Apropos, Raycast, Spotlight, Alfred and the Help menu, each cell linked to its source | none | `src/data/compare.ts` |
-| Private (`#private`) | Read in the moment, kept on this Mac, never kept; each macOS permission and why; the network line | `settings-privacy` | |
-| Install (`#install`) | Download, three steps, searchable FAQ (also FAQPage JSON-LD) | none | `src/data/faq.ts` |
+The idea: **the page is your desktop.** Every picture of the app is a real window, cut out of a real capture, floating on
+the page with a shadow the page draws. No framed screenshots, no captions under pictures: the words sit beside the windows,
+and the stories are told by pressing keys and scrolling.
+
+| Section | What happens | Windows |
+|---|---|---|
+| Hero | Headline, the ring with its pearl, key caps. Pressing them, or Option-Space, opens the real panel over the page where the app puts it; typing n then f steps it to New Folder first, with the caps lighting as you type | `hero-open`, `hero-n`, `hero-nf` |
+| Gap (`#gap`) | A statement that lights word by word; measured numbers and the folding wall once `apps.json` exists | none |
+| How it works (`#how`) | Pinned on wide screens: one panel stays while seven chapters scroll past and it changes to the state each one is about; the pearl travels down a line beside the words. On phones each chapter is its words then its window | `deep-xcode`, `slip`, `holding`, `send-list`, `sequence`, `confirm`, `usually-next` |
+| Actions (`#holding`) | The 35 built-in actions, read from the app's pack, as tiles by what you hold | none |
+| Apps (`#apps`) | An app switcher: a dock of 14 real app icons, the panel jumps to that app's real menu bar; it moves on by itself while on screen until you pick one | `app-*` (13 from the capture run, Safari from the website slots) |
+| Your commands (`#yours`) | Alias, key and link tiles, then two windows overlapping like on a desktop, drifting apart a little as you scroll, beside the recording and menu item notes (both Early) | `recording-review`, `alias-popover` |
+| Compare (`#compare`) | The sourced table | none |
+| Privacy (`#private`) | The read, kept, never kept map; the real Privacy and data page scrolls inside its window as the site scrolls, with the recording permission window overlapping it | `privacy-page` (light and dark), `recording-permission` |
+| Install (`#install`) | Download, then a stepper: Open (the menu bar popover hanging from a drawn menu bar), Allow Accessibility, Press Option-Space (the welcome guide); it moves on by itself until you pick a step. Then the FAQ, whose answers slide open | `menubar-popover`, `onboarding-permission`, `onboarding-done` |
 
 ### Other pages
 
@@ -78,64 +80,29 @@ From the contact sheets of every section of these sites (`/private/tmp/claude-50
 
 ## Pictures
 
-Every app picture is a real capture: a Debug build of the app in stage mode, its real glass window over the `paper`
-(light) or `night` (dark) wallpaper, captured from the screen at 2x. The data inside the windows is sample data
-(fixtures), except the menu commands, which are the real menu bars of the apps on the Mac that took them. Source:
-`/Users/walid/Pictures/Apropos Captures/2026-10-20/website-slots/` (16 slots, light and dark, with `manifest.json`).
+Source: `/Users/walid/Pictures/Apropos Captures/2026-10-20/` (real glass, a Debug build in stage mode, captured at 2x). The
+data inside the windows is sample data, except the menu commands, which are the real menu bars of the apps on the Mac that
+took them.
 
-`node scripts/import-shots.mjs <folder> [slot ...]` copies them into `src/assets/shots/<slot>-light.webp` and `-dark.webp`
-(WebP at quality 90, full size; about 2 MB for all 32 files instead of 95 MB of PNG). The build makes the smaller versions.
-Each picture is a typed slot (`src/data/shots.ts`); an empty slot would render a flat panel naming the capture it waits for.
+`node scripts/import-windows.mjs <folder>` writes `src/assets/windows/<id>-dark.webp` (and `-light.webp` where a clean
+light window exists; only the Privacy page has one). The typed list is `src/data/windows.ts`; `Window.astro` draws one.
+- The capture run's own cutouts (`*-dark-cutout.png`) are used as they are.
+- The website slot frames (`demo-open`, `demo-n`, `demo-nf`, `xcode`, `safari`) have no cutout: the script cuts the panel
+  out at (560, 320, 1440 x 960) with a rounded mask (radius 58, inset 3). That place was found by matching the empty
+  search header of the Finder cutout against the frame.
+- Windows are dark in both themes. A dark glass panel on the paper page reads like the real thing and keeps one look.
 
-The frame takes the picture's own proportions and rounds it at 22 px. `zoom` and `zoomSmall` on `Shot` crop in toward the
-middle, where the panel sits in every capture: a little in narrow columns, more below 700 px.
-
-| Slot | Where | Shows |
-|---|---|---|
-| `demo-open`, `demo-n`, `demo-nf` | Hero demo (Option-Space on the page) | Finder, then "n", then "nf" with New Folder first |
-| `mail`, `xcode`, `notes`, `safari`, `finder` | One key dock, in that order | "ra" Reply All, "clean" Clean Build Folder, "check" Checklist, "sidebra" Show Sidebar, "compress" Compress 3 Items |
-| `sequence-draft`, `send-list` | Send to story (send list on the Send to Notes step) | Copy in Safari, UPPERCASE, Notes; the destination list |
-| `usually-next` | Learning | Usually next with two reasons; the quote beside it is one of them |
-| `recording-review`, `alias-popover` | Your commands (both tagged Early) | Review window; Command-K popover on Alias and shortcut |
-| `settings-privacy` | Privacy | Top of Privacy and data (the window cannot be taller than the screen) |
-| `menubar-popover` | Install | The menu bar popover under a drawn menu bar |
-
-Not used from `website-slots/`: `recording-bar` (a small strip in a large wallpaper; the review window says more).
-
-### Added from the full capture run (`/Users/walid/Pictures/Apropos Captures/2026-10-20/`, 547 files, 270 manifest entries)
-
-Imported with `node scripts/import-extra.mjs <folder>`. Where only a dark picture is listed it serves both themes.
-
-| Site slot | Source file | Where |
-|---|---|---|
-| `app-<app>` for Calendar, Finder, Mail, Maps, Music, Notes, Photos, Preview, Reminders, System Settings, Terminal, TextEdit, Xcode | `apps/list-<app>-dark.png` | Apps: a snap row of the same key over 13 apps |
-| `ctx-files`, `ctx-page`, `ctx-git` | `apps/context-files-selected-finder-dark.png`, `apps/context-page-open-safari-dark.png`, `apps/context-git-folder-terminal-dark.png` | Holding, under the tiles |
-| `send-confirm` | `panel/send-confirm-safari-dark.png` | Send to, beside the destinations |
-| `settings-menu-keys`, `settings-links` | `settings/shortcuts-items-light-1.png`, `settings/integrations-light-1.png` (right 5.5% cropped off) | Your commands |
-| `onboarding-permission`, `onboarding-done` | `onboarding/permission-dark.png`, `onboarding/done-dark.png` | Install |
-| `recording-permission` | `recording/permission-ready-dark.png` | Privacy, tagged Early |
-
-**Rejected, and why** (every file was opened and judged by eye; the light panel and Settings sets were re-shot late and never reviewed by the capture session)
-- **Every light scene in the full run except a few Settings pages.** The real desktop showed through: a football match
-  in a browser window sits behind the panel (score bar, pitch, a TV channel's Arabic caption). A pixel scan for pitch green
-  flagged 134 of the full run's files; on inspection the light `apps/`, `panel/`, `onboarding/`, `recording/` and `menubar/`
-  scenes all carry it. The dark scenes over the `night` wallpaper are clean, so the site uses those.
-- `apps/list-safari-dark.png`: the same video shows through. Safari is already covered by the `safari` slot.
-- `settings/commands-detail-*`: the video is visible beside the sheet. `settings/shortcuts-items-dark-1.png`: the video
-  is blurred through the glass. `settings/integrations-dark-1.png`: the real Dock and a running app's label show at the bottom.
-- `settings/shortcuts-items-light-1.png` and `settings/integrations-light-1.png` keep a thin strip of the desktop on the
-  right edge, so the import crops it off.
-- `onboarding/welcome-*`: the guide's own Continue button shows as a ghost inside the glass.
-- `recording/*-light.png`: the video shows through, like the other light scenes.
+**Left out, and why** (every file was opened and judged by eye)
+- Every light scene and light cutout of the full run except the tall Settings pages: a football video on the real desktop
+  shows through the glass (one light cutout even shows a different typed query). The dark ones are clean.
+- `settings/commands-detail-*` (video beside the sheet), `settings/shortcuts-items-dark-*` (video blurred through the
+  glass), `settings/integrations-dark-*` (the real Dock shows at the bottom), `onboarding/welcome-*` (a ghost of its own
+  Continue button in the glass), `apps/list-safari-dark` (video; the website slot's Safari is used instead).
 - Not needed for the story (not wrong): error, loading and permission states of the panel, interface sizes and icon
-  styles, the symbol picker states, the recording bar states, the other recording permission and review states, the other Settings pages, the tiled halves of tall pages.
-- `panel/usually-next-finder` and the other panel states that repeat a `website-slots` picture.
+  styles, symbol picker states, the recording bar states, the other Settings pages and tiles, other onboarding steps.
 
-Missing and replaced by the closest existing picture: a light version of each added picture (the dark one is used in
-both themes), and a Commands page picture for Your commands (Shortcuts and Integrations are used instead).
-
-Other real pictures: the ring and pearl (rendered from the icon scene), the app icons (macOS's own icons for apps
-installed on this Mac, read with `NSWorkspace`, nothing launched), the share image.
+Other real pictures: the ring and pearl (rendered from the icon scene), app icons (macOS's own icons for installed apps,
+read with `NSWorkspace`), the share image.
 
 ## Measured app data
 
@@ -206,10 +173,10 @@ The global hotkey on a real Mac, live Accessibility reading (the pictures use sa
 - **Deploy.** `deploy-workflow.yml.example` is ready to move to `.github/workflows/website.yml` with the two Cloudflare secrets.
   Nothing has been pushed or deployed.
 
-## Quality gates (last run 2026-10-20, with all chosen captures, without measured data)
+## Quality gates (last run 2026-10-20, the "page is your desktop" redesign, without measured data)
 
-- `npm run build`, `check:seo`, `check:ui` and `check:a11y` pass.
-- Lighthouse 12, home page, mobile: 100/100/100/100 (LCP 1.9 s, 309 KiB). Desktop was 100 across before the extra pictures and was not rerun.
-- Nothing scrolls sideways at 375 px (the comparison table scrolls inside its own frame, with the row names pinned).
-- Section screenshots were reviewed with the 16 slots. The extra pictures were checked one by one as images, not in the page layout: the owner asked for no more screenshot runs.
-Re-run all of these after `apps.json` lands or more pictures are added.
+- `npm run build`, `check:seo`, `check:ui` (demo, story, app switcher, install steps, nav, FAQ, copy; with and without
+  motion) and `check:a11y` (axe, light and dark, 1440 and 375) pass.
+- Lighthouse 12, home page: mobile 98/100/100/100 (LCP 2.3 s, 264 KiB), desktop 100/100/100/100.
+- Nothing scrolls sideways at 375 px: the windows that run off the edge on phones are clipped by their section.
+- Section screenshots of the home page, desktop and 375 px, light and dark, were taken with Playwright and reviewed.

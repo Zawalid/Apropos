@@ -1,6 +1,6 @@
 ---
 import Ring from './Ring.astro';
-import Shot from './Shot.astro';
+import Window from './Window.astro';
 import { links, site, version } from '../data/site';
 ---
 <section class="hero" aria-labelledby="hero-title" data-hero>
@@ -39,14 +39,17 @@ import { links, site, version } from '../data/site';
 <dialog class="demo" data-demo aria-label="Apropos open over Finder">
   <div class="demo-stage">
     <div class="frames" data-frames>
-      <div class="frame on" data-frame="0"><Shot id="demo-open" ratio={1.6} zoom={1.3} zoomSmall={1.5} sizes="(max-width: 700px) 150vw, (min-width: 1000px) 1250px, 125vw" /></div>
-      <div class="frame" data-frame="1"><Shot id="demo-n" ratio={1.6} zoom={1.3} zoomSmall={1.5} sizes="(max-width: 700px) 150vw, (min-width: 1000px) 1250px, 125vw" /></div>
-      <div class="frame" data-frame="2"><Shot id="demo-nf" ratio={1.6} zoom={1.3} zoomSmall={1.5} sizes="(max-width: 700px) 150vw, (min-width: 1000px) 1250px, 125vw" /></div>
+      <div class="frame on" data-frame="0"><Window id="hero-open" width={720} /></div>
+      <div class="frame" data-frame="1"><Window id="hero-n" width={720} decorative /></div>
+      <div class="frame" data-frame="2"><Window id="hero-nf" width={720} decorative /></div>
     </div>
-    <div class="demo-bar">
-      <p class="demo-say" aria-live="polite" data-demo-say>Type <kbd class="kbd">n</kbd> then <kbd class="kbd">f</kbd>, the first letters of New Folder.</p>
-      <button class="quiet" type="button" data-demo-close>Close <span class="kbd">esc</span></button>
-    </div>
+    <p class="demo-keys" aria-live="polite" data-demo-say>
+      <span class="visually-hidden" data-demo-sr>Type n then f, the first letters of New Folder.</span>
+      <span class="cap" data-cap="n" aria-hidden="true">n</span>
+      <span class="cap" data-cap="f" aria-hidden="true">f</span>
+      <span class="gap" aria-hidden="true"></span>
+      <button class="cap cap-esc" type="button" data-demo-close aria-label="Close">esc</button>
+    </p>
   </div>
 </dialog>
 
@@ -146,9 +149,10 @@ import { links, site, version } from '../data/site';
     text-align: center;
   }
 
-  /* The demo opens where the app opens its panel: the middle at 46% down the screen. */
+  /* The demo is the real panel over the page, where the app puts it: the middle at 46% down the screen. Like the app,
+     it appears at once: only a quick fade, no zoom. */
   .demo {
-    width: min(960px, calc(100vw - 24px));
+    width: min(720px, calc(100vw - 24px));
     max-width: none;
     max-height: none;
     margin: 0;
@@ -163,15 +167,14 @@ import { links, site, version } from '../data/site';
     overflow: visible;
   }
   .demo::backdrop {
-    background: color-mix(in srgb, var(--paper) 55%, transparent);
+    background: color-mix(in srgb, var(--paper) 78%, transparent);
   }
   .demo[open] .demo-stage {
-    animation: demo-in 180ms var(--ease);
+    animation: demo-in 120ms var(--ease);
   }
   @keyframes demo-in {
     from {
       opacity: 0;
-      transform: scale(0.985);
     }
   }
   .frames {
@@ -180,32 +183,58 @@ import { links, site, version } from '../data/site';
   .frame {
     grid-area: 1 / 1;
     opacity: 0;
-    transition: opacity 120ms var(--ease);
   }
   .frame.on {
     opacity: 1;
   }
-  .demo-bar {
+  .demo-keys {
     display: flex;
-    flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px 20px;
-    margin-top: 14px;
-    padding: 6px 8px 6px 18px;
-    border-radius: 999px;
-    background: var(--card);
-    box-shadow: 0 0 0 1px var(--line);
+    gap: 8px;
+    margin-top: 22px;
   }
-  .demo-say {
-    font-size: 15px;
+  .cap {
+    display: grid;
+    place-items: center;
+    min-width: 44px;
+    height: 44px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--key);
+    color: var(--key-ink);
+    box-shadow:
+      0 0 0 1px var(--line-2),
+      0 3px 0 var(--key-edge);
+    font: 600 17px/1 var(--sans);
+    transition:
+      transform 90ms var(--ease),
+      box-shadow 90ms var(--ease),
+      opacity 160ms var(--ease);
+  }
+  .cap:not(.cap-esc) {
+    opacity: 0.45;
+  }
+  .cap:global(.next) {
+    opacity: 1;
+  }
+  .cap:global(.done) {
+    opacity: 1;
+    transform: translateY(2px);
+    box-shadow:
+      0 0 0 1px var(--line-2),
+      0 1px 0 var(--key-edge);
+    color: var(--mint);
+  }
+  .cap-esc {
+    font-size: 14px;
+    font-weight: 500;
     color: var(--ink-2);
+    cursor: pointer;
   }
-  @media (max-width: 600px) {
-    .demo-bar {
-      border-radius: 18px;
-      padding: 12px 10px 10px 16px;
-    }
+  .gap {
+    width: 18px;
   }
 
   @media (max-width: 1023px) {

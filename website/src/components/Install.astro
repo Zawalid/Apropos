@@ -1,7 +1,9 @@
 ---
 import { links, site, version } from '../data/site';
 import { faq } from '../data/faq';
-import Shot from './Shot.astro';
+import Window from './Window.astro';
+import ring from '../assets/icon.png';
+import { Image } from 'astro:assets';
 ---
 <section id="install" class="section install" aria-labelledby="install-title">
   <div class="wrap">
@@ -16,35 +18,38 @@ import Shot from './Shot.astro';
       </a>
     </div>
 
-    <div class="first">
-    <ol class="steps">
-      <li>
-        <h3>Open the download</h3>
-        <p>Move Apropos to Applications and open it. It lives in the menu bar, with no Dock icon.</p>
-      </li>
-      <li>
-        <h3>Allow Accessibility</h3>
-        <p>The welcome screen says why and opens the right page of System Settings. Apropos notices the change without a restart.</p>
-      </li>
-      <li>
-        <h3>Press Option-Space</h3>
-        <p>In any app. Type a few letters of what you want, press Return. Escape closes it.</p>
-      </li>
-    </ol>
-    <figure class="bar-pic">
-      <Shot id="menubar-popover" ratio={1.25} zoom={1.25} zoomSmall={1.4} sizes="(max-width: 700px) 140vw, (min-width: 1000px) 820px, 125vw" />
-      <figcaption class="small">The menu bar shows the app in front and what is read from it, pauses context or learning for an hour, and lists your recent commands.</figcaption>
-    </figure>
-    </div>
-    <div class="guide">
-      <figure>
-        <Shot id="onboarding-permission" ratio={1.34} zoom={1.15} zoomSmall={1.3} sizes="(max-width: 860px) 130vw, 640px" />
-        <figcaption class="small">The welcome guide asks for Accessibility once, says why, and opens the right page.</figcaption>
-      </figure>
-      <figure>
-        <Shot id="onboarding-done" ratio={1.34} zoom={1.15} zoomSmall={1.3} sizes="(max-width: 860px) 130vw, 640px" />
-        <figcaption class="small">Then it is ready: Option-Space from any app, and three next steps.</figcaption>
-      </figure>
+    <div class="stepper" data-stepper>
+      <div class="step-tabs" role="tablist" aria-label="Install steps">
+        <button type="button" role="tab" id="step-tab-0" aria-controls="step-0" aria-selected="true" tabindex="0" data-tab>
+          <span class="n">1</span>
+          <span class="t"><strong>Open the download</strong>Move Apropos to Applications and open it. It lives in the menu bar, with no Dock icon.</span>
+        </button>
+        <button type="button" role="tab" id="step-tab-1" aria-controls="step-1" aria-selected="false" tabindex="-1" data-tab>
+          <span class="n">2</span>
+          <span class="t"><strong>Allow Accessibility</strong>The welcome guide says why, opens the right page of System Settings, and notices the change without a restart.</span>
+        </button>
+        <button type="button" role="tab" id="step-tab-2" aria-controls="step-2" aria-selected="false" tabindex="-1" data-tab>
+          <span class="n">3</span>
+          <span class="t"><strong>Press Option-Space</strong>In any app. Type a few letters of what you want, press Return. Escape closes it.</span>
+        </button>
+      </div>
+      <div class="step-panels">
+        <div class="step-panel" id="step-0" role="tabpanel" aria-labelledby="step-tab-0" data-panel>
+          <div class="bar-wrap">
+          <div class="menubar" aria-hidden="true">
+            <strong>Finder</strong><span>File</span><span>Edit</span><span>View</span><span>Go</span>
+            <span class="mb-gap"></span><Image src={ring} alt="" width={16} height={16} densities={[1, 2]} class="mb-ring" /><span class="mb-clock">Tue 9:41</span>
+          </div>
+          <div class="hang"><Window id="menubar-popover" width={320} /></div>
+          </div>
+        </div>
+        <div class="step-panel" id="step-1" role="tabpanel" aria-labelledby="step-tab-1" hidden data-panel>
+          <Window id="onboarding-permission" width={640} />
+        </div>
+        <div class="step-panel" id="step-2" role="tabpanel" aria-labelledby="step-tab-2" hidden data-panel>
+          <Window id="onboarding-done" width={640} />
+        </div>
+      </div>
     </div>
 
     <div class="faq" data-faq>
@@ -87,48 +92,37 @@ import Shot from './Shot.astro';
     padding: 0 30px;
     font-size: 17px;
   }
-  .first {
+
+  .stepper {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     gap: clamp(32px, 5vw, 80px);
     align-items: center;
     padding-top: clamp(32px, 4vw, 56px);
   }
-  .steps {
+  .step-tabs {
     display: grid;
-    gap: 28px;
-    counter-reset: step;
-  }
-  .guide {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-    margin-top: clamp(40px, 5vw, 64px);
-  }
-  .guide figure {
-    display: grid;
-    gap: 10px;
-  }
-  .bar-pic {
-    display: grid;
-    gap: 12px;
-  }
-  .steps li {
-    display: grid;
-    align-content: start;
     gap: 8px;
-    counter-increment: step;
   }
-  .steps h3 {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 21px;
-    font-weight: 700;
-    letter-spacing: -0.022em;
+  .step-tabs button {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 14px;
+    padding: 16px 18px;
+    border: 0;
+    border-radius: var(--r-box);
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    color: var(--ink-2);
+    transition: background-color 200ms var(--ease);
   }
-  .steps h3::before {
-    content: counter(step);
+  .step-tabs button[aria-selected='true'] {
+    background: var(--card);
+    box-shadow: 0 0 0 1px var(--line);
+    color: var(--ink-2);
+  }
+  .n {
     display: grid;
     place-items: center;
     width: 30px;
@@ -137,11 +131,92 @@ import Shot from './Shot.astro';
     box-shadow: inset 0 0 0 1px var(--line-2);
     font-size: 14px;
     font-weight: 600;
+    color: var(--ink);
   }
-  .steps p {
-    color: var(--ink-2);
+  button[aria-selected='true'] .n {
+    background: var(--pill);
+    color: var(--pill-ink);
+    box-shadow: none;
   }
-
+  .t {
+    display: grid;
+    gap: 4px;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .t strong {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .step-panels {
+    display: grid;
+    align-items: center;
+    min-height: 440px;
+  }
+  .step-panel {
+    grid-area: 1 / 1;
+    display: grid;
+    justify-items: center;
+    animation: step-in 260ms var(--ease);
+  }
+  .step-panel[hidden] {
+    display: none;
+  }
+  @keyframes step-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+  /* A drawn menu bar for the popover to hang from: the macOS strip, not a picture of it. */
+  .menubar {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    width: 100%;
+    height: 30px;
+    padding: 0 14px;
+    border-radius: 9px;
+    background: var(--card);
+    box-shadow: 0 0 0 1px var(--line);
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .mb-gap {
+    flex: 1;
+  }
+  .menubar :global(.mb-ring) {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+  .mb-clock {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  @media (max-width: 600px) {
+    .mb-clock,
+    .menubar span:nth-of-type(n + 3) {
+      display: none;
+    }
+    .hang {
+      justify-self: end;
+      margin-right: 0;
+    }
+  }
+  /* The popover hangs from the Apropos icon: its middle sits under the icon, which is about 96 px from the bar's end. */
+  .bar-wrap {
+    width: min(100%, 560px);
+    display: grid;
+  }
+  .hang {
+    width: min(320px, 62%);
+    margin-top: 6px;
+    justify-self: end;
+    margin-right: calc(96px - min(320px, 62%) / 2);
+  }
   .faq {
     margin-top: clamp(96px, 11vw, 160px);
     display: grid;
@@ -227,8 +302,7 @@ import Shot from './Shot.astro';
     grid-column: 2;
   }
   @media (max-width: 860px) {
-    .first,
-    .guide,
+    .stepper,
     .faq {
       grid-template-columns: 1fr;
     }

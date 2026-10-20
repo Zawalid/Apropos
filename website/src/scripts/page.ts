@@ -143,20 +143,43 @@ if (!motion || !pearl) {
 const demo = $<HTMLDialogElement>('[data-demo]');
 if (demo) {
   const frames = $$<HTMLElement>('[data-frame]', demo);
-  const say = $<HTMLElement>('[data-demo-say]', demo);
+  const sr = $<HTMLElement>('[data-demo-sr]', demo);
+  const caps = $$<HTMLElement>('[data-cap]', demo);
   const script = 'nf';
   let typed = '';
   const show = (i: number) => frames.forEach((f, n) => f.classList.toggle('on', n === i));
+  // The key caps under the panel are the instructions: the next key stands out, typed keys stay pressed.
+  const paint = () => {
+    caps.forEach((c, i) => {
+      c.classList.toggle('done', i < typed.length);
+      c.classList.toggle('next', i === typed.length);
+    });
+    if (sr) {
+      sr.textContent =
+        typed.length === 0
+          ? 'Type n then f, the first letters of New Folder.'
+          : typed.length < script.length
+            ? 'Typed n. Now f.'
+            : 'Typed nf: New Folder is first. In the app, Return would run it.';
+    }
+  };
+  const type = (letter: string) => {
+    if (script[typed.length] !== letter) return;
+    typed += letter;
+    show(typed.length);
+    paint();
+  };
   const reset = () => {
     typed = '';
     show(0);
-    if (say) say.innerHTML = 'Type <kbd class="kbd">n</kbd> then <kbd class="kbd">f</kbd>, the first letters of New Folder.';
+    paint();
   };
   const open = () => {
     if (demo.open) return;
     reset();
     demo.showModal();
   };
+  caps.forEach((c) => c.addEventListener('click', () => type(c.dataset.cap ?? '')));
   for (const b of $$('[data-demo-open]')) b.addEventListener('click', open);
   $('[data-demo-close]', demo)?.addEventListener('click', () => demo.close());
   demo.addEventListener('click', (e) => {
@@ -179,17 +202,7 @@ if (demo) {
     }
     if (!demo.open || e.metaKey || e.ctrlKey || e.altKey) return;
     const letter = e.key.toLowerCase();
-    if (letter.length !== 1 || !/[a-z]/.test(letter)) return;
-    const next = script[typed.length];
-    if (letter !== next) return;
-    typed += letter;
-    show(typed.length);
-    if (say) {
-      say.innerHTML =
-        typed.length < script.length
-          ? `Typed <mark>${typed}</mark>. Now <kbd class="kbd">f</kbd>.`
-          : 'Typed <mark>nf</mark>: New Folder is first. In the app, Return would run it.';
-    }
+    if (letter.length === 1) type(letter);
   });
 }
 
@@ -222,31 +235,30 @@ if (wall && motion) {
   });
 }
 
-// Reach: the step you read is lit, the pearl rides the line, the capture follows.
+// The story: the chapter whose share of the track you are in is on, its pane shows, and the pearl moves down the rail.
 const story = $<HTMLElement>('[data-story]');
 if (story) {
-  const steps = $$<HTMLElement>('[data-step]', story);
-  const views = $$<HTMLElement>('[data-view]', story);
-  const lineBead = $<HTMLElement>('[data-line-bead]', story);
-  const track = lineBead?.parentElement;
+  const track = $<HTMLElement>('.track', story);
+  const chapters = $$<HTMLElement>('[data-chapter]', story);
+  const panes = $$<HTMLElement>('[data-pane]', story);
+  const bead = $<HTMLElement>('[data-story-bead]', story);
   let last = -1;
+  const place = (at: number) => {
+    if (!bead?.parentElement) return;
+    const run = bead.parentElement.clientHeight;
+    bead.style.setProperty('--y', `${((run * at) / Math.max(chapters.length - 1, 1)).toFixed(1)}px`);
+  };
   onFrame.push(() => {
-    const box = story.getBoundingClientRect();
-    // Off screen every step reads at full contrast; only the story you are in dims the steps you are not on.
-    story.classList.toggle('reading', box.top < window.innerHeight && box.bottom > 0);
-    const line = window.innerHeight * 0.5;
-    let at = 0;
-    steps.forEach((s, i) => {
-      if (s.getBoundingClientRect().top < line) at = i;
-    });
+    if (!track) return;
+    const box = track.getBoundingClientRect();
+    const run = box.height - (window.innerHeight - 64);
+    const p = clamp(-box.top / Math.max(run, 1), 0, 0.9999);
+    const at = Math.floor(p * chapters.length);
     if (at === last) return;
     last = at;
-    steps.forEach((s, i) => s.classList.toggle('on', i === at));
-    views.forEach((v) => v.classList.toggle('on', Number(v.dataset.view) === (at === 2 ? 1 : 0)));
-    if (lineBead && track) {
-      const stop = [0, 0.5, 1, 1][at] ?? 0;
-      lineBead.style.setProperty('--x', `${(track.clientWidth * stop).toFixed(1)}px`);
-    }
+    chapters.forEach((c, i) => c.classList.toggle('on', i === at));
+    panes.forEach((c, i) => c.classList.toggle('on', i === at));
+    place(at);
   });
   window.addEventListener('resize', () => {
     last = -1;
@@ -270,7 +282,7 @@ if (turns && motion) {
 }
 
 // Tabs: the dock of apps and the measured app picker. Arrow keys move between tabs, as in a real tab list.
-for (const group of $$<HTMLElement>('[data-tabs], [data-explorer]')) {
+for (const group of $$<HTMLElement>('[data-tabs], [data-explorer], [data-switcher], [data-stepper]')) {
   const tabs = $$<HTMLButtonElement>('[data-tab]', group);
   const panels = $$<HTMLElement>('[data-panel]', group);
   const select = (i: number, focus = false) => {
@@ -282,9 +294,13 @@ for (const group of $$<HTMLElement>('[data-tabs], [data-explorer]')) {
     if (focus) tabs[i]?.focus();
   };
   tabs.forEach((t, i) => {
-    t.addEventListener('click', () => select(i));
+    t.addEventListener('click', () => {
+      group.dataset.touched = '1';
+      select(i);
+    });
     t.addEventListener('keydown', (e) => {
       const keys: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+      group.dataset.touched = '1';
       if (e.key in keys) {
         e.preventDefault();
         select((i + keys[e.key] + tabs.length) % tabs.length, true);
@@ -297,6 +313,23 @@ for (const group of $$<HTMLElement>('[data-tabs], [data-explorer]')) {
       }
     });
   });
+  // The app switcher and the install steps move on by themselves while on screen, until someone picks one.
+  if (motion && (group.matches('[data-switcher]') || group.matches('[data-stepper]'))) {
+    const every = group.matches('[data-stepper]') ? 3200 : 2200;
+    let timer = 0;
+    let hover = false;
+    group.addEventListener('pointerenter', () => (hover = true));
+    group.addEventListener('pointerleave', () => (hover = false));
+    const tick = () => {
+      if (hover || group.dataset.touched || group.contains(document.activeElement)) return;
+      const at = tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true');
+      select((at + 1) % tabs.length);
+    };
+    new IntersectionObserver(([e]) => {
+      window.clearInterval(timer);
+      if (e.isIntersecting) timer = window.setInterval(tick, every);
+    }, { threshold: 0.4 }).observe(group);
+  }
 }
 
 // Copy buttons.
@@ -310,6 +343,34 @@ for (const b of $$<HTMLButtonElement>('[data-copy]')) {
     }
     setTimeout(() => (b.textContent = 'Copy'), 1600);
   });
+}
+
+// A page taller than the screen scrolls inside its window while the window crosses the viewport.
+for (const frame of $$<HTMLElement>('[data-scroll-page]')) {
+  const inner = frame.firstElementChild as HTMLElement | null;
+  if (!inner || !motion) continue;
+  onFrame.push(() => {
+    const box = frame.getBoundingClientRect();
+    const vh = window.innerHeight;
+    if (box.bottom < 0 || box.top > vh) return;
+    const p = clamp((vh - box.top) / (vh + box.height));
+    const room = inner.offsetHeight - frame.clientHeight;
+    inner.style.setProperty('--scroll', `${(-room * clamp((p - 0.15) / 0.7)).toFixed(1)}px`);
+  });
+}
+
+// Windows that drift at their own pace as the page scrolls, so overlapping windows read as layers.
+if (motion) {
+  for (const el of $$<HTMLElement>('[data-drift]')) {
+    const rate = Number(el.dataset.drift) || 0;
+    onFrame.push(() => {
+      // Measured on the parent, which does not move, so the drift never feeds back into itself.
+      const box = (el.parentElement ?? el).getBoundingClientRect();
+      if (box.bottom < -200 || box.top > window.innerHeight + 200) return;
+      const off = box.top + box.height / 2 - window.innerHeight / 2;
+      el.style.setProperty('--drift', `${(off * rate).toFixed(1)}px`);
+    });
+  }
 }
 
 // The shortcut tile presses its keys once when it comes into view.
