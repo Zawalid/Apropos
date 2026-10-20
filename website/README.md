@@ -76,26 +76,38 @@ From the contact sheets of every section of these sites (`/private/tmp/claude-50
   the sitemap, and the footer hides its link.
 - `/404/`.
 
-## Pictures: what is real, what is a placeholder
+## Pictures
 
-**Every app picture is a placeholder today.** No capture has landed yet. Each picture is a typed slot (`src/data/shots.ts`); an
-empty slot renders a flat panel that says which capture it waits for ("Capture coming: panel over Finder with 3 files selected"),
-so nothing fake ships. The v1 flat renders from `build/previews` are not used anywhere.
+Every app picture is a real capture: a Debug build of the app in stage mode, its real glass window over the `paper`
+(light) or `night` (dark) wallpaper, captured from the screen at 2x. The data inside the windows is sample data
+(fixtures), except the menu commands, which are the real menu bars of the apps on the Mac that took them. Source:
+`/Users/walid/Pictures/Apropos Captures/2026-10-20/website-slots/` (16 slots, light and dark, with `manifest.json`).
 
-To fill a slot, save the capture as `src/assets/shots/<slot>-light.png` and `<slot>-dark.png` (one is enough; it is then used for
-both themes) and rebuild. The frame takes the picture's own proportions, rounds it at 22 px and lifts it with a soft shadow, so a
-capture that already includes its wallpaper (as the capture spike produces) needs no cropping.
+`node scripts/import-shots.mjs <folder> [slot ...]` copies them into `src/assets/shots/<slot>-light.webp` and `-dark.webp`
+(WebP at quality 90, full size; about 2 MB for all 32 files instead of 95 MB of PNG). The build makes the smaller versions.
+Each picture is a typed slot (`src/data/shots.ts`); an empty slot would render a flat panel naming the capture it waits for.
 
-Slots and what each needs: `demo-open`, `demo-n`, `demo-nf` (Finder, panel just opened, then "n", then "nf" with New Folder
-first, same framing for all three so the demo can step through them), `finder` (3 files selected), `safari` (a page), `mail`,
-`notes` (with a selection), `xcode`, `usually-next`, `send-list`, `sequence-draft`, `alias-popover`, `recording-review`,
-`settings-privacy`, plus `recording-bar` and `menubar-popover` (defined, not placed yet).
+The frame takes the picture's own proportions and rounds it at 22 px. `zoom` and `zoomSmall` on `Shot` crop in toward the
+middle, where the panel sits in every capture: a little in narrow columns, more below 700 px.
 
-The capture spike (`side-session-notes/local_76764915-.../captures/capture-spike.md`) found that real glass needs a region capture of
-the real screen over a stage wallpaper window, run from the owner's terminal, and recommends a Debug-only stage mode in the app.
+| Slot | Where | Shows |
+|---|---|---|
+| `demo-open`, `demo-n`, `demo-nf` | Hero demo (Option-Space on the page) | Finder, then "n", then "nf" with New Folder first |
+| `mail`, `xcode`, `notes`, `safari`, `finder` | One key dock, in that order | "ra" Reply All, "clean" Clean Build Folder, "check" Checklist, "sidebra" Show Sidebar, "compress" Compress 3 Items |
+| `sequence-draft`, `send-list` | Send to story (send list on the Send to Notes step) | Copy in Safari, UPPERCASE, Notes; the destination list |
+| `usually-next` | Learning | Usually next with two reasons; the quote beside it is one of them |
+| `recording-review`, `alias-popover` | Your commands (both tagged Early) | Review window; Command-K popover on Alias and shortcut |
+| `settings-privacy` | Privacy | Top of Privacy and data (the window cannot be taller than the screen) |
+| `menubar-popover` | Install | The menu bar popover under a drawn menu bar |
 
-Real pictures that are on the page: the ring and pearl (rendered from the icon scene), the app icons (macOS's own icons for
-apps installed on this Mac, read with `NSWorkspace`, nothing launched), the share image.
+Not used: `recording-bar`. The bar is a small strip in a large wallpaper and says less than the review window beside it.
+
+Waiting: the full capture run (`apps/`, `panel/`, `settings/`, `onboarding/`, `recording/`, `menubar/` in the same dated
+folder) is still being reviewed by the capture session. When it is final, pick from it for the app wall and explorer,
+the privacy and make-your-own sections and install, and list what was used and rejected here.
+
+Other real pictures: the ring and pearl (rendered from the icon scene), the app icons (macOS's own icons for apps
+installed on this Mac, read with `NSWorkspace`, nothing launched), the share image.
 
 ## Measured app data
 
@@ -152,7 +164,6 @@ The global hotkey on a real Mac, real glass, live Accessibility reading, the dow
 
 ## TODO for the owner
 
-- **Captures.** Every app picture is a placeholder. Fill the slots above (see the capture spike). The page is designed around them.
 - **Measured numbers.** Run `npm run harvest` from a terminal with Accessibility, review `src/data/apps.json`, rebuild.
 - **Repository name.** `src/data/site.ts` assumes `https://github.com/Zawalid/Apropos`.
 - **Release asset.** The download pill points at `.../releases/latest/download/Apropos.dmg`. It 404s until a release with an
@@ -167,10 +178,10 @@ The global hotkey on a real Mac, real glass, live Accessibility reading, the dow
 - **Deploy.** `deploy-workflow.yml.example` is ready to move to `.github/workflows/website.yml` with the two Cloudflare secrets.
   Nothing has been pushed or deployed.
 
-## Quality gates (last run 2026-10-20, without captures or measured data)
+## Quality gates (last run 2026-10-20, with the 16 captures, without measured data)
 
 - `npm run build`, `check:seo`, `check:ui` and `check:a11y` pass.
-- Lighthouse 12, home page: mobile 100/100/100/100, desktop 100/100/100/100 (performance, accessibility, best practices, SEO).
+- Lighthouse 12, home page: mobile 99/100/100/100 (LCP 2.1 s, 236 KiB), desktop 100/100/100/100 (performance, accessibility, best practices, SEO).
 - Nothing scrolls sideways at 375 px (the comparison table scrolls inside its own frame, with the row names pinned).
 - Screenshots of every section of every page, desktop and 375 px, light and dark, were taken and reviewed.
-Re-run all of these after the captures and `apps.json` land: images are the biggest change to performance.
+Re-run all of these after `apps.json` lands or more pictures are added.

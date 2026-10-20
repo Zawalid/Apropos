@@ -1,6 +1,7 @@
 ---
 import { links, site, version } from '../data/site';
 import { faq } from '../data/faq';
+import Shot from './Shot.astro';
 ---
 <section id="install" class="section install" aria-labelledby="install-title">
   <div class="wrap">
@@ -15,6 +16,7 @@ import { faq } from '../data/faq';
       </a>
     </div>
 
+    <div class="first">
     <ol class="steps">
       <li>
         <h3>Open the download</h3>
@@ -29,6 +31,11 @@ import { faq } from '../data/faq';
         <p>In any app. Type a few letters of what you want, press Return. Escape closes it.</p>
       </li>
     </ol>
+    <figure class="bar-pic">
+      <Shot id="menubar-popover" ratio={1.25} zoom={1.25} zoomSmall={1.4} sizes="(max-width: 700px) 140vw, (min-width: 1000px) 820px, 125vw" />
+      <figcaption class="small">The menu bar shows the app in front and what is read from it, pauses context or learning for an hour, and lists your recent commands.</figcaption>
+    </figure>
+    </div>
 
     <div class="faq" data-faq>
       <div class="faq-head">
@@ -70,12 +77,21 @@ import { faq } from '../data/faq';
     padding: 0 30px;
     font-size: 17px;
   }
+  .first {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(32px, 5vw, 80px);
+    align-items: center;
+    padding-top: clamp(32px, 4vw, 56px);
+  }
   .steps {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 32px;
-    padding-top: clamp(32px, 4vw, 48px);
+    gap: 28px;
     counter-reset: step;
+  }
+  .bar-pic {
+    display: grid;
+    gap: 12px;
   }
   .steps li {
     display: grid;
@@ -187,7 +203,7 @@ import { faq } from '../data/faq';
     grid-column: 2;
   }
   @media (max-width: 860px) {
-    .steps,
+    .first,
     .faq {
       grid-template-columns: 1fr;
     }

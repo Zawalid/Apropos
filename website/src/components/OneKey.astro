@@ -18,11 +18,11 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
-  { app: 'Finder', slot: 'finder', typed: 'nf', hit: '[N]ew [F]older', note: 'First letters of each word find the item.' },
-  { app: 'Safari', slot: 'safari', typed: 'sidebra', hit: 'Show [Sidebar]', note: 'Two letters swapped still find it.' },
   { app: 'Mail', slot: 'mail', typed: 'ra', hit: '[R]eply [A]ll', note: 'The shortcut sits next to the item, so you learn it on the way.' },
-  { app: 'Notes', slot: 'notes', typed: 'check', hit: '[Check]list', note: 'A word from the middle of a menu works too.' },
   { app: 'Xcode', slot: 'xcode', typed: 'clean', hit: '[Clean] Build Folder', note: 'Deep items come up as fast as the top ones.' },
+  { app: 'Notes', slot: 'notes', typed: 'check', hit: '[Check]list', note: 'A word from the middle of a menu works too.' },
+  { app: 'Safari', slot: 'safari', typed: 'sidebra', hit: 'Show [Sidebar]', note: 'Two letters swapped still find it.' },
+  { app: 'Finder', slot: 'finder', typed: 'compress', hit: '[Compress] 3 Items', note: 'Three files selected: Finder’s own item says what it will act on, and the bar shows the folder and the count.' },
 ];
 
 const titleOf = (t: Tab) => t.hit.replace(/[[\]]/g, '');
@@ -51,7 +51,7 @@ const marked = (hit: string) => hit.replace(/\[([^\]]+)\]/g, '<mark>$1</mark>');
           const m = measured(t.app);
           return (
             <div class="panel" id={`onekey-${t.slot}`} role="tabpanel" aria-labelledby={`onekey-tab-${t.slot}`} hidden={i !== 0} data-panel>
-              <Shot id={t.slot} ratio={1.6} sizes="(min-width: 1240px) 1240px, 100vw" />
+              <Shot id={t.slot} ratio={1.6} sizes="(max-width: 700px) 160vw, (min-width: 1240px) 1240px, 100vw" />
               <div class="caption">
                 <p class="typed">
                   <span class="label">{t.app}, type</span>

@@ -8,9 +8,9 @@ import Shot from './Shot.astro';
 import { iconFor } from '../data/apps';
 
 const steps = [
-  { title: 'Select a paragraph in Safari.', body: 'Apropos sees the selection and the page it came from. Nothing is copied yet.' },
-  { title: 'Add UPPERCASE to a sequence.', body: 'Command-K on any row adds it as a step. The draft shows in the list, ready to grow.' },
-  { title: 'Add Send to Notes.', body: 'Each step reads the result of the step before it, so Notes gets the capitals, not the original.' },
+  { title: 'Start with the selection in Safari.', body: 'Command-K on any row adds it as a step: here, Copy from Safari’s own Edit menu. The draft shows at the top of the list.' },
+  { title: 'Add UPPERCASE.', body: 'Each step reads the result of the step before it, so the copied text arrives here.' },
+  { title: 'Add Send to Notes.', body: 'Notes, Reminders, Things, Obsidian, Bear, a Mail draft or the Share menu. Notes gets the capitals, not the original.' },
   { title: 'Run it, or keep it.', body: 'Run the draft once, or save it as your own command with a name, an alias and a key.' },
 ];
 
@@ -55,8 +55,8 @@ const chain = [iconFor('Safari'), iconFor('Notes')];
           <span class="track"><span class="bead travel" data-line-bead></span></span>
         </div>
         <div class="views">
-          <div class="view on" data-view="0"><Shot id="send-list" ratio={1.25} sizes="(min-width: 1000px) 640px, 100vw" /></div>
-          <div class="view" data-view="1"><Shot id="sequence-draft" ratio={1.25} sizes="(min-width: 1000px) 640px, 100vw" /></div>
+          <div class="view on" data-view="0"><Shot id="sequence-draft" ratio={1.25} zoom={1.2} zoomSmall={1.45} sizes="(max-width: 700px) 145vw, (min-width: 1000px) 840px, 120vw" /></div>
+          <div class="view" data-view="1"><Shot id="send-list" ratio={1.25} zoom={1.2} zoomSmall={1.45} sizes="(max-width: 700px) 145vw, (min-width: 1000px) 840px, 120vw" /></div>
         </div>
         <p class="small cap">
           Step icons in the draft are new and not yet checked on a real Mac. <span class="early">Early</span>

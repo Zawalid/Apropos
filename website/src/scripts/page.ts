@@ -162,6 +162,11 @@ if (demo) {
   demo.addEventListener('click', (e) => {
     if (e.target === demo) demo.close();
   });
+  // The frames sit in a closed dialog, so they would only start loading on the first press. Warm them up once the page
+  // is idle, so the panel appears at once like the real one.
+  const warm = () => $$<HTMLImageElement>('img', demo).forEach((img) => (img.loading = 'eager'));
+  if ('requestIdleCallback' in window) window.requestIdleCallback(warm, { timeout: 4000 });
+  else window.setTimeout(warm, 2500);
   const keys = $$<HTMLElement>('[data-press]');
   document.addEventListener('keydown', (e) => {
     if (e.altKey && e.code === 'Space' && !e.metaKey && !e.ctrlKey) {
@@ -237,7 +242,7 @@ if (story) {
     if (at === last) return;
     last = at;
     steps.forEach((s, i) => s.classList.toggle('on', i === at));
-    views.forEach((v) => v.classList.toggle('on', Number(v.dataset.view) === (at >= 3 ? 1 : 0)));
+    views.forEach((v) => v.classList.toggle('on', Number(v.dataset.view) === (at === 2 ? 1 : 0)));
     if (lineBead && track) {
       const stop = [0, 0.5, 1, 1][at] ?? 0;
       lineBead.style.setProperty('--x', `${(track.clientWidth * stop).toFixed(1)}px`);

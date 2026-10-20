@@ -39,9 +39,9 @@ import { links, site, version } from '../data/site';
 <dialog class="demo" data-demo aria-label="Apropos open over Finder">
   <div class="demo-stage">
     <div class="frames" data-frames>
-      <div class="frame on" data-frame="0"><Shot id="demo-open" ratio={1.6} sizes="(min-width: 1000px) 920px, 94vw" /></div>
-      <div class="frame" data-frame="1"><Shot id="demo-n" ratio={1.6} sizes="(min-width: 1000px) 920px, 94vw" /></div>
-      <div class="frame" data-frame="2"><Shot id="demo-nf" ratio={1.6} sizes="(min-width: 1000px) 920px, 94vw" /></div>
+      <div class="frame on" data-frame="0"><Shot id="demo-open" ratio={1.6} zoom={1.3} zoomSmall={1.5} sizes="(max-width: 700px) 150vw, (min-width: 1000px) 1250px, 125vw" /></div>
+      <div class="frame" data-frame="1"><Shot id="demo-n" ratio={1.6} zoom={1.3} zoomSmall={1.5} sizes="(max-width: 700px) 150vw, (min-width: 1000px) 1250px, 125vw" /></div>
+      <div class="frame" data-frame="2"><Shot id="demo-nf" ratio={1.6} zoom={1.3} zoomSmall={1.5} sizes="(max-width: 700px) 150vw, (min-width: 1000px) 1250px, 125vw" /></div>
     </div>
     <div class="demo-bar">
       <p class="demo-say" aria-live="polite" data-demo-say>Type <kbd class="kbd">n</kbd> then <kbd class="kbd">f</kbd>, the first letters of New Folder.</p>
@@ -200,6 +200,12 @@ import { links, site, version } from '../data/site';
   .demo-say {
     font-size: 15px;
     color: var(--ink-2);
+  }
+  @media (max-width: 600px) {
+    .demo-bar {
+      border-radius: 18px;
+      padding: 12px 10px 10px 16px;
+    }
   }
 
   @media (max-width: 1023px) {

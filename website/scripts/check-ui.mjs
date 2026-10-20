@@ -37,12 +37,12 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
 
   // Dock: arrow keys move the selection and show one panel.
   await page.locator('#onekey').scrollIntoViewIfNeeded();
-  await page.locator('#onekey-tab-finder').focus();
+  await page.locator('#onekey-tab-mail').focus();
   await page.keyboard.press('ArrowRight');
   const sel = await page.evaluate(() => [...document.querySelectorAll('#onekey [data-tab]')].map((t) => t.getAttribute('aria-selected')).join());
   check(sel === 'false,true,false,false,false', `${label}: ArrowRight in the dock gave ${sel}`);
   await page.keyboard.press('End');
-  const lastOn = await page.evaluate(() => document.querySelector('#onekey-tab-xcode').getAttribute('aria-selected'));
+  const lastOn = await page.evaluate(() => document.querySelector('#onekey-tab-finder').getAttribute('aria-selected'));
   check(lastOn === 'true', `${label}: End did not select the last app`);
   const shown = await page.evaluate(() => [...document.querySelectorAll('#onekey [data-panel]')].filter((p) => !p.hidden).length);
   check(shown === 1, `${label}: ${shown} dock panels are shown, expected 1`);

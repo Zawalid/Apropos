@@ -13,9 +13,15 @@ interface Props {
   sizes?: string;
   eager?: boolean;
   class?: string;
+  /**
+   * How far to crop in toward the middle, where the panel sits in every capture: on wide screens, and below 700 px.
+   * The wallpaper around the panel is art direction on a big frame and wasted pixels on a phone.
+   */
+  zoom?: number;
+  zoomSmall?: number;
 }
 
-const { id, ratio = 1.45, sizes = '(min-width: 1240px) 1100px, 100vw', eager = false, class: className } = Astro.props;
+const { id, ratio = 1.45, sizes = '(min-width: 1240px) 1100px, 100vw', eager = false, class: className, zoom = 1, zoomSmall = 1.6 } = Astro.props;
 const s = shot(id);
 const widths = [640, 960, 1400, 2000];
 
@@ -31,7 +37,7 @@ const dark = s.dark && s.dark !== s.light ? await srcset(s.dark) : null;
 const w = s.light?.width ?? 1400;
 const h = s.light ? s.light.height : Math.round(1400 / ratio);
 ---
-<figure class:list={['shot', className, { empty: !s.filled }]} style={`--ratio:${s.light ? s.light.width / s.light.height : ratio}`} data-slot={id}>
+<figure class:list={['shot', className, { empty: !s.filled }]} style={`--ratio:${s.light ? s.light.width / s.light.height : ratio};--zoom:${zoom};--zoom-sm:${zoomSmall}`} data-slot={id}>
   {light ? (
     <picture>
       {dark && <source media="(prefers-color-scheme: dark)" srcset={dark.srcset} sizes={sizes} />}
@@ -58,6 +64,12 @@ const h = s.light ? s.light.height : Math.round(1400 / ratio);
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transform: scale(var(--zoom, 1));
+  }
+  @media (max-width: 700px) {
+    .shot img {
+      transform: scale(var(--zoom-sm, 1.6));
+    }
   }
   .hold {
     position: absolute;
