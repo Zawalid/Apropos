@@ -100,11 +100,37 @@ middle, where the panel sits in every capture: a little in narrow columns, more 
 | `settings-privacy` | Privacy | Top of Privacy and data (the window cannot be taller than the screen) |
 | `menubar-popover` | Install | The menu bar popover under a drawn menu bar |
 
-Not used: `recording-bar`. The bar is a small strip in a large wallpaper and says less than the review window beside it.
+Not used from `website-slots/`: `recording-bar` (a small strip in a large wallpaper; the review window says more).
 
-Waiting: the full capture run (`apps/`, `panel/`, `settings/`, `onboarding/`, `recording/`, `menubar/` in the same dated
-folder) is still being reviewed by the capture session. When it is final, pick from it for the app wall and explorer,
-the privacy and make-your-own sections and install, and list what was used and rejected here.
+### Added from the full capture run (`/Users/walid/Pictures/Apropos Captures/2026-10-20/`, 547 files, 270 manifest entries)
+
+Imported with `node scripts/import-extra.mjs <folder>`. Where only a dark picture is listed it serves both themes.
+
+| Site slot | Source file | Where |
+|---|---|---|
+| `app-<app>` for Calendar, Finder, Mail, Maps, Music, Notes, Photos, Preview, Reminders, System Settings, Terminal, TextEdit, Xcode | `apps/list-<app>-dark.png` | Apps: a snap row of the same key over 13 apps |
+| `ctx-files`, `ctx-page`, `ctx-git` | `apps/context-files-selected-finder-dark.png`, `apps/context-page-open-safari-dark.png`, `apps/context-git-folder-terminal-dark.png` | Holding, under the tiles |
+| `send-confirm` | `panel/send-confirm-safari-dark.png` | Send to, beside the destinations |
+| `settings-menu-keys`, `settings-links` | `settings/shortcuts-items-light-1.png`, `settings/integrations-light-1.png` (right 5.5% cropped off) | Your commands |
+| `onboarding-permission`, `onboarding-done` | `onboarding/permission-dark.png`, `onboarding/done-dark.png` | Install |
+
+**Rejected, and why**
+- **Every light scene in the full run except a few Settings pages.** The real desktop showed through: a football match
+  in a browser window sits behind the panel (score bar, pitch, a TV channel's Arabic caption). A pixel scan for pitch green
+  flagged 134 of the full run's files; on inspection the light `apps/`, `panel/`, `onboarding/`, `recording/` and `menubar/`
+  scenes all carry it. The dark scenes over the `night` wallpaper are clean, so the site uses those.
+- `apps/list-safari-dark.png`: the same video shows through. Safari is already covered by the `safari` slot.
+- `settings/commands-detail-*`: the video is visible beside the sheet. `settings/shortcuts-items-dark-1.png`: the video
+  is blurred through the glass. `settings/integrations-dark-1.png`: the real Dock and a running app's label show at the bottom.
+- `settings/shortcuts-items-light-1.png` and `settings/integrations-light-1.png` keep a thin strip of the desktop on the
+  right edge, so the import crops it off.
+- `onboarding/welcome-*`: the guide's own Continue button shows as a ghost inside the glass.
+- Not needed for the story (not wrong): error, loading and permission states of the panel, interface sizes and icon
+  styles, the symbol picker states, the recording bar states, the other Settings pages, the tiled halves of tall pages.
+- `panel/usually-next-finder` and the other panel states that repeat a `website-slots` picture.
+
+Missing and replaced by the closest existing picture: a light version of each added picture (the dark one is used in
+both themes), and a Commands page picture for Your commands (Shortcuts and Integrations are used instead).
 
 Other real pictures: the ring and pearl (rendered from the icon scene), the app icons (macOS's own icons for apps
 installed on this Mac, read with `NSWorkspace`, nothing launched), the share image.
@@ -178,10 +204,10 @@ The global hotkey on a real Mac, live Accessibility reading (the pictures use sa
 - **Deploy.** `deploy-workflow.yml.example` is ready to move to `.github/workflows/website.yml` with the two Cloudflare secrets.
   Nothing has been pushed or deployed.
 
-## Quality gates (last run 2026-10-20, with the 16 captures, without measured data)
+## Quality gates (last run 2026-10-20, with all chosen captures, without measured data)
 
 - `npm run build`, `check:seo`, `check:ui` and `check:a11y` pass.
-- Lighthouse 12, home page: mobile 99/100/100/100 (LCP 2.1 s, 236 KiB), desktop 100/100/100/100 (performance, accessibility, best practices, SEO).
+- Lighthouse 12, home page, mobile: 100/100/100/100 (LCP 1.9 s, 309 KiB). Desktop was 100 across before the extra pictures and was not rerun.
 - Nothing scrolls sideways at 375 px (the comparison table scrolls inside its own frame, with the row names pinned).
-- Screenshots of every section of every page, desktop and 375 px, light and dark, were taken and reviewed.
+- Section screenshots were reviewed with the 16 slots. The extra pictures were checked one by one as images, not in the page layout: the owner asked for no more screenshot runs.
 Re-run all of these after `apps.json` lands or more pictures are added.

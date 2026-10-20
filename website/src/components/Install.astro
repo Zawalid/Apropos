@@ -36,6 +36,16 @@ import Shot from './Shot.astro';
       <figcaption class="small">The menu bar shows the app in front and what is read from it, pauses context or learning for an hour, and lists your recent commands.</figcaption>
     </figure>
     </div>
+    <div class="guide">
+      <figure>
+        <Shot id="onboarding-permission" ratio={1.34} zoom={1.15} zoomSmall={1.3} sizes="(max-width: 860px) 130vw, 640px" />
+        <figcaption class="small">The welcome guide asks for Accessibility once, says why, and opens the right page.</figcaption>
+      </figure>
+      <figure>
+        <Shot id="onboarding-done" ratio={1.34} zoom={1.15} zoomSmall={1.3} sizes="(max-width: 860px) 130vw, 640px" />
+        <figcaption class="small">Then it is ready: Option-Space from any app, and three next steps.</figcaption>
+      </figure>
+    </div>
 
     <div class="faq" data-faq>
       <div class="faq-head">
@@ -88,6 +98,16 @@ import Shot from './Shot.astro';
     display: grid;
     gap: 28px;
     counter-reset: step;
+  }
+  .guide {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: clamp(40px, 5vw, 64px);
+  }
+  .guide figure {
+    display: grid;
+    gap: 10px;
   }
   .bar-pic {
     display: grid;
@@ -204,6 +224,7 @@ import Shot from './Shot.astro';
   }
   @media (max-width: 860px) {
     .first,
+    .guide,
     .faq {
       grid-template-columns: 1fr;
     }

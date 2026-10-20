@@ -66,6 +66,21 @@ const link = 'apropos://run?command=up&text=hello%20world';
         </div>
         <Shot id="alias-popover" ratio={1.3} zoom={1.2} zoomSmall={1.45} sizes="(max-width: 700px) 145vw, (min-width: 1000px) 700px, 120vw" />
       </article>
+
+      <figure class="b b-page">
+        <Shot id="settings-menu-keys" ratio={0.77} sizes="(max-width: 1000px) 100vw, 600px" />
+        <figcaption>
+          <strong>Settings, Shortcuts.</strong> Every key in one place: the panel’s, your commands’, and the menu items you
+          gave an alias or a key, with the app each belongs to.
+        </figcaption>
+      </figure>
+      <figure class="b b-page">
+        <Shot id="settings-links" ratio={0.77} sizes="(max-width: 1000px) 100vw, 600px" />
+        <figcaption>
+          <strong>Settings, Integrations.</strong> Which commands may run from outside, a link builder, and copyable
+          links for Raycast, Alfred or a script.
+        </figcaption>
+      </figure>
     </div>
   </div>
 </section>
@@ -101,6 +116,17 @@ const link = 'apropos://run?command=up&text=hello%20world';
   }
   .b-link {
     grid-column: span 4;
+  }
+  .b-page {
+    grid-column: span 6;
+    margin: 0;
+  }
+  .b-page figcaption {
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  .b-page strong {
+    color: var(--ink);
   }
   .b-record,
   .b-menu {
@@ -221,7 +247,8 @@ const link = 'apropos://run?command=up&text=hello%20world';
     }
     .b-link,
     .b-record,
-    .b-menu {
+    .b-menu,
+    .b-page {
       grid-column: 1 / -1;
     }
   }
