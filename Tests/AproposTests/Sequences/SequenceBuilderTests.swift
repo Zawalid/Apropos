@@ -413,8 +413,8 @@ struct SequenceBuilderTests {
         try rig.store.create(inner)
         rig.context.setUserCommands(rig.store.commands)
         feed(rig)
-        let row = try #require(row(rig, inner.id.rawValue))
-        #expect(rig.model.addToSequence(row) == .refused("A sequence cannot run another sequence."))
+        let innerRow = try #require(row(rig, inner.id.rawValue))
+        #expect(rig.model.addToSequence(innerRow) == .refused("A sequence cannot run another sequence."))
     }
 
     @Test func aSequenceHasAtMostTwentySteps() {
