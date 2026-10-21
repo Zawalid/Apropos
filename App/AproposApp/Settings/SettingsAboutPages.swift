@@ -161,19 +161,22 @@ struct AboutPage: View {
             }
         }
         SettingsSection(title: "License") {
-            SettingsRow(title: "Early access", detail: "Apropos is free to use while it is in early access. Licensing arrives with the first public release.") {
-                Button("Enter license key") {}
-                    .buttonStyle(SecondaryButtonStyle())
-                    .disabled(true)
-                    .opacity(0.5)
+            SettingsRow(
+                title: "Free and open source",
+                detail: "Apropos is MIT licensed. You can read it, change it and build it yourself."
+            ) {
+                AboutLink(link: .license)
+            }
+            SettingsRow(title: "Website", detail: "Documentation, the changelog and the download page.") {
+                AboutLink(link: .website)
             }
         }
         SettingsSection(title: "Notices") {
             SettingsRow(
-                title: "No third-party code",
-                detail: "Apropos is built on Apple's system frameworks only. Libraries added later are listed here with their licenses."
+                title: "Sparkle",
+                detail: "In-app updates use Sparkle, MIT licensed, and only when you turn them on. The rest is built on Apple's system frameworks."
             ) { EmptyView() }
-            SettingsRow(title: "Copyright", detail: "Copyright 2026 Walid Zakan.") { EmptyView() }
+            SettingsRow(title: "Copyright", detail: "Copyright 2026 \(ProjectLinks.author).") { EmptyView() }
         }
     }
 
@@ -196,6 +199,16 @@ struct AboutPage: View {
                 chip("Privacy", symbol: "lock.shield") { navigation.select(.privacyAndData) }
             }
             .padding(.top, 4)
+            Divider().overlay(Brand.line).frame(width: 220).padding(.top, 10)
+            Text("Made by \(ProjectLinks.author)")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Brand.text)
+            HStack(spacing: 16) {
+                ForEach([ProjectLinks.Link.authorGitHub, .authorWebsite, .authorX], id: \.self) { AboutLink(link: $0) }
+            }
+            HStack(spacing: 16) {
+                ForEach([ProjectLinks.Link.repository, .issues, .license], id: \.self) { AboutLink(link: $0) }
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 18)
@@ -238,5 +251,31 @@ struct AboutPage: View {
         let short = info?["CFBundleShortVersionString"] as? String ?? "0"
         let build = info?["CFBundleVersion"] as? String ?? "0"
         return "\(short) (\(build))"
+    }
+}
+
+/// A quiet text link with a small icon. The label underlines on hover, and the address shows as the tooltip.
+struct AboutLink: View {
+    let link: ProjectLinks.Link
+
+    @State private var hovering = false
+
+    var body: some View {
+        Button {
+            NSWorkspace.shared.open(link.url)
+        } label: {
+            Label(link.title, systemImage: link.symbol)
+                .font(.system(size: 12.5))
+                .underline(hovering)
+                .foregroundStyle(hovering ? Brand.mint : Brand.text2)
+        }
+        .buttonStyle(.plain)
+        .onHover { inside in
+            hovering = inside
+            if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+        }
+        .help(link.url.absoluteString)
+        .accessibilityLabel(link.title)
+        .accessibilityHint("Opens \(link.url.host() ?? "the link") in your browser")
     }
 }

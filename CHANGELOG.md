@@ -6,6 +6,14 @@ work lands.
 
 ## [Unreleased]
 
+### Fixed (Command-comma and About)
+- Command-comma opens the Settings window and nothing else. The app no longer has an empty SwiftUI Settings scene, which
+  made macOS open a blank "Apropos Settings" window next to the real one. The app now starts from a plain AppKit entry
+  point and builds its own small menu (Apropos, Edit, Window), so text fields still get Cut, Copy and Paste.
+- About says who made Apropos, with links to the author's GitHub, site and X, and to the source, the issue tracker and the
+  MIT license. The license and notices sections no longer say "early access" and "no third-party code": Apropos is open
+  source and uses Sparkle for updates when you turn them on.
+
 ### Added (releases and updates)
 - A release pipeline in the style of Lopper: `scripts/release.sh` cuts a version, `scripts/build-app.sh` and
   `scripts/make-dmg.sh` build the app and a dark installer DMG, and a tagged push publishes a GitHub release with a checksum.

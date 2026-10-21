@@ -1,13 +1,19 @@
 import AppKit
-import SwiftUI
 
+/// A plain AppKit entry point. The app has no SwiftUI scene on purpose: an empty `Settings` scene made macOS open a blank
+/// "Apropos Settings" window on Command-comma next to the real one. The status item, the panel, the Settings window and
+/// the welcome guide are all owned by `AppController`, and `MainMenu` gives the app the few menu items it needs.
 @main
-struct AproposApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+enum AproposMain {
+    @MainActor private static var delegate: AppDelegate?
 
-    var body: some Scene {
-        // The menu bar item is an NSStatusItem owned by the controller; SwiftUI needs a scene, and this one is empty.
-        Settings { EmptyView() }
+    @MainActor
+    static func main() {
+        let app = NSApplication.shared
+        let delegate = AppDelegate()
+        Self.delegate = delegate
+        app.delegate = delegate
+        app.run()
     }
 }
 
@@ -16,23 +22,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let controller = AppController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        MainMenu.install(
+            openSettings: { [weak self] in self?.controller.showSettings() },
+            openAbout: { [weak self] in self?.controller.showSettings(page: .about) })
         controller.start()
-    }
-
-    func applicationDidBecomeActive(_ notification: Notification) {
-        routeSettingsShortcut()
-    }
-
-    @objc private func openSettings() { controller.showSettings() }
-
-    /// The empty Settings scene puts its own Settings item, with Command-comma, in the app menu. Point that item at the
-    /// window the controller owns. SwiftUI rebuilds the menu, so this runs whenever the app becomes active.
-    private func routeSettingsShortcut() {
-        guard let appMenu = NSApp.mainMenu?.items.first?.submenu else { return }
-        for item in appMenu.items where item.keyEquivalent == "," {
-            item.target = self
-            item.action = #selector(openSettings)
-        }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
