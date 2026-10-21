@@ -40,6 +40,6 @@
 	<key>SUFeedURL</key>
 	<string>https://github.com/Zawalid/Apropos/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>REPLACE_WITH_PUBLIC_KEY</string>
+	<string>wAOdIBq2zJx4mrw2MBcPDuqy9G55qgzShCxXNpQcJzU=</string>
 </dict>
 </plist>

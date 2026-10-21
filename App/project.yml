@@ -40,9 +40,9 @@ targets:
       path: AproposApp/Info.plist
       properties:
         SUFeedURL: https://github.com/Zawalid/Apropos/releases/latest/download/appcast.xml
-        # The public half of the update signing key. A placeholder until the key pair exists (docs/updates.md); with the
-        # placeholder the updater never starts.
-        SUPublicEDKey: REPLACE_WITH_PUBLIC_KEY
+        # The public half of the update signing key (made with generate_keys --account apropos, see docs/updates.md). The
+        # private half is never in the repository. With a placeholder here the updater never starts.
+        SUPublicEDKey: wAOdIBq2zJx4mrw2MBcPDuqy9G55qgzShCxXNpQcJzU=
         # Never check on its own until the person turns it on in Settings, and never show Sparkle's own prompt.
         SUEnableAutomaticChecks: false
         SUAllowsAutomaticUpdates: false
