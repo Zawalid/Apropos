@@ -14,7 +14,7 @@ open, and lists the actions that fit that moment.
 ![Swift 6](https://img.shields.io/badge/Swift-6-orange?style=flat-square)
 ![Status: early](https://img.shields.io/badge/status-early-yellow?style=flat-square)
 
-[Website](https://apropos.zawalid.com) &nbsp;·&nbsp; [Install](docs/install.md) &nbsp;·&nbsp; [How it stays private](#how-it-stays-private) &nbsp;·&nbsp; [Build from source](#build-from-source) &nbsp;·&nbsp; [Docs](#docs) &nbsp;·&nbsp; [Roadmap](docs/roadmap.md) &nbsp;·&nbsp; [Changelog](CHANGELOG.md)
+[Website](https://apropos.zawalid.com) &nbsp;·&nbsp; [Install](docs/install.md) &nbsp;·&nbsp; [How it stays private](#how-it-stays-private) &nbsp;·&nbsp; [Build from source](#build-from-source) &nbsp;·&nbsp; [Docs](#docs) &nbsp;·&nbsp; [Changelog](CHANGELOG.md)
 
 <br>
 
@@ -46,8 +46,8 @@ Apropos is early. There is no release yet.
 - The first builds will not be notarized, because there is no Apple Developer account behind the project yet. macOS
   will ask you to confirm the first launch. [docs/install.md](docs/install.md) says exactly how and why.
 - Automatic updates are not wired up yet.
-- Recording a command by doing it once is a first version and has not been verified on a real Mac yet. See
-  [docs/recorder-plan.md](docs/recorder-plan.md). Treat it as experimental.
+- Recording a command by doing it once is a first version and has not been verified on a real Mac yet. Treat
+  it as experimental, and see [docs/recorder.md](docs/recorder.md) for how it works.
 - Settings and file formats can still change before 1.0.
 
 What is shipped and what is not is tracked in [CHANGELOG.md](CHANGELOG.md), nothing else is claimed here.
@@ -194,8 +194,6 @@ run against fixtures and never against a live app.
 
 | | |
 |---|---|
-| [design.md](docs/design.md) | what Apropos is for and what it will not do |
-| [roadmap.md](docs/roadmap.md) and [backlog.md](docs/backlog.md) | what is built and what is next |
 | [development.md](docs/development.md) | previews, the dev loop, signing, tests |
 | [install.md](docs/install.md) | install, the first launch without notarization, uninstall |
 | [releasing.md](docs/releasing.md) | how a release is meant to be cut (draft) |

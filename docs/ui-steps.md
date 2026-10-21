@@ -1,7 +1,7 @@
 # UI steps
 
 A command made of steps: choose menu items in other apps through the Accessibility API, in order, stopping at the first
-step that fails. It is phase 1 of record-to-command ([recording-spike.md](recording-spike.md)): the step engine, with no
+step that fails. It is phase 1 of record-to-command (see [recorder.md](recorder.md)): the step engine, with no
 recorder. A recorder will later write the same format, and until then you author steps by hand or from menu commands the
 palette already knows.
 

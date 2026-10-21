@@ -2,7 +2,7 @@
 
 The capture core that turns what a person does into a reviewable list of UI steps: menu picks and keyboard shortcuts that
 are menu items, with app switches as boundaries. It has no UI and nothing in the app starts it yet. It builds on the step
-engine ([ui-steps.md](ui-steps.md)) and the decisions in [recording-spike.md](recording-spike.md); a recording is a
+engine ([ui-steps.md](ui-steps.md)) and the decisions of the earlier feasibility spike; a recording is a
 **draft**, never a finished command.
 
 Code: `Sources/Apropos/Recorder`. Tests: `Tests/AproposTests/Recorder` (fakes only, no live tap anywhere).
@@ -178,7 +178,7 @@ Nothing here has been run against a real app: it was developed only with fakes. 
    swift run apropos-probe --record-state
    ```
 2. Allow that terminal under Privacy & Security > Accessibility **and** Input Monitoring.
-3. Use the spike fixture so no real app is involved (check it out of history first: see docs/recording-spike.md). It is
+3. Use the spike fixture so no real app is involved (check it out of git history first: `git checkout d783a41 -- scratch/recording-spike`). It is
    invisible by default; in a scratch copy of
    `scratch/recording-spike/fixture/main.swift` set `window.alphaValue = 1`, `ignoresMouseEvents = false` and
    `app.setActivationPolicy(.regular)` so its menu bar shows, build it with `scratch/recording-spike/build.sh`, and run

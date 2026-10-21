@@ -19,7 +19,7 @@ work lands.
   the right page of System Settings; nothing is requested until you press Allow. While recording, a small glass bar floats
   near the top of the screen with the time and the step count, and Control-Option-Command-R stops it from any app. What you
   recorded lands in your sequence draft as one menu step, ready to run or save from the panel. Not yet verified on a real
-  Mac: see docs/recorder-plan.md, milestone R0.
+  Mac.
 
 ### Added (shortcut tips)
 - When you run a menu item from the panel five times or more and it has a keyboard shortcut, the footer shows "Run 8 times

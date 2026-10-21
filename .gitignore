@@ -33,3 +33,25 @@ sparkle_private*
 .claude/settings.local.json
 scratch/
 node_modules/
+
+# internal notes, kept on the author disk only
+/docs/backlog.md
+/docs/recorder-plan.md
+/docs/recording-spike.md
+/docs/rename-to-apropos.md
+/docs/live-check.md
+/docs/design.md
+/docs/roadmap.md
+/docs/identity/brand.md
+/docs/identity/inspiration
+/docs/identity/native-design-brief.md
+/docs/identity/onboarding-stage-brief.md
+/docs/identity/onboarding-stage-notes.md
+/docs/prototype/README.md
+/docs/prototype/identity.html
+/docs/prototype/index.html
+/docs/prototype/onboarding.html
+/docs/prototype/settings.html
+/docs/prototype/settings2.html
+/docs/prototype/settings3.html
+/docs/prototype/v2.html

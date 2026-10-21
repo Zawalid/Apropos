@@ -1,8 +1,7 @@
 # Apropos
 
 Native macOS command center (Raycast-like) whose palette adapts to the frontmost app and its context.
-Read [docs/design.md](docs/design.md) before making product decisions, and [docs/roadmap.md](docs/roadmap.md)
-for what to build next.
+Product notes (design, roadmap, backlog) are kept locally by the author and are not in the repository.
 
 ## Stack
 - Swift 6, SwiftUI plus AppKit, macOS 14+

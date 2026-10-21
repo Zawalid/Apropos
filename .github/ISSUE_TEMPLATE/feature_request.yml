@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Apropos is the context companion next to a launcher: it answers "what can I do right now, in this app, with this
-        selection". It does not launch apps, search files or manage the clipboard. See docs/design.md.
+        selection". It does not launch apps, search files or manage the clipboard.
   - type: textarea
     id: problem
     attributes:

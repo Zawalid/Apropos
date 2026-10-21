@@ -9,8 +9,8 @@ By contributing you agree that your work is released under the [MIT license](LIC
 ## Before you start
 
 - For anything bigger than a small fix, open an issue or a [discussion](https://github.com/Zawalid/Apropos/discussions)
-  first, so you do not spend a weekend on something that does not fit. [docs/design.md](docs/design.md) says what Apropos
-  is for and what it will not do, and [docs/roadmap.md](docs/roadmap.md) says what is next.
+  first, so you do not spend a weekend on something that does not fit. Apropos is the context companion next to a
+  launcher: it does not launch apps, search files or manage the clipboard.
 - Good first changes: a fix with a failing test, a symbol or action pack for an app, a clearer sentence in the docs.
 
 ## Set up
