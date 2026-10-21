@@ -203,7 +203,7 @@ private func window(_ configure: (FakeAX) -> Void) -> FakeAX {
     }
 
     @Test func privacyRoundTripsThroughDefaults() {
-        let suite = "apropos.test.\(UUID().uuidString)"
+        let suite = scratchDefaultsSuite("privacy")
         guard let defaults = UserDefaults(suiteName: suite) else { return }
         ContextPrivacy(disabledBundleIDs: ["a.b", "c.d"]).save(to: defaults)
         #expect(ContextPrivacy.load(from: defaults).disabledBundleIDs == ["a.b", "c.d"])
