@@ -6,6 +6,14 @@ work lands.
 
 ## [Unreleased]
 
+### Added (releases and updates)
+- A release pipeline in the style of Lopper: `scripts/release.sh` cuts a version, `scripts/build-app.sh` and
+  `scripts/make-dmg.sh` build the app and a dark installer DMG, and a tagged push publishes a GitHub release with a checksum.
+  Signing and notarization switch on when the secrets exist. A Homebrew cask template and `scripts/cask.sh` are ready.
+- In-app updates through Sparkle, off until you turn them on in Settings, Updates, with Check now. Every update is checked
+  against a signing key before it is installed, and nothing is installed without your press. A build without that key does not
+  start the updater and says so on the Updates page.
+
 ### Added (reviewing a recording)
 - When you stop recording, a review window lists every step in plain words with a Sturdy, Fair or Fragile badge, and the
   things that were not recorded in place. Rename, move, merge or delete a row. Try it looks for each step in the apps as they

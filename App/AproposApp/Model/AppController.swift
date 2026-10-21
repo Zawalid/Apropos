@@ -22,6 +22,7 @@ final class AppController {
     let panelPositions: PanelPositionStore
     let sequences: SequenceCenter
     let userCommands: UserCommandStore
+    let updater: AppUpdater
     let commandHotKeys = CommandHotKeyManager()
     let itemHotKeys = MenuItemHotKeyManager()
     @ObservationIgnored private(set) lazy var external = ExternalRequestHandler(controller: self)
@@ -75,7 +76,8 @@ final class AppController {
     /// The pieces are passed in so previews can build a controller over in-memory stores and a fixed permission.
     init(
         settings: SettingsModel, usageStore: UsageStore, permission: AccessibilityPermission,
-        tracker: FrontmostAppTracker, defaults: UserDefaults, commandsDirectory: URL? = nil, sendFoldersURL: URL? = nil
+        tracker: FrontmostAppTracker, defaults: UserDefaults, commandsDirectory: URL? = nil, sendFoldersURL: URL? = nil,
+        startsUpdater: Bool = true
     ) {
         // Previews pass no folder and get an empty throwaway one, so they never read the person's commands.
         self.userCommands = UserCommandStore(
@@ -85,6 +87,12 @@ final class AppController {
         self.permission = permission
         self.tracker = tracker
         self.settings = settings
+        // Updates: off until the person turns them on, never in automated runs and previews.
+        let updater = AppUpdater(startingUpdater: startsUpdater && !AgentMode.isOn)
+        self.updater = updater
+        settings.checkNow = { [updater] in updater.checkNow() }
+        settings.updatesAvailable = updater.isConfigured
+        updater.automaticallyChecks = settings.checkForUpdates && updater.isConfigured
         let menus = AppMenuModel(tracker: tracker, permission: permission)
         menus.showAlternates = settings.showAlternates
         self.menus = menus
@@ -324,6 +332,7 @@ final class AppController {
         if menus.showAlternates != settings.showAlternates { menus.showAlternates = settings.showAlternates }
         palette.sources = settings.paletteSources
         palette.menuDisabledApps = Set(settings.menuDisabledApps)
+        updater.automaticallyChecks = settings.checkForUpdates && updater.isConfigured
         usage.applyPredictionSettings(settings.store)
         if !settings.contextSensing {
             actions.clear()

@@ -46,7 +46,8 @@
             let usageStore = usageStore()
             let controller = AppController(
                 settings: settings(customize), usageStore: usageStore,
-                permission: AccessibilityPermission(probe: { trusted }), tracker: tracker, defaults: defaults())
+                permission: AccessibilityPermission(probe: { trusted }), tracker: tracker, defaults: defaults(),
+                startsUpdater: false)
             if let app, !trusted {
                 let target = DebugFixtures.targetApp(named: app)
                 tracker.pin(target)

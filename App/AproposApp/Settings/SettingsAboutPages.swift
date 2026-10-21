@@ -29,17 +29,25 @@ struct UpdatesPage: View {
     var body: some View {
         @Bindable var settings = settings
         SettingsSection(
-            footer: "Until then, a new build is installed by hand. Nothing contacts a server."
+            footer: settings.updatesAvailable
+                ? "Apropos asks GitHub once a day when this is on. Nothing is downloaded or installed until you press Install Update."
+                : "This build has no update signing key, so a new build is installed by hand. Nothing contacts a server."
         ) {
             SettingsRow(
                 title: "You have Apropos \(AboutPage.version)",
-                detail: "Automatic updates arrive with the first public release."
+                detail: settings.updatesAvailable ? nil : "Updates are not set up in this build."
             ) {
-                Badge(text: "Early access", tone: .mint)
+                if settings.updatesAvailable {
+                    Button("Check now") { settings.checkForUpdatesNow() }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .help("Ask GitHub now whether a newer version exists")
+                } else {
+                    Badge(text: "Early access", tone: .mint)
+                }
             }
             SettingToggleRow(id: .checkForUpdates, isOn: $settings.checkForUpdates)
-                .opacity(0.5)
-                .disabled(true)
+                .opacity(settings.updatesAvailable ? 1 : 0.5)
+                .disabled(!settings.updatesAvailable)
                 .settingsAnchor("checknow")
         }
         SettingsSection(title: "What has changed") {

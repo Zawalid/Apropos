@@ -296,12 +296,13 @@ final class SettingsModel {
         }
     }
 
-    func checkForUpdatesNow() {
-        let alert = NSAlert()
-        alert.messageText = "Updates are not set up yet"
-        alert.informativeText = "Apropos will check for updates once the updater ships."
-        alert.runModal()
-    }
+    /// Set by the app controller: asks the updater now, whether or not the automatic check is on.
+    @ObservationIgnored var checkNow: () -> Void = {}
+
+    /// Whether this build can update itself at all (it has a signing key). False in previews and unconfigured builds.
+    @ObservationIgnored var updatesAvailable = false
+
+    func checkForUpdatesNow() { checkNow() }
 
     func flush() { store.flush() }
 
