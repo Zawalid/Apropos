@@ -40,8 +40,9 @@ faster way to author the same step list.
 
 ## What was run, and what is blocked
 
-A throwaway fixture app and harness live in [scratch/recording-spike](../scratch/recording-spike). Nothing under
-`Sources/`, `App/` or `scripts/` was touched, and nothing was launched against the person's apps.
+A throwaway fixture app and harness were written for this spike. They are no longer in the tree; they live in git history
+at commit `d783a41` (`git show d783a41 --stat`, then `git checkout d783a41 -- scratch/recording-spike`). Nothing under
+`Sources/`, `App/` or `scripts/` was touched, and nothing was launched against anyone's real apps.
 
 | Piece | File | Notes |
 |---|---|---|
@@ -75,7 +76,7 @@ A throwaway fixture app and harness live in [scratch/recording-spike](../scratch
 frontmost, so "no focus stolen" below is weak evidence), a human's real clicks and keys through the event tap, and the
 whole prior-art section.
 
-### Results of the first run (2026-10-18, Walid's terminal granted Accessibility, Input Monitoring)
+### Results of the first run (2026-10-18, the author's terminal granted Accessibility, Input Monitoring)
 
 Run with `./run-experiments.sh`; output in `scratch/recording-spike/build/results` (not committed: the tree dumps
 contain the person's name and recent items, see below).
@@ -108,17 +109,17 @@ freshly built binary, a race between the dump and the replay, or the 600-node br
 that replay needs retries, longer first-use waits and a real failure report. **Rerun `./run-experiments.sh` twice** to see
 whether it recurs.
 
-### Running the experiments (Walid)
+### Running the experiments
 
 The harness needs Accessibility, and the tap part needs Input Monitoring. Only the person can grant them, and this
 session did not try to.
 
 1. In a terminal you do not mind granting (or use the built binary directly), run:
    ```bash
-   cd /Users/walid/Personal/Projects/Cue/scratch/recording-spike && ./build.sh
+   cd scratch/recording-spike && ./build.sh
    ```
 2. System Settings, Privacy and Security, Accessibility: add and enable the app you run the script from (Terminal or
-   iTerm), or click `+` and add `/Users/walid/Personal/Projects/Cue/scratch/recording-spike/build/harness`. Remove it
+   iTerm), or click `+` and add `scratch/recording-spike/build/harness` (the full path on your disk). Remove it
    afterwards. For the event tap line also add the same entry under Input Monitoring.
 3. Run, from the same terminal:
    ```bash

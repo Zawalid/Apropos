@@ -4,7 +4,7 @@ Each milestone is one `/goal` run. Finish and verify one before starting the nex
 
 ## M0: Foundation
 Project scaffold, dev loop, global hotkey, floating panel, frontmost-app tracking, accessibility menu reading,
-fuzzy search, run a menu item, permission onboarding, tests, CI. See [GOAL.md](../GOAL.md).
+fuzzy search, run a menu item, permission onboarding, tests, CI.
 
 ## M1: Context and ranking
 Selection, file, URL and document-title sensing. Per-app pinned and most-used actions. Learned ranking stored locally.

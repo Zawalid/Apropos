@@ -178,7 +178,8 @@ Nothing here has been run against a real app: it was developed only with fakes. 
    swift run apropos-probe --record-state
    ```
 2. Allow that terminal under Privacy & Security > Accessibility **and** Input Monitoring.
-3. Use the spike fixture so no real app is involved. It is invisible by default; in a scratch copy of
+3. Use the spike fixture so no real app is involved (check it out of history first: see docs/recording-spike.md). It is
+   invisible by default; in a scratch copy of
    `scratch/recording-spike/fixture/main.swift` set `window.alphaValue = 1`, `ignoresMouseEvents = false` and
    `app.setActivationPolicy(.regular)` so its menu bar shows, build it with `scratch/recording-spike/build.sh`, and run
    it on a scratch Space.

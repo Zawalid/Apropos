@@ -1,0 +1,26 @@
+name: Feature request
+description: An idea for something Apropos should do
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Apropos is the context companion next to a launcher: it answers "what can I do right now, in this app, with this
+        selection". It does not launch apps, search files or manage the clipboard. See docs/design.md.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: Describe the moment, not the solution. Which app, what was selected, what you wish was one keystroke away.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you imagine
+      description: Optional. A sketch of how it could work.
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Does it need to read or run anything new
+      description: Optional. New permissions, new data kept, new commands run. Local-first is a hard rule.

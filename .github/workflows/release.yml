@@ -1,0 +1,89 @@
+name: Release (draft)
+
+# DRAFT. This workflow has never been run and is not part of any release process yet. It only starts by hand
+# (Actions, Release (draft), Run workflow), never on a tag or a push, so it cannot fire by accident.
+#
+# What it does: checks the version, runs the tests, builds the app, ad hoc signed, packs a zip and a DMG with checksums,
+# and creates a DRAFT, pre-release GitHub release for you to look over. It does not sign with a Developer ID, does not
+# notarize and does not build an update feed. A separate piece of work will add those. See docs/releasing.md.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, for example 0.1.0 (must equal MARKETING_VERSION in App/project.yml)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check the version
+        run: |
+          PROJECT_VERSION="$(grep -m1 'MARKETING_VERSION' App/project.yml | awk '{print $2}')"
+          if [ "$VERSION" != "$PROJECT_VERSION" ]; then
+            echo "input $VERSION does not match MARKETING_VERSION $PROJECT_VERSION in App/project.yml" >&2
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "tag v$VERSION already exists" >&2
+            exit 1
+          fi
+
+      - run: brew install xcodegen
+
+      - name: Run the tests
+        run: |
+          git config --global user.email "ci@example.com"
+          git config --global user.name "CI"
+          git config --global init.defaultBranch main
+          swift test
+
+      - name: Build the app
+        run: |
+          (cd App && xcodegen generate)
+          xcodebuild build \
+            -project App/Apropos.xcodeproj -scheme Apropos -configuration Release \
+            -derivedDataPath build/release \
+            CODE_SIGN_IDENTITY="-" CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)"
+          codesign --verify --strict build/release/Build/Products/Release/Apropos.app
+
+      - name: Pack the zip and the DMG
+        run: |
+          APP="build/release/Build/Products/Release/Apropos.app"
+          mkdir -p build/dist build/dmg
+          ditto -c -k --keepParent "$APP" "build/dist/Apropos-$VERSION.zip"
+          cp -R "$APP" build/dmg/
+          ln -s /Applications build/dmg/Applications
+          hdiutil create -volname "Apropos" -srcfolder build/dmg -ov -format UDZO "build/dist/Apropos-$VERSION.dmg"
+          (cd build/dist && shasum -a 256 "Apropos-$VERSION.zip" "Apropos-$VERSION.dmg" > "Apropos-$VERSION.sha256")
+
+      - name: Release notes
+        run: |
+          awk -v v="$VERSION" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > build/notes.md
+          [ -s build/notes.md ] || echo "Apropos $VERSION. See CHANGELOG.md." > build/notes.md
+          {
+            echo
+            echo "### Install"
+            echo "This build is **not notarized**. macOS will ask you to confirm the first launch: see docs/install.md."
+            echo
+            echo "SHA-256 of the files is in the attached \`.sha256\` file."
+          } >> build/notes.md
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v$VERSION" \
+            "build/dist/Apropos-$VERSION.zip" "build/dist/Apropos-$VERSION.dmg" "build/dist/Apropos-$VERSION.sha256" \
+            --target "$GITHUB_SHA" --title "Apropos $VERSION" --notes-file build/notes.md --draft --prerelease

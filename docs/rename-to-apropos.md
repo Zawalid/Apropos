@@ -69,6 +69,6 @@ Real users (starting with Walid) already have data under the old name. On first 
 - [ ] Report lists what was and was not verified
 
 ## Folder
-The repository folder `/Users/walid/Personal/Projects/Cue` becomes `.../Apropos` as the very last step, done by
+The repository folder (`Cue` on the author's disk) becomes `Apropos` as the very last step, done by
 the user, because moving it breaks every open session's working directory. After the move, update the paths in
 `CLAUDE.md` and any session notes.

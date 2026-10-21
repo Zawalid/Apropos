@@ -11,7 +11,7 @@ for what to build next.
 - Distributed directly (not the Mac App Store, accessibility is incompatible with the sandbox), updates via Sparkle
 
 ## Rules
-- Mirror the layout and tooling of the Lopper project (`/Users/walid/Personal/Projects/Lopper`): `scripts/dev.sh`,
+- Mirror the layout and tooling of the Lopper project (github.com/Zawalid/Lopper): `scripts/dev.sh`,
   `docs/`, `CHANGELOG.md`, GitHub Actions CI, swift-format with the committed config
 - No emojis in code. No `as any` style escapes: no force casts or force unwraps in production code
 - Keep core logic in the package and unit-tested; keep views thin

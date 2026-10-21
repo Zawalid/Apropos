@@ -17,3 +17,19 @@ scratch/recording-spike/build/
 # third-party design references, local only
 docs/identity/inspiration/*
 !docs/identity/inspiration/README.md
+
+# secrets and signing material never belong in the repository
+.env
+.env.*
+*.p12
+*.p8
+*.pem
+*.mobileprovision
+*.cer
+sparkle_private*
+*_ed25519*
+
+# local agent settings and throwaway work
+.claude/settings.local.json
+scratch/
+node_modules/
