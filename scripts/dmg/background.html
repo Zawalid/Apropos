@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Apropos installer background</title>
+<style>
+  :root {
+    --ink: #0b100f;
+    --text: #f1f4f2;
+    --muted: #a3aeaa;
+    --mint: #8cf2cc;
+    --pearl: #ff8a4c;
+    --plate: #2a8f69;
+  }
+  html, body { margin: 0; background: var(--ink); }
+  body { font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif; }
+  .stage {
+    position: relative; width: 660px; height: 420px; overflow: hidden;
+    background:
+      radial-gradient(ellipse 320px 160px at 50% 49%, rgba(140, 242, 204, 0.14), transparent 70%),
+      radial-gradient(circle at 50% 0%, #16211e 0%, transparent 60%),
+      var(--ink);
+  }
+  .dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(140, 242, 204, 0.12) 1px, transparent 1.2px);
+    background-size: 22px 22px; background-position: 11px 11px;
+    mask-image: radial-gradient(ellipse 340px 230px at 50% 50%, transparent 30%, #000 100%);
+    -webkit-mask-image: radial-gradient(ellipse 340px 230px at 50% 50%, transparent 30%, #000 100%);
+  }
+  svg { position: absolute; inset: 0; width: 660px; height: 420px; }
+
+  .title {
+    position: absolute; left: 0; right: 0; top: 34px; text-align: center;
+    font-size: 26px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; color: var(--text);
+  }
+  .sub {
+    position: absolute; left: 0; right: 0; top: 70px; text-align: center;
+    font-size: 12.5px; line-height: 1; letter-spacing: 0.01em; color: var(--muted);
+  }
+
+  /* Plates sit under the icon names. Finder draws those names itself in black (light mode) or white (dark mode),
+     so the plate is a mid-tone green that stays readable with both. */
+  .plate {
+    position: absolute; top: 275px; width: 124px; height: 26px; margin-left: -62px;
+    border-radius: 13px; background: var(--plate);
+    box-shadow: 0 0 0 1px rgba(140, 242, 204, 0.35), 0 6px 18px rgba(42, 143, 105, 0.35);
+  }
+
+  .hint {
+    position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 10px; white-space: nowrap;
+    padding: 9px 16px 9px 12px; border-radius: 12px;
+    background: rgba(17, 24, 22, 0.9); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+    font-size: 11.5px; line-height: 1; color: var(--muted);
+  }
+  .hint em { font-style: normal; color: var(--text); font-weight: 600; }
+  .hint .pill {
+    font-size: 10.5px; font-weight: 600; color: var(--mint);
+    padding: 4px 8px; border-radius: 6px; background: rgba(140, 242, 204, 0.1); box-shadow: 0 0 0 1px rgba(140, 242, 204, 0.3);
+  }
+</style>
+
+<div class="stage">
+  <div class="dots"></div>
+
+  <svg viewBox="0 0 660 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="fade" gradientUnits="userSpaceOnUse" x1="250" x2="410" y1="0" y2="0">
+        <stop offset="0" stop-color="#8cf2cc" stop-opacity="0.0"/>
+        <stop offset="0.5" stop-color="#8cf2cc" stop-opacity="1"/>
+        <stop offset="1" stop-color="#8cf2cc" stop-opacity="1"/>
+      </linearGradient>
+      <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stop-color="#ff8a4c" stop-opacity="0.55"/>
+        <stop offset="1" stop-color="#ff8a4c" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <!-- The way from the app to Applications: a dashed line that ends in the pearl, the mark's own bead. -->
+    <path d="M250 205 H405" stroke="url(#fade)" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 9"/>
+    <circle cx="418" cy="205" r="22" fill="url(#glow)"/>
+    <circle cx="418" cy="205" r="6" fill="#ff8a4c"/>
+  </svg>
+
+  <div class="plate" style="left: 170px"></div>
+  <div class="plate" style="left: 490px"></div>
+
+  <div class="title">Apropos</div>
+  <div class="sub">Drag Apropos to the Applications folder</div>
+
+  <div class="hint"><span class="pill">First launch</span><span><em>Right-click Apropos, choose Open</em>, then allow Accessibility</span></div>
+</div>

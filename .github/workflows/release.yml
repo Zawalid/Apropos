@@ -1,16 +1,16 @@
-name: Release (draft)
+name: Release
 
-# DRAFT. This workflow has never been run and is not part of any release process yet. It only starts by hand
-# (Actions, Release (draft), Run workflow), never on a tag or a push, so it cannot fire by accident.
-#
-# What it does: checks the version, runs the tests, builds the app, ad hoc signed, packs a zip and a DMG with checksums,
-# and creates a DRAFT, pre-release GitHub release for you to look over. It does not sign with a Developer ID, does not
-# notarize and does not build an update feed. A separate piece of work will add those. See docs/releasing.md.
+# Pushing a tag like v0.2.0 (made by scripts/release.sh) builds the app, packs a DMG and publishes a GitHub Release.
+# Without signing secrets the app is ad hoc signed (people confirm it once, see docs/install.md). Add the secrets below
+# and the same workflow signs with a Developer ID certificate and notarizes the DMG. It can also be started by hand
+# (Actions, Release, Run workflow) to publish a DRAFT pre-release for a tag that does not exist yet.
 on:
+  push:
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to release, for example 0.1.0 (must equal MARKETING_VERSION in App/project.yml)"
+        description: "Version for a draft pre-release, for example 0.1.0 (must equal MARKETING_VERSION in App/project.yml)"
         required: true
         type: string
 
@@ -22,23 +22,39 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 60
     env:
-      VERSION: ${{ inputs.version }}
+      # Optional signing. All of these must be set as repository secrets to turn signing on:
+      #   DEVELOPER_ID_P12 (base64 of the .p12), DEVELOPER_ID_P12_PASSWORD, DEVELOPER_ID_NAME
+      #   ("Developer ID Application: Your Name (TEAMID)"), NOTARY_KEY_ID, NOTARY_ISSUER_ID, NOTARY_KEY_P8 (base64)
+      HAS_SIGNING: ${{ secrets.DEVELOPER_ID_P12 != '' && secrets.DEVELOPER_ID_NAME != '' && secrets.NOTARY_KEY_P8 != '' }}
+      # In-app updates: the EdDSA private key that signs each release's zip (see docs/updates.md). Without it the release
+      # still publishes, just without an update feed.
+      HAS_SPARKLE: ${{ secrets.SPARKLE_ED_PRIVATE_KEY != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Check the version
+      - name: Work out the version and check it
         run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            TAG="v$VERSION"
+            echo "DRAFT=1" >> "$GITHUB_ENV"
+          else
+            TAG="$GITHUB_REF_NAME"
+            VERSION="${TAG#v}"
+          fi
           PROJECT_VERSION="$(grep -m1 'MARKETING_VERSION' App/project.yml | awk '{print $2}')"
           if [ "$VERSION" != "$PROJECT_VERSION" ]; then
-            echo "input $VERSION does not match MARKETING_VERSION $PROJECT_VERSION in App/project.yml" >&2
+            echo "version $VERSION does not match MARKETING_VERSION $PROJECT_VERSION in App/project.yml" >&2
             exit 1
           fi
-          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
-            echo "tag v$VERSION already exists" >&2
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "tag $TAG already exists" >&2
             exit 1
           fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
 
       - run: brew install xcodegen
 
@@ -49,41 +65,81 @@ jobs:
           git config --global init.defaultBranch main
           swift test
 
+      - name: Import the signing certificate
+        if: env.HAS_SIGNING == 'true'
+        env:
+          P12: ${{ secrets.DEVELOPER_ID_P12 }}
+          P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/release.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          echo "SIGN_IDENTITY=${{ secrets.DEVELOPER_ID_NAME }}" >> "$GITHUB_ENV"
+
       - name: Build the app
-        run: |
-          (cd App && xcodegen generate)
-          xcodebuild build \
-            -project App/Apropos.xcodeproj -scheme Apropos -configuration Release \
-            -derivedDataPath build/release \
-            CODE_SIGN_IDENTITY="-" CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)"
-          codesign --verify --strict build/release/Build/Products/Release/Apropos.app
+        run: scripts/build-app.sh
 
-      - name: Pack the zip and the DMG
+      - name: Pack the DMG
         run: |
-          APP="build/release/Build/Products/Release/Apropos.app"
-          mkdir -p build/dist build/dmg
-          ditto -c -k --keepParent "$APP" "build/dist/Apropos-$VERSION.zip"
-          cp -R "$APP" build/dmg/
-          ln -s /Applications build/dmg/Applications
-          hdiutil create -volname "Apropos" -srcfolder build/dmg -ov -format UDZO "build/dist/Apropos-$VERSION.dmg"
-          (cd build/dist && shasum -a 256 "Apropos-$VERSION.zip" "Apropos-$VERSION.dmg" > "Apropos-$VERSION.sha256")
+          scripts/make-dmg.sh
+          mv build/Apropos.dmg "build/Apropos-$VERSION.dmg"
 
-      - name: Release notes
+      - name: Notarize and staple
+        if: env.HAS_SIGNING == 'true'
+        env:
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
         run: |
+          echo "$NOTARY_KEY_P8" | base64 --decode > "$RUNNER_TEMP/AuthKey.p8"
+          xcrun notarytool submit "build/Apropos-$VERSION.dmg" \
+            --key "$RUNNER_TEMP/AuthKey.p8" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" --wait
+          xcrun stapler staple "build/Apropos-$VERSION.dmg"
+
+      - name: Checksum and release notes
+        run: |
+          # A copy under a fixed name, so the permanent link releases/latest/download/Apropos.dmg always works.
+          cp "build/Apropos-$VERSION.dmg" build/Apropos.dmg
+          (cd build && shasum -a 256 "Apropos-$VERSION.dmg" > "Apropos-$VERSION.dmg.sha256")
           awk -v v="$VERSION" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > build/notes.md
-          [ -s build/notes.md ] || echo "Apropos $VERSION. See CHANGELOG.md." > build/notes.md
+          [ -s build/notes.md ] || echo "Release $VERSION" > build/notes.md
+          # What the in-app update window shows: the changelog entry without the install instructions below.
+          cp build/notes.md build/update-notes.md
           {
             echo
             echo "### Install"
-            echo "This build is **not notarized**. macOS will ask you to confirm the first launch: see docs/install.md."
-            echo
-            echo "SHA-256 of the files is in the attached \`.sha256\` file."
+            echo "Download the DMG and drag Apropos to Applications. See docs/install.md for the first-launch steps."
+            echo "Or with Homebrew: \`brew install --cask zawalid/apropos/apropos\`."
+            echo "SHA-256: \`$(cut -d' ' -f1 "build/Apropos-$VERSION.dmg.sha256")\`"
           } >> build/notes.md
 
-      - name: Create the draft release
+      - name: Build the update feed
+        if: env.HAS_SPARKLE == 'true'
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+          NOTES: build/update-notes.md
+        run: scripts/appcast.sh "$VERSION"
+
+      - name: Publish the GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v$VERSION" \
-            "build/dist/Apropos-$VERSION.zip" "build/dist/Apropos-$VERSION.dmg" "build/dist/Apropos-$VERSION.sha256" \
-            --target "$GITHUB_SHA" --title "Apropos $VERSION" --notes-file build/notes.md --draft --prerelease
+          FLAGS=()
+          case "$VERSION" in *-*) FLAGS+=(--prerelease);; esac
+          if [ "${DRAFT:-0}" = 1 ]; then FLAGS+=(--draft --prerelease); fi
+          UPDATE_FILES=()
+          if [ -f build/appcast/appcast.xml ]; then
+            UPDATE_FILES=(build/appcast/appcast.xml "build/appcast/Apropos-$VERSION.zip")
+          fi
+          TARGET=()
+          if [ "${DRAFT:-0}" = 1 ]; then TARGET=(--target "$GITHUB_SHA"); fi
+          gh release create "$TAG" \
+            "build/Apropos-$VERSION.dmg" build/Apropos.dmg "build/Apropos-$VERSION.dmg.sha256" \
+            "${UPDATE_FILES[@]}" "${TARGET[@]}" \
+            --title "Apropos $VERSION" --notes-file build/notes.md "${FLAGS[@]}"

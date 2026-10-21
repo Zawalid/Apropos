@@ -5,7 +5,9 @@ what that means for you.
 
 ## Status of the download
 
-- There is no release asset on GitHub yet. Until there is, build from source (below).
+- There is no release asset on GitHub yet. Until there is, build from source (below). Once there is one, a download
+  is `Apropos-<version>.dmg` from the Releases page (`releases/latest/download/Apropos.dmg` always points at the newest),
+  and Homebrew installs it with `brew install --cask zawalid/apropos/apropos`.
 - The first downloadable builds will **not be notarized**. Notarization needs an Apple Developer Program membership, and
   there is no account behind the project at the moment. When that changes, this page and the releases will say so.
 - A build you make yourself on your own Mac is signed ad hoc by Xcode and opens without any of the steps in
@@ -68,8 +70,10 @@ sign with a stable certificate (see [development.md](development.md)).
 
 ## Updating
 
-Automatic updates are not available yet and Apropos makes no network connections. To update, build or download the new
-version and replace the app. Your settings and commands are kept between versions.
+Apropos can update itself, but only if you turn it on (Settings, Updates). It then asks GitHub once a day whether a newer
+version exists, shows what is new and waits for you to press Install Update. It is off by default, and a build without an
+update signing key cannot turn it on. See [updates.md](updates.md). Otherwise download the new version and replace the app,
+or run `brew upgrade --cask apropos`. Your settings and commands are kept between versions.
 
 ## Uninstalling
 

@@ -196,7 +196,8 @@ run against fixtures and never against a live app.
 |---|---|
 | [development.md](docs/development.md) | previews, the dev loop, signing, tests |
 | [install.md](docs/install.md) | install, the first launch without notarization, uninstall |
-| [releasing.md](docs/releasing.md) | how a release is meant to be cut (draft) |
+| [releasing.md](docs/releasing.md) | how a release is cut: version, DMG, Homebrew cask, update feed |
+| [updates.md](docs/updates.md) | in-app updates: what they do, privacy, the signing key |
 | [context-actions.md](docs/context-actions.md), [ranking.md](docs/ranking.md), [prediction.md](docs/prediction.md) | how the panel decides what to show |
 | [user-commands.md](docs/user-commands.md), [integrations.md](docs/integrations.md), [destinations.md](docs/destinations.md), [sequences.md](docs/sequences.md) | commands, links, Send to, sequences |
 | [recorder.md](docs/recorder.md), [ui-steps.md](docs/ui-steps.md) | recording and replaying steps |
