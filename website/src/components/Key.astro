@@ -147,7 +147,7 @@ const { as: Tag = 'span', wide = 1, glyph, word, class: className, ...rest } = A
     position: absolute;
     top: calc(var(--u, 64px) * 0.1);
     right: calc(var(--u, 64px) * 0.13);
-    font-size: calc(var(--u, 64px) * 0.24);
+    font-size: max(13px, calc(var(--u, 64px) * 0.24));
     font-weight: 400;
     line-height: 1;
   }
@@ -155,7 +155,7 @@ const { as: Tag = 'span', wide = 1, glyph, word, class: className, ...rest } = A
     position: absolute;
     left: calc(var(--u, 64px) * 0.13);
     bottom: calc(var(--u, 64px) * 0.1);
-    font-size: calc(var(--u, 64px) * 0.16);
+    font-size: max(12px, calc(var(--u, 64px) * 0.16));
     font-weight: 400;
     line-height: 1;
     letter-spacing: 0;

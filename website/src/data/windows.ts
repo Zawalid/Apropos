@@ -50,3 +50,9 @@ export function win(id: WindowId) {
   if (!dark && !light) throw new Error(`No picture for window "${id}" in src/assets/windows`);
   return { id, alt: windows[id], dark: dark ?? light, light: light ?? null };
 }
+
+/**
+ * The part of a panel shown on phones (see Window.astro): the search field and the left of its rows, where the titles
+ * are, scaled so their text reads at about 14 px on a 375 px screen. Row titles end before 46% of the width.
+ */
+export const panelCrop = { x: 0, y: 0, w: 0.46, h: 0.62 };

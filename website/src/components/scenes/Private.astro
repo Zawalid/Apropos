@@ -243,8 +243,9 @@ const promise = 'No account, no analytics, no server. Nothing about your screen 
       position: relative;
       top: 0;
     }
-    .page-clip {
-      height: 60vh;
+    /* Its text is too small to read at phone width; the lists beside it say the same in large type. */
+    .page-win {
+      display: none;
     }
   }
 </style>

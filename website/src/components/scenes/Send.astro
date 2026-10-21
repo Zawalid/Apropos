@@ -17,6 +17,7 @@ const stations = [
     icon: safari,
     name: 'Safari',
     win: 'send-list' as const,
+    crop: { x: 0, y: 0, w: 0.46, h: 0.62 },
     title: 'Send it where it belongs.',
     line: 'Notes, Reminders, Things, Obsidian, Bear, a Mail draft, a folder or the Share menu. Each shows only when its app is installed.',
   },
@@ -25,6 +26,7 @@ const stations = [
     icon: notes,
     name: 'UPPERCASE, then Notes',
     win: 'sequence' as const,
+    crop: { x: 0, y: 0, w: 0.56, h: 0.68 },
     title: 'Chain steps across apps.',
     line: 'Command-K adds any row to a draft. Each step gets the result of the one before, so Notes receives the capitals, not the original.',
   },
@@ -33,6 +35,7 @@ const stations = [
     icon: mail,
     name: 'Mail draft',
     win: 'confirm' as const,
+    crop: { x: 0, y: 0.5, w: 0.5, h: 0.5 },
     title: 'Nothing leaves without a second Return.',
     line: 'Anything that leaves a trace waits with a one-line preview of what will go. A Mail draft never sends itself.',
   },
@@ -50,7 +53,7 @@ const phrase = 'Quarterly numbers look good';
       <svg class="wave lit" viewBox="0 0 1000 120" preserveAspectRatio="none" data-lit>
         <path d="M0 60 C 120 0, 220 0, 330 60 S 540 120, 660 60 S 880 0, 1000 60" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" data-path />
       </svg>
-      <span class="mark upper" style="--x:0.33">UPPERCASE</span>
+      <span class="gate" style="--x:0.25" data-upper>UPPERCASE</span>
       <span class="chip" data-chip><span data-chip-text>{phrase}</span></span>
       <span class="ret kbd" data-ret>&#8617;</span>
     </div>
@@ -60,7 +63,7 @@ const phrase = 'Quarterly numbers look good';
         <li class="station" style={`--x:${s.at}`} data-station={i}>
           <div class="above">
             <p class="who"><Image src={s.icon} alt="" width={28} height={28} densities={[1, 2]} /><span>{s.name}</span></p>
-            <div class="win"><Window id={s.win} width={420} /></div>
+            <div class="win"><Window id={s.win} width={420} phone={s.crop} /></div>
           </div>
           <div class="below">
             <h3>{s.title}</h3>
@@ -150,10 +153,12 @@ const phrase = 'Quarterly numbers look good';
     color: var(--night-mint);
     clip-path: inset(-20px calc(100% - var(--reach, 0%)) -20px -20px);
   }
-  .mark {
+  /* The UPPERCASE station sits on the route like a gate. The chip goes through it: the gate steps aside while the chip
+     passes, so the two never overlap, and the chip comes out in capitals. */
+  .gate {
     position: absolute;
     left: calc(var(--x) * 100%);
-    top: 50%;
+    top: calc(var(--my, 0.2) * 100%);
     translate: -50% -50%;
     background: #0b1a1f;
     font: 600 12px/1 var(--mono);
@@ -238,6 +243,14 @@ const phrase = 'Quarterly numbers look good';
     :global(html.live) .send .route {
       left: 24px;
       right: 24px;
+      top: 64%;
+      height: 80px;
+    }
+    :global(html.live) .send .above {
+      bottom: calc(36% + 70px);
+    }
+    :global(html.live) .send .below {
+      top: calc(64% + 64px);
     }
     :global(html.live) .send .station {
       left: 50%;
@@ -266,6 +279,7 @@ const phrase = 'Quarterly numbers look good';
   const stations = [...(scene?.querySelectorAll<HTMLElement>('[data-station]') ?? [])];
   const title = scene?.querySelector<HTMLElement>('.title');
   const phrase = chipText?.textContent ?? '';
+  const gate = scene?.querySelector<HTMLElement>('[data-upper]');
 
   // Where on the path a given x (0 to 1) is, found once by walking the path.
   let table: Array<[number, number, number]> = [];
@@ -284,6 +298,7 @@ const phrase = 'Quarterly numbers look good';
     for (const t of table) if (Math.abs(t[0] - x) < Math.abs(best[0] - x)) best = t;
     return best[1];
   };
+  gate?.style.setProperty('--my', yAt(0.25).toFixed(3));
 
   onScene(scene ?? null, (p) => {
     if (!route || !lit || !chip || !chipText || !ret) return;
@@ -298,7 +313,14 @@ const phrase = 'Quarterly numbers look good';
     const cy = yAt(along) * h;
     chip.style.transform = `translate(${cx.toFixed(1)}px, ${cy.toFixed(1)}px)`;
     lit.style.setProperty('--reach', `${(along * 100).toFixed(2)}%`);
-    chipText.textContent = along > 0.33 ? phrase.toUpperCase() : phrase;
+    chipText.textContent = along > 0.25 ? phrase.toUpperCase() : phrase;
+    if (gate) {
+      // The gate steps aside while the chip is on it, and comes back once the chip is clear.
+      const c = chip.getBoundingClientRect();
+      const g = gate.getBoundingClientRect();
+      const gap = Math.max(g.left - c.right, c.left - g.right, g.top - c.bottom, c.top - g.bottom);
+      gate.style.opacity = gap < 12 ? '0' : String(Math.min(1, (gap - 12) / 40));
+    }
     const hit = p > 0.9;
     ret.classList.toggle('hit', hit);
     chip.style.opacity = String(1 - span(p, 0.9, 0.96));

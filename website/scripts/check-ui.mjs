@@ -86,7 +86,7 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
     s.addRange(r);
   });
   await page.waitForTimeout(300);
-  check(await page.evaluate(() => !document.querySelector('[data-pop]').hidden), `${label}: selecting words did not open the actions`);
+  check(await page.evaluate(() => document.querySelector('[data-pop-sel]').textContent.includes('Mail or Safari')), `${label}: selecting words did not hand them to the actions`);
   await page.locator('[data-pop-list] button', { hasText: 'UPPERCASE' }).first().click();
   await page.waitForTimeout(200);
   check(await page.evaluate(() => document.querySelector('[data-essay]').textContent.includes('MAIL OR SAFARI')), `${label}: UPPERCASE did not change the selected words`);

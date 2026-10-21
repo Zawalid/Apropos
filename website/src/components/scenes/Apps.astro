@@ -7,7 +7,7 @@
  */
 import { Image } from 'astro:assets';
 import Window from '../Window.astro';
-import type { WindowId } from '../../data/windows';
+import { panelCrop, type WindowId } from '../../data/windows';
 
 const icons = import.meta.glob<{ default: ImageMetadata }>('../../assets/apps/*.png', { eager: true });
 const icon = (slug: string) => icons[`../../assets/apps/${slug}.png`].default;
@@ -46,7 +46,7 @@ const apps: { name: string; slug: string; win: WindowId }[] = [
     <ol class="strip" data-strip aria-label="Apropos over 14 apps" tabindex="0">
       {apps.map((a, i) => (
         <li class="slot" data-slot id={`app-${a.slug}`} aria-label={a.name}>
-          <Window id={a.win} width={720} eager={i < 2} />
+          <Window id={a.win} width={720} eager={i < 2} phone={panelCrop} />
         </li>
       ))}
     </ol>

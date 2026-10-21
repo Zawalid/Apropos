@@ -5,6 +5,7 @@
  * where typing "clean" put it, path and all. The menu titles and the path are Xcode's own (the deep-xcode capture).
  */
 import Window from '../Window.astro';
+import { panelCrop } from '../../data/windows';
 
 const bar = ['Xcode', 'File', 'Edit', 'View', 'Find', 'Navigate', 'Editor', 'Product', 'Debug', 'Integrate', 'Window', 'Help'];
 // Each level: the items seen in the capture under that menu, and the one the path goes through.
@@ -39,7 +40,7 @@ const levels = [
     </div>
 
     <div class="panel" data-panel>
-      <Window id="deep-xcode" width={820} />
+      <Window id="deep-xcode" width={820} phone={{ ...panelCrop, w: 0.5, h: 0.7 }} />
     </div>
   </div>
 </section>
@@ -113,7 +114,7 @@ const levels = [
     font-size: clamp(30px, 3.4vw, 50px);
   }
   .lvl-3 {
-    font-size: clamp(40px, 5.6vw, 86px);
+    font-size: clamp(40px, 5vw, 76px);
     line-height: 1.02;
     font-weight: 700;
     letter-spacing: -0.035em;
@@ -198,10 +199,11 @@ const levels = [
   }
   :global(html.live) .deep .lvl-3 {
     --a: var(--a3);
-    max-width: 9.5em;
+    /* Never past the right edge: the room left after three steps of the staircase. */
+    max-width: min(9.5em, calc(100vw - var(--gutter) * 2 - var(--step-x) * 3));
   }
   :global(html.live) .deep .stair {
-    --step-x: min(19vw, 290px);
+    --step-x: min(17vw, 250px);
     --step-y: 10vh;
   }
   :global(html.live) .deep .panel {
@@ -213,7 +215,8 @@ const levels = [
     opacity: 0;
     will-change: transform, opacity;
   }
-  @media (max-width: 760px) {
+  /* Under 900 px the levels stack instead of stepping right. */
+  @media (max-width: 900px) {
     :global(html.live) .deep .stair {
       --step-x: 7vw;
       --step-y: 8vh;
@@ -265,7 +268,8 @@ const levels = [
     const fold = easeInOut(span(p, 0.52, 0.72));
 
     // The fold: the deepest item travels to its row in the panel (row 5, about 52% down, 8% in) and shrinks to its size.
-    const pr = panel.getBoundingClientRect();
+    // The picture itself, which on phones is larger than its frame.
+    const pr = (panel.querySelector('img') ?? panel).getBoundingClientRect();
     const dr = deepest.getBoundingClientRect();
     const camX = -dive * Math.min(window.innerWidth * 0.12, 160);
     const camY = -dive * window.innerHeight * 0.12;
@@ -280,7 +284,8 @@ const levels = [
     const tx = camX * (1 - fold) + (rowX - restX * endScale) * fold;
     const ty = camY * (1 - fold) + (rowY - restY * endScale) * fold;
     stair.style.transform = `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(${s.toFixed(4)})`;
-    stair.style.opacity = String(1 - span(p, 0.66, 0.74));
+    // It fades as it shrinks, so its words are never on screen too small to read.
+    stair.style.opacity = String(1 - span(p, 0.6, 0.7));
     stair.style.setProperty('--rest', String(1 - span(p, 0.52, 0.6)));
 
     const show = easeOut(span(p, 0.6, 0.78));

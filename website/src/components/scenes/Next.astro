@@ -24,8 +24,9 @@ const runs = [1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1];
   </div>
 
   <div class="win" data-win>
-    <Window id="usually-next" width={760} />
-    <span class="pearl" aria-hidden="true"></span>
+    <Window id="usually-next" width={760} phone={{ x: 0, y: 0.12, w: 0.29, h: 0.36 }}>
+      <span class="pearl" aria-hidden="true"></span>
+    </Window>
   </div>
 
   <div class="words">
@@ -105,11 +106,12 @@ const runs = [1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1];
   .win {
     grid-area: win;
     position: relative;
-    margin-right: -14vw;
+    margin-right: var(--gutter);
   }
+  /* On the row, in the gap before its icon. */
   .pearl {
     position: absolute;
-    left: -1.8%;
+    left: 1.6%;
     top: 35.4%;
     width: 12px;
     height: 12px;
@@ -176,6 +178,17 @@ const runs = [1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1];
     transform: none;
   }
 
+  /* On phones the window is shown four times larger, so the pearl is drawn smaller to look the same. */
+  @media (max-width: 600px) {
+    .pearl {
+      width: 4px;
+      height: 4px;
+      margin: -2px 0 0 -2px;
+      box-shadow:
+        0 0 0 1.2px color-mix(in srgb, var(--pearl) 20%, transparent),
+        0 0 5px var(--pearl-glow);
+    }
+  }
   @media (max-width: 860px) {
     .next {
       grid-template-columns: 1fr;
@@ -186,7 +199,7 @@ const runs = [1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1];
       padding-right: var(--gutter);
     }
     .win {
-      margin-right: calc(var(--gutter) * -1 - 30vw);
+      margin-right: 0;
     }
   }
 </style>

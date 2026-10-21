@@ -5,6 +5,7 @@
  * come up under it. The rule is the app's own (docs/ranking.md: one swap of neighbouring letters is forgiven).
  */
 import Window from '../Window.astro';
+import { panelCrop } from '../../data/windows';
 
 const letters = ['s', 'h', 'w', 'o'];
 ---
@@ -21,7 +22,7 @@ const letters = ['s', 'h', 'w', 'o'];
       </p>
     </div>
     <div class="result" data-result>
-      <Window id="slip" width={640} />
+      <Window id="slip" width={640} phone={panelCrop} />
     </div>
   </div>
 </section>

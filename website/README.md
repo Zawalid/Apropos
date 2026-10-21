@@ -48,6 +48,15 @@ Astro strips types at build, so `npm run build` is the gate.
   `transform`, `opacity` and `clip-path` move. With reduced motion nothing is pinned and every scene is laid out in its
   finished state; every control still works.
 
+### Pictures on phones
+
+A whole window at phone width has text of about 6 px. `Window.astro` takes a `phone` crop (left, top, width, height as
+fractions of the picture): on screens up to 600 px only that part is shown, scaled to the frame, and the image sizes ask
+for the larger file. Panels show the search field and the left of their rows (`panelCrop` in `src/data/windows.ts`, row
+titles at about 14 px); others are chosen per window so the edge falls between words (Learns shows only the row titles
+of Usually next; the Mail draft shows its confirmation row). The Privacy and data page is too dense to crop and is left
+out on phones; the lists beside it say the same in large type.
+
 ## What is on each page
 
 ### Home `/`
@@ -58,11 +67,11 @@ Astro strips types at build, so `npm run build` is the gate.
 | 1 | Deep (`#deep`) | night | Xcode's menu bar, then Debug, View Debugging, Rendering, Color Hits Green and Misses Red open as a staircase of type down and right while the camera follows; then the staircase folds into its row in the real panel after typing clean | `deep-xcode` |
 | 2 | Slip (`#slip`) | day | s h w o across the whole width; the w and o jump over each other, the word becomes show in mint, the real results for shwo rise | `slip` |
 | 3 | Apps (`#apps`) | day | The first sideways scene: the real panel over 14 apps passes as a strip, the app names slide behind at another speed, an app switcher moves the pearl; click an icon or use the arrow keys | `app-*` |
-| 4 | Holding (`#holding`) | day | One big paragraph. Select any words and an action list opens at your selection; pick one and the page's own words change in place, the old ones struck and lifted away (the app's functions, `src/scripts/textTools.ts`). A phrase is marked for you until you select. Then files, page and folder or repository beside the real panel holding a page and a selection | `holding` |
-| 5 | Send (`#send`) | night | A dotted route crosses the desk; a chip with a Safari selection rides it, turns to capitals past UPPERCASE, and waits at the Mail draft for a second Return. Each station shows its real window | `send-list`, `sequence`, `confirm` |
+| 4 | Holding (`#holding`) | day | One big paragraph. Select any words and the action bar docked under it (never over it) takes them; pick one and the page's own words change in place, the old ones struck and lifted away (the app's functions, `src/scripts/textTools.ts`). A phrase is marked for you until you select. Then files, page and folder or repository beside the real panel holding a page and a selection | `holding` |
+| 5 | Send (`#send`) | night | A dotted route crosses the desk; a chip with a Safari selection rides it, turns to capitals through the UPPERCASE gate (which steps aside while the chip passes), and waits at the Mail draft for a second Return. Each station shows its real window | `send-list`, `sequence`, `confirm` |
 | 6 | Next (`#next`) | day | A tally: twelve marks arrive, nine fill, the numeral counts to 9, and the pearl drops onto the Usually next row of the real panel, whose reason says the same | `usually-next` |
 | 7 | Yours (`#yours`) | night | Radial: the command file in the middle, the four ways to run it at its corners, flying out from it; each in turn lights the lines it comes from and acts itself out. Then recording and keys for menu items, both Early | `recording-review`, `alias-popover` |
-| 8 | Compare (`#compare`) | day | The sourced table, revealed by a mint scan line as it scrolls up; marks pop as the line passes; the column under the pointer lights. Phones pick one tool | none |
+| 8 | Compare (`#compare`) | day | The sourced table, revealed once by a mint scan line when it comes into view; marks pop as the line passes; the column under the pointer lights. Each cell is two columns (mark centred on the first line, words aligned). Under 1280 px, where columns would fall under 170 px, it becomes one tool at a time beside Apropos; under 480 px the two cards stack | none |
 | 9 | Private (`#private`) | night | The app icon's ring arrives large and settles into "Apropos makes 0 network connections" as its zero; the promise lights word by word. Then what is read, kept (real file names) and never kept, and the permissions, beside the real Privacy and data page scrolling in its window | `privacy-page` |
 | 10 | Install (`#install`) | day | The keys come back; the space bar is the download. Three steps on one line, the pearl on the step you are reading. Then the questions, searchable | none |
 
@@ -172,11 +181,13 @@ The global hotkey on a real Mac, live Accessibility reading (the pictures use sa
 - **Deploy.** `deploy-workflow.yml.example` is ready to move to `.github/workflows/website.yml` with the two Cloudflare secrets.
   Nothing has been pushed or deployed.
 
-## Quality gates (last run 2026-10-20, v3 "One key, slowed down", without measured data)
+## Quality gates (last run 2026-10-21, after the layout audit)
 
 - `npm run build`, `check:seo`, `check:ui` (with and without motion) and `check:a11y` (axe, light and dark, 1440 and 375,
   with and without motion) pass.
-- Lighthouse 13, home page: mobile 99/100/100/100 (LCP 2.0 s, CLS 0, 243 KiB), desktop 100/100/100/100 (LCP 0.5 s).
-- Nothing scrolls sideways at 375 px.
-- Every scene was captured with Playwright still and mid-scroll, desktop and 375 px, light and dark, and the frames were
-  reviewed; the reduced motion page was captured top to bottom.
+- Layout audit (`side-session-notes/.../audit/dom2.mjs`): at 1440, 1100, 768 and 375, dark and light, scrolled in 300 px
+  steps, no text under 11 px, no clipped or off-screen text, no table cell under 160 px, no icon off its first text line,
+  no text overlapping text, no section heading under the header after a nav jump, no sideways scroll. All zero.
+- Lighthouse 13, home page: mobile 96/100/100/100 (LCP 2.8 s, the phone crops load the larger pictures), desktop
+  100/100/100/100.
+- Viewport screenshots top to bottom at 1440 dark and 375 light were read.

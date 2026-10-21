@@ -1,9 +1,19 @@
 ---
 /**
  * A real window of the app floating on the page: the cutout, a shadow drawn by the page, nothing around it.
+ * On phones a whole window is too small to read, so `phone` names the part of it to show there, as fractions of the
+ * picture (left, top, width, height): that part is scaled up to the width of the frame and the rest is cut off. Pick a
+ * part whose edges fall between words. Anything passed as children sits on the picture and scales with it.
  */
 import { getImage } from 'astro:assets';
 import { win, type WindowId } from '../data/windows';
+
+interface Crop {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 
 interface Props {
   id: WindowId;
@@ -12,10 +22,12 @@ interface Props {
   /** Decorative copies (a second state of the same window) hide from assistive tech. */
   decorative?: boolean;
   eager?: boolean;
+  /** The part shown on phones (600 px wide and under). */
+  phone?: Crop;
   class?: string;
 }
 
-const { id, width, decorative = false, eager = false, class: className } = Astro.props;
+const { id, width, decorative = false, eager = false, phone, class: className } = Astro.props;
 const w = win(id);
 const steps = [Math.round(width), Math.round(width * 1.5), Math.round(width * 2)];
 
@@ -27,24 +39,41 @@ async function set(image: NonNullable<typeof w.dark>) {
 
 const dark = await set(w.dark);
 const light = w.light ? await set(w.light) : null;
-const sizes = `(max-width: ${Math.round(width / 0.9)}px) 92vw, ${width}px`;
+// On a phone a cropped window is drawn about 1 / w times the width of the screen.
+const phoneSize = phone ? `(max-width: 600px) ${Math.round(100 / phone.w)}vw, ` : '';
+const sizes = `${phoneSize}(max-width: ${Math.round(width / 0.9)}px) 92vw, ${width}px`;
+const ratio = w.dark.width / w.dark.height;
+const style = phone
+  ? `--cx:${phone.x};--cy:${phone.y};--ck:${(1 / phone.w).toFixed(4)};--car:${((phone.w * ratio) / phone.h).toFixed(4)}`
+  : undefined;
 ---
-<picture class:list={['win', className]} data-window={id}>
-  {light && <source media="(prefers-color-scheme: dark)" srcset={dark.srcset} sizes={sizes} />}
-  <img
-    src={(light ?? dark).src}
-    srcset={(light ?? dark).srcset}
-    sizes={sizes}
-    width={w.dark.width}
-    height={w.dark.height}
-    alt={decorative ? '' : w.alt}
-    loading={eager ? 'eager' : 'lazy'}
-    decoding="async"
-  />
-</picture>
+<div class:list={['win', { crop: !!phone }, className]} data-window={id} style={style}>
+  <div class="win-in">
+    <picture>
+      {light && <source media="(prefers-color-scheme: dark)" srcset={dark.srcset} sizes={sizes} />}
+      <img
+        src={(light ?? dark).src}
+        srcset={(light ?? dark).srcset}
+        sizes={sizes}
+        width={w.dark.width}
+        height={w.dark.height}
+        alt={decorative ? '' : w.alt}
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+      />
+    </picture>
+    <slot />
+  </div>
+</div>
 
 <style>
   .win {
+    display: block;
+  }
+  .win-in {
+    position: relative;
+  }
+  picture {
     display: block;
   }
   .win img {
@@ -53,15 +82,29 @@ const sizes = `(max-width: ${Math.round(width / 0.9)}px) 92vw, ${width}px`;
     /* The shadow follows the window's own rounded corners. */
     filter: drop-shadow(0 1px 1px rgba(6, 11, 14, 0.18)) drop-shadow(0 24px 40px rgba(6, 11, 14, 0.28));
   }
-  /* On phones a big window runs off the right edge at a size you can read, like a window partly off screen. */
-  @media (max-width: 600px) {
-    .win.bleed {
-      width: 150%;
-    }
-  }
   @media (prefers-color-scheme: dark) {
     .win img {
       filter: drop-shadow(0 0 0.5px rgba(234, 243, 241, 0.35)) drop-shadow(0 28px 48px rgba(0, 0, 0, 0.6));
+    }
+  }
+  /* Phones: show the named part of the window, scaled up, inside a frame with the panel's own radius. */
+  @media (max-width: 600px) {
+    .win.crop {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: var(--car);
+      border-radius: 18px;
+      background: #0b1a1f;
+      box-shadow:
+        0 0 0 1px rgba(234, 243, 241, 0.12),
+        0 24px 40px -12px rgba(6, 11, 14, 0.45);
+    }
+    .win.crop .win-in {
+      transform-origin: 0 0;
+      transform: scale(var(--ck)) translate(calc(var(--cx) * -100%), calc(var(--cy) * -100%));
+    }
+    .win.crop img {
+      filter: none;
     }
   }
 </style>
