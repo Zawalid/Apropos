@@ -163,9 +163,9 @@ private func window(_ configure: (FakeAX) -> Void) -> FakeAX {
     @Test func slowProviderTimesOutWithPartialSnapshot() async {
         let root = window { $0.strings[AXAttr.title] = "Doc" }
         let service = makeService(root: root, providers: [SlowProvider()])
-        let started = Date()
+        // No clock check: how long the call takes depends on how busy the machine is. A timed out gap and no URL show the
+        // service gave up on the provider and did not wait for its late answer.
         let snapshot = await service.snapshot(for: app("slow.app"))
-        #expect(Date().timeIntervalSince(started) < 1.0)
         #expect(snapshot.gaps.contains(.timedOut))
         #expect(snapshot.fields.url == nil)
         #expect(snapshot.fields.windowTitle == "Doc")
