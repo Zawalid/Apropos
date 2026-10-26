@@ -6,6 +6,8 @@ work lands.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-26
+
 ### Fixed (Command-comma and About)
 - Command-comma opens the Settings window and nothing else. The app no longer has an empty SwiftUI Settings scene, which
   made macOS open a blank "Apropos Settings" window next to the real one. The app now starts from a plain AppKit entry
