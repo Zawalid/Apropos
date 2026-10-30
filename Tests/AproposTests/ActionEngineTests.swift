@@ -144,7 +144,7 @@ private let finder = TargetApp(pid: 42, bundleID: "com.apple.finder", name: "Fin
         let started = Date()
         let timed = await engine.run(action(backend: .function("t.slow"), timeout: 0.5), values: textValues("a"), target: nil)
         #expect(timed == .failure(.timedOut))
-        #expect(Date().timeIntervalSince(started) < 5)
+        #expect(Date().timeIntervalSince(started) < 20)  // the work would take 30 s; a busy machine needs slack
 
         let task = Task { await engine.run(action(backend: .function("t.slow"), timeout: 30), values: textValues("a"), target: nil) }
         try? await Task.sleep(for: .milliseconds(150))

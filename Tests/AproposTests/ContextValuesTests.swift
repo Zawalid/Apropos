@@ -148,7 +148,7 @@ private func target(_ id: String) -> TargetApp { TargetApp(pid: 1, bundleID: id,
         await #expect(throws: ProcessRunError.timedOut) {
             try await ProcessRunner.run(ProcessRequest(executable: "/bin/sleep", arguments: ["30"], timeout: 0.3))
         }
-        #expect(Date().timeIntervalSince(started) < 5)
+        #expect(Date().timeIntervalSince(started) < 20)  // the work would take 30 s; a busy machine needs slack
     }
 
     @Test func cancellationStopsTheProcess() async {

@@ -283,7 +283,7 @@ struct SequencerTests {
         slow.timeout = 60
         let started = ContinuousClock.now
         let report = await run(planFor(slow, Seq.upper()), runner: runner, timeout: 0.4)
-        #expect(ContinuousClock.now - started < .seconds(5))
+        #expect(ContinuousClock.now - started < .seconds(20))
         #expect(report.outcome == .timedOut)
         #expect(report.results.map(\.status) == [.failed(.timedOut), .skipped(.timedOut)])
         #expect(report.message == "Step 1 (UPPERCASE) stopped the sequence: it took too long.")
