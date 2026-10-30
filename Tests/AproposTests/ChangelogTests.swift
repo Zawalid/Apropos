@@ -39,7 +39,8 @@ struct ChangelogTests {
         let text = try String(contentsOf: url, encoding: .utf8)
         let releases = ChangelogParser.parse(text)
         #expect(releases.first?.isUnreleased == true)
-        #expect(releases.first?.sections.isEmpty == false)
+        // Right after a release is cut the Unreleased section is empty; the newest entry with notes must have sections.
+        #expect(releases.first { !$0.sections.isEmpty } != nil)
     }
 
     @Test func supportReportHasNoPersonalContent() {
