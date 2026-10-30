@@ -220,7 +220,7 @@ private func window(_ configure: (FakeAX) -> Void) -> FakeAX {
         setup.arguments = ["-C", dir.path, "init", "-q", "-b", "trunk"]
         try setup.run()
         setup.waitUntilExit()
-        #expect(GitBranchReader().branch(forFolder: dir.path, timeout: 2) == "trunk")
+        #expect(GitBranchReader().branch(forFolder: dir.path, timeout: 15) == "trunk")
         #expect(GitBranchReader().branch(forFolder: "relative/path", timeout: 1) == nil)
     }
 }

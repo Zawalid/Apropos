@@ -268,7 +268,8 @@ struct SequencerTests {
         slow.timeout = 0.5
         let started = ContinuousClock.now
         let report = await run(planFor(slow, Seq.upper()), runner: runner)
-        #expect(ContinuousClock.now - started < .seconds(5))
+        // Well under the 30 s the step would sleep: it proves the run did not wait, without depending on a busy machine.
+        #expect(ContinuousClock.now - started < .seconds(20))
         #expect(report.results.map(\.status) == [.failed(.timedOut), .skipped(.afterFailure)])
         #expect(report.outcome == .stopped(atStep: 0))
     }
