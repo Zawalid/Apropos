@@ -209,6 +209,18 @@ Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) fi
 [code of conduct](CODE_OF_CONDUCT.md). For security problems, do not open a public issue: see [SECURITY.md](SECURITY.md).
 Questions and ideas fit in [Discussions](https://github.com/Zawalid/Apropos/discussions).
 
+## Deploying and releasing
+
+| What | How | Needs |
+|---|---|---|
+| Tests and build | `ci.yml` runs on every push and pull request (macOS 26 runner) | nothing |
+| Website | `pages.yml` builds `website/` and deploys it to Cloudflare when `website/**` changes on `main`. By hand: `cd website && npm ci --legacy-peer-deps && npm run build && npx wrangler deploy` | secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
+| A release | `scripts/release.sh 0.2.0` bumps the version and changelog, commits and tags (it never pushes). `git push origin main --follow-tags` starts `release.yml`, which builds the app and DMG, writes the checksum and the signed update feed, and publishes the GitHub release | secret `SPARKLE_ED_PRIVATE_KEY`; optional Developer ID secrets to sign and notarize |
+| Homebrew | after the release, `scripts/cask.sh 0.2.0 > ../homebrew-apropos/Casks/apropos.rb`, commit and push the tap | the `Zawalid/homebrew-apropos` repository |
+| In-app updates | the app reads `releases/latest/download/appcast.xml`; off until the user turns it on | the Sparkle key pair, see [docs/updates.md](docs/updates.md) |
+
+Details, the first-release checklist and the notarization secrets are in [docs/releasing.md](docs/releasing.md).
+
 ## License
 
 [MIT](LICENSE), copyright 2026 Walid Zakan.
