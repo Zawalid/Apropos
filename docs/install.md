@@ -7,11 +7,26 @@ what that means for you.
 
 - There is no release asset on GitHub yet. Until there is, build from source (below). Once there is one, a download
   is `Apropos-<version>.dmg` from the Releases page (`releases/latest/download/Apropos.dmg` always points at the newest),
-  and Homebrew installs it with `brew install --cask zawalid/apropos/apropos`.
+  and Homebrew installs it (see [With Homebrew](#with-homebrew)).
 - The first downloadable builds will **not be notarized**. Notarization needs an Apple Developer Program membership, and
   there is no account behind the project at the moment. When that changes, this page and the releases will say so.
 - A build you make yourself on your own Mac is signed ad hoc by Xcode and opens without any of the steps in
   [The first launch of a downloaded build](#the-first-launch-of-a-downloaded-build).
+
+## With Homebrew
+
+Current Homebrew refuses to load a cask from a tap that is not Homebrew's own until you trust it. Two commands:
+
+```bash
+brew trust zawalid/apropos
+```
+
+```bash
+brew install --cask zawalid/apropos/apropos
+```
+
+The first launch still needs the steps in [The first launch of a downloaded build](#the-first-launch-of-a-downloaded-build),
+until the app is notarized. Update with `brew upgrade --cask apropos`.
 
 ## Build from source
 

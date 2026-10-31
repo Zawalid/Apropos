@@ -24,11 +24,19 @@ How a new version gets from `main` to a download. One command cuts it, one push 
 5. Publish: `git push origin main --follow-tags`.
 
 The tag starts [`.github/workflows/release.yml`](../.github/workflows/release.yml): it checks that the tag matches
-`MARKETING_VERSION`, runs the tests, builds the app, packs `Apropos-0.2.0.dmg`, writes a SHA-256 file, builds the update
-feed when the Sparkle key is set, and creates the GitHub Release with the changelog entry as its notes.
+`MARKETING_VERSION`, **waits for a green `ci.yml` run on that commit** (it does not run the tests again), builds the app,
+packs `Apropos-0.2.0.dmg`, writes a SHA-256 file, builds the update feed when the Sparkle key is set, and creates a
+**draft** GitHub Release with the changelog entry as its notes.
 
-The workflow can also be started by hand (Actions, Release, Run workflow, with a version). That makes a **draft
-pre-release** from the current commit and creates no tag, which is how to try the pipeline before relying on it.
+6. Try the draft: download the DMG from it and go through [install.md](install.md) on a clean account.
+7. Publish it: `gh release edit v0.2.0 --draft=false`. The `releases/latest/download/...` links, the update feed and the
+   Homebrew cask only work once it is published.
+
+If the gate fails, fix the cause on `main`, let CI go green, then re-run the failed release workflow from the Actions
+tab. The tag never has to move. (Moving a published tag is a destructive action and is blocked for agents.)
+
+The workflow can also be started by hand (Actions, Release, Run workflow, with a version). That makes a draft pre-release
+from the current commit and creates no tag, which is how to try the pipeline before relying on it.
 
 ## Building the same thing locally
 
@@ -69,7 +77,8 @@ scripts/cask.sh 0.2.0 > ../homebrew-apropos/Casks/apropos.rb
 cd ../homebrew-apropos && git add -A && git commit -m "apropos 0.2.0" && git push
 ```
 
-People install with `brew install --cask zawalid/apropos/apropos`. The cask template is
+People install with two commands, because current Homebrew refuses to load a cask from a third-party tap until it is
+trusted: `brew trust zawalid/apropos`, then `brew install --cask zawalid/apropos/apropos`. The cask template is
 [`packaging/homebrew/apropos.rb`](../packaging/homebrew/apropos.rb); its caveat tells people about the first-launch step
 until the app is notarized. The cask does not declare `auto_updates`, so Homebrew keeps upgrading it; pick one way of
 updating and stay with it.
@@ -85,7 +94,7 @@ publishes, just with no update feed. Check after a release that `releases/latest
 1. Generate the Sparkle key pair and put the public key in `App/project.yml` (see [updates.md](updates.md)).
 2. Add `SPARKLE_ED_PRIVATE_KEY` as a repository secret, and keep an offline backup of the key.
 3. Run the workflow by hand once for a draft pre-release and download the DMG on a clean Mac or user account.
-4. Cut `0.1.0` with `scripts/release.sh 0.1.0` and push the tag.
+4. Cut `0.1.0` with `scripts/release.sh 0.1.0`, push the tag, try the draft, publish it.
 5. Create the tap and publish the cask with `scripts/cask.sh`.
 
 ## Later
