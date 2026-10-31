@@ -17,6 +17,11 @@ on:
 permissions:
   contents: write
 
+# One release at a time, and never cancel one halfway: a half-published release is worse than a queued one.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: macos-26
