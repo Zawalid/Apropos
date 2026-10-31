@@ -35,8 +35,9 @@ packs `Apropos-0.2.0.dmg`, writes a SHA-256 file, builds the update feed when th
 If the gate fails, fix the cause on `main`, let CI go green, then re-run the failed release workflow from the Actions
 tab. The tag never has to move. (Moving a published tag is a destructive action and is blocked for agents.)
 
-The workflow can also be started by hand (Actions, Release, Run workflow, with a version). That makes a draft pre-release
-from the current commit and creates no tag, which is how to try the pipeline before relying on it.
+The workflow can also be started by hand (Actions, Release, Run workflow). That is a trial: it builds the current branch
+as a throwaway draft pre-release under a `test-N` tag, which is how to try the pipeline, and the signing, before a real
+release. Delete the trial draft afterwards.
 
 ## Building the same thing locally
 

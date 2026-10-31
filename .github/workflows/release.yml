@@ -4,16 +4,16 @@ name: Release
 # Test the DMG from the draft, then publish it: gh release edit vX.Y.Z --draft=false (the latest/download links and the
 # update feed only work once it is published).
 # Without signing secrets the app is ad hoc signed (people confirm it once, see docs/install.md). Add the secrets below
-# and the same workflow signs with a Developer ID certificate and notarizes the DMG. It can also be started by hand
-# (Actions, Release, Run workflow) to publish a DRAFT pre-release for a tag that does not exist yet.
+# and the same workflow signs with that certificate (and notarizes when the Apple secrets exist). It can also be started by hand
+# (Actions, Release, Run workflow) to try the whole pipeline: it makes a throwaway draft pre-release under a test tag.
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
     inputs:
-      version:
-        description: "Version for a draft pre-release, for example 0.1.0 (must equal MARKETING_VERSION in App/project.yml)"
-        required: true
+      note:
+        description: "Optional note for the trial run (nothing depends on it)"
+        required: false
         type: string
 
 permissions:
@@ -47,22 +47,20 @@ jobs:
 
       - name: Work out the version and check it
         run: |
+          PROJECT_VERSION="$(grep -m1 'MARKETING_VERSION' App/project.yml | awk '{print $2}')"
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.version }}"
-            TAG="v$VERSION"
+            # A by-hand run is a trial: it builds whatever is on the branch as a throwaway draft pre-release under a
+            # test tag, so it never collides with a real release.
+            VERSION="$PROJECT_VERSION"
+            TAG="test-$GITHUB_RUN_NUMBER"
             echo "DRAFT=1" >> "$GITHUB_ENV"
           else
             TAG="$GITHUB_REF_NAME"
             VERSION="${TAG#v}"
-          fi
-          PROJECT_VERSION="$(grep -m1 'MARKETING_VERSION' App/project.yml | awk '{print $2}')"
-          if [ "$VERSION" != "$PROJECT_VERSION" ]; then
-            echo "version $VERSION does not match MARKETING_VERSION $PROJECT_VERSION in App/project.yml" >&2
-            exit 1
-          fi
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
-            echo "tag $TAG already exists" >&2
-            exit 1
+            if [ "$VERSION" != "$PROJECT_VERSION" ]; then
+              echo "tag $TAG does not match MARKETING_VERSION $PROJECT_VERSION in App/project.yml" >&2
+              exit 1
+            fi
           fi
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
