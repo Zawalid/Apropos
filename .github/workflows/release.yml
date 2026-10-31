@@ -30,10 +30,13 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 60
     env:
-      # Optional signing. All of these must be set as repository secrets to turn signing on:
-      #   DEVELOPER_ID_P12 (base64 of the .p12), DEVELOPER_ID_P12_PASSWORD, DEVELOPER_ID_NAME
-      #   ("Developer ID Application: Your Name (TEAMID)"), NOTARY_KEY_ID, NOTARY_ISSUER_ID, NOTARY_KEY_P8 (base64)
-      HAS_SIGNING: ${{ secrets.DEVELOPER_ID_P12 != '' && secrets.DEVELOPER_ID_NAME != '' && secrets.NOTARY_KEY_P8 != '' }}
+      # Optional signing. Set these three repository secrets to sign every release with the SAME certificate, which keeps the
+      # app's identity across updates (an ad hoc build gets a new one every time, so macOS forgets its Accessibility grant):
+      #   SIGNING_P12 (base64 of the .p12), SIGNING_P12_PASSWORD, SIGNING_IDENTITY (the certificate's name).
+      # A self-signed certificate from scripts/make-signing-cert.sh is enough. An Apple "Developer ID Application" certificate
+      # works the same way and can also be notarized: add NOTARY_KEY_ID, NOTARY_ISSUER_ID and NOTARY_KEY_P8 (base64).
+      HAS_SIGNING: ${{ secrets.SIGNING_P12 != '' && secrets.SIGNING_P12_PASSWORD != '' && secrets.SIGNING_IDENTITY != '' }}
+      HAS_NOTARY: ${{ secrets.NOTARY_KEY_P8 != '' && secrets.NOTARY_KEY_ID != '' && secrets.NOTARY_ISSUER_ID != '' }}
       # In-app updates: the EdDSA private key that signs each release's zip (see docs/updates.md). Without it the release
       # still publishes, just without an update feed.
       HAS_SPARKLE: ${{ secrets.SPARKLE_ED_PRIVATE_KEY != '' }}
@@ -89,8 +92,9 @@ jobs:
       - name: Import the signing certificate
         if: env.HAS_SIGNING == 'true'
         env:
-          P12: ${{ secrets.DEVELOPER_ID_P12 }}
-          P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+          P12: ${{ secrets.SIGNING_P12 }}
+          P12_PASSWORD: ${{ secrets.SIGNING_P12_PASSWORD }}
+          IDENTITY: ${{ secrets.SIGNING_IDENTITY }}
         run: |
           KEYCHAIN="$RUNNER_TEMP/release.keychain-db"
           KEYCHAIN_PASSWORD="$(uuidgen)"
@@ -101,10 +105,22 @@ jobs:
           security import "$RUNNER_TEMP/cert.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
           security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
           security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
-          echo "SIGN_IDENTITY=${{ secrets.DEVELOPER_ID_NAME }}" >> "$GITHUB_ENV"
+          # A self-signed certificate is not trusted by default and codesign refuses an untrusted identity. A Developer ID
+          # certificate already chains to Apple, so only trust it for code signing when it is not valid yet.
+          if ! security find-identity -v -p codesigning "$KEYCHAIN" | grep -q "$IDENTITY"; then
+            security find-certificate -c "$IDENTITY" -p "$KEYCHAIN" > "$RUNNER_TEMP/cert.pem"
+            sudo security add-trusted-cert -d -r trustRoot -p codeSign -k "$KEYCHAIN" "$RUNNER_TEMP/cert.pem"
+          fi
+          security find-identity -v -p codesigning "$KEYCHAIN" | grep -q "$IDENTITY" || { echo "the signing identity is not usable" >&2; exit 1; }
+          echo "SIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
 
       - name: Build the app
         run: scripts/build-app.sh
+
+      - name: Show the app's signing identity
+        # With a certificate the requirement reads: identifier "com.zawalid.apropos" and certificate leaf = H"...".
+        # With an ad hoc build it is only a cdhash, which changes with every build.
+        run: codesign -d -r- build/Apropos.app 2>&1 | grep -E "designated" || true
 
       - name: Pack the DMG
         run: |
@@ -112,7 +128,7 @@ jobs:
           mv build/Apropos.dmg "build/Apropos-$VERSION.dmg"
 
       - name: Notarize and staple
-        if: env.HAS_SIGNING == 'true'
+        if: env.HAS_SIGNING == 'true' && env.HAS_NOTARY == 'true'
         env:
           NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
           NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
