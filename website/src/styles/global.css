@@ -1,0 +1,430 @@
+/* Apropos site, v3: "One key, slowed down" (docs/direction.md). The page is paper lying on the night desktop the app was
+   captured on. Day scenes are sheets of paper, night scenes are the desk showing between them. Brand tokens from
+   docs/identity/brand.md: paper and ink, mint only for matched letters and links, the pearl only for "now". */
+
+:root {
+  color-scheme: light dark;
+  --paper: #f3f5f4;
+  --paper-2: #e8eeec;
+  --paper-3: #dde6e3;
+  --card: #fbfcfc;
+  --ink: #0e1a1d;
+  --ink-2: #43504e;
+  --ink-3: #5a6664;
+  --line: rgba(10, 24, 28, 0.1);
+  --line-2: rgba(10, 24, 28, 0.17);
+  --mint: #07785d;
+  --mint-wash: rgba(10, 143, 112, 0.14);
+  --pearl: #e56f2e;
+  --pearl-glow: rgba(229, 111, 46, 0.45);
+  --pill: #0e1a1d;
+  --pill-ink: #f3f5f4;
+  --sheet-shadow: 0 -1px 0 rgba(255, 255, 255, 0.6) inset, 0 40px 80px -40px rgba(6, 11, 14, 0.55);
+
+  /* The night desk is the same in both themes: it is the wallpaper behind every capture. */
+  --night: #0a1a1e;
+  --on-night: #eaf3f1;
+  --on-night-2: rgba(234, 243, 241, 0.72);
+  --on-night-3: rgba(234, 243, 241, 0.56);
+  --night-line: rgba(234, 243, 241, 0.16);
+  --night-mint: #8cf2cc;
+  --night-pearl: #ff8a4c;
+
+  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --gutter: clamp(16px, 4.2vw, 56px);
+  --max: 1280px;
+  --sheet-r: clamp(28px, 4vw, 56px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0b1418;
+    --paper-2: #111d22;
+    --paper-3: #182a31;
+    --card: #0f1a1f;
+    --ink: #eaf3f1;
+    --ink-2: #a8b7b4;
+    --ink-3: #8f9f9c;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-2: rgba(255, 255, 255, 0.15);
+    --mint: #8cf2cc;
+    --mint-wash: rgba(140, 242, 204, 0.16);
+    --pearl: #ff8a4c;
+    --pearl-glow: rgba(255, 138, 76, 0.5);
+    --pill: #eaf3f1;
+    --pill-ink: #0b1418;
+    --sheet-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 40px 90px -40px rgba(0, 0, 0, 0.9);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: 80px;
+}
+
+body {
+  margin: 0;
+  background: var(--night);
+  color: var(--ink);
+  font: 400 17px/1.5 var(--sans);
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  font-kerning: normal;
+  overflow-x: clip;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+dl,
+dd,
+figure,
+pre {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: var(--mint);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+::selection {
+  background: var(--mint-wash);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+main {
+  position: relative;
+  overflow-x: clip;
+}
+
+/* The desk: the night wallpaper the captures were taken on, fixed behind the whole page. */
+.desk {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--night);
+}
+
+.desk img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  max-width: none;
+}
+
+/* A day scene: a sheet of paper on the desk, with rounded ends. */
+.sheet {
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--sheet-r);
+  box-shadow: var(--sheet-shadow);
+}
+
+/* A night scene: the desk shows, so its text is light in both themes. */
+.night {
+  color: var(--on-night);
+  --ink: var(--on-night);
+  --ink-2: var(--on-night-2);
+  --ink-3: var(--on-night-3);
+  --line: var(--night-line);
+  --mint: var(--night-mint);
+  --pearl: var(--night-pearl);
+  --pill: #eaf3f1;
+  --pill-ink: #0b1418;
+}
+
+.wrap {
+  width: 100%;
+  max-width: calc(var(--max) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--pill);
+  color: var(--pill-ink);
+  text-decoration: none;
+}
+
+.skip:focus {
+  top: 12px;
+}
+
+/* Type. One family, SF Pro, set tight at display sizes. */
+.display {
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  word-spacing: 0.04em;
+  line-height: 0.94;
+  text-wrap: balance;
+}
+
+.claim {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(40px, 6.4vw, 80px);
+  letter-spacing: -0.042em;
+  word-spacing: 0.04em;
+  line-height: 0.98;
+  text-wrap: balance;
+  max-width: 15ch;
+}
+
+.lede {
+  font-size: clamp(18px, 1.6vw, 21px);
+  line-height: 1.45;
+  color: var(--ink-2);
+  max-width: 34em;
+  text-wrap: pretty;
+}
+
+.small {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Matched letters in a typed query: the one job of mint besides links. */
+mark,
+.m {
+  background: none;
+  color: var(--mint);
+  font-weight: 700;
+}
+
+.section {
+  padding-block: clamp(96px, 13vw, 176px) 0;
+}
+
+.section-head {
+  display: grid;
+  gap: 22px;
+  margin-bottom: clamp(40px, 5vw, 72px);
+}
+
+/* Actions: one ink pill per view, plain text links for the rest. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pill);
+  color: var(--pill-ink);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 160ms var(--ease);
+}
+
+.pill:hover {
+  text-decoration: none;
+}
+
+.pill:active {
+  transform: scale(0.97);
+}
+
+.pill svg {
+  width: 16px;
+  height: 16px;
+}
+
+.quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 16px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.quiet:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Small keys, inline in text: the same keycap as Key.astro in one element, a lit top over a darker skirt. */
+.kbd {
+  --kt1: #ffffff;
+  --kt2: #eef2f1;
+  --ks: #c3ccc9;
+  --kink: #27312f;
+  --khi: rgba(255, 255, 255, 0.95);
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.9em;
+  height: 1.9em;
+  padding: 0 0.45em;
+  border-radius: 0.36em;
+  background: linear-gradient(180deg, var(--kt1), var(--kt2));
+  color: var(--kink);
+  box-shadow:
+    inset 0 1px 0 var(--khi),
+    0 0 0 1px rgba(10, 24, 28, 0.1),
+    0 0.14em 0 var(--ks),
+    0 0.2em 0.45em rgba(6, 11, 14, 0.28);
+  font: 500 0.78em/1 var(--sans);
+  letter-spacing: 0;
+  vertical-align: 0.12em;
+  white-space: nowrap;
+}
+
+.night .kbd {
+  --kt1: #33454c;
+  --kt2: #24343a;
+  --ks: #0b1215;
+  --kink: #e3ecea;
+  --khi: rgba(255, 255, 255, 0.16);
+}
+
+@media (prefers-color-scheme: dark) {
+  .kbd {
+    --kt1: #33454c;
+    --kt2: #24343a;
+    --ks: #0b1215;
+    --kink: #e3ecea;
+    --khi: rgba(255, 255, 255, 0.16);
+  }
+}
+
+.early {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  vertical-align: 0.25em;
+  white-space: nowrap;
+}
+
+/* The pearl, as the brand draws it: a tangerine bead with a soft halo. */
+.bead {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pearl);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pearl) 18%, transparent), 0 0 12px var(--pearl-glow);
+}
+
+/* Scenes (src/scripts/scenes.ts). Without the script, or with reduced motion, every scene is laid out in its finished
+   state and nothing is pinned. With it (html.live), a pinned scene is taller than the screen, its stage sticks, and the
+   scroll inside it becomes --p from 0 to 1. */
+.scene {
+  position: relative;
+}
+
+.stage {
+  position: relative;
+}
+
+html.live .scene[data-pin] {
+  height: var(--len, 300svh);
+}
+
+html.live .scene[data-pin] > .stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: clip;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 100ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@view-transition {
+  navigation: auto;
+}

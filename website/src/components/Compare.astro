@@ -1,0 +1,602 @@
+---
+/**
+ * Apropos next to the launchers. Wide screens: one table, the Apropos column raised, each tool under its real icon, every
+ * cell a mark (does it, partly, does not) plus a short line, and a small link to the source of each fact. Phones: pick
+ * one tool and read it against Apropos, two columns.
+ */
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { rows, tools, type Mark, type ToolId } from '../data/compare';
+import apropos from '../assets/icon.png';
+import raycast from '../assets/apps/raycast.png';
+import spotlight from '../assets/apps/spotlight.png';
+import alfred from '../assets/apps/alfred.png';
+
+interface Props {
+  /** On the home page the table is a section; on /compare/ it is the page body. */
+  heading?: boolean;
+}
+const { heading = true } = Astro.props;
+
+const icons: Partial<Record<ToolId, ImageMetadata>> = { apropos, raycast, spotlight, alfred };
+const others = tools.filter((t) => t.id !== 'apropos');
+const groups = (['Does', 'Setup and price'] as const).filter((g) => rows.some((r) => r.group === g));
+const markWord: Record<Mark, string> = { yes: 'Yes', some: 'Partly', no: 'No' };
+const sourceOf = (tool: string, label: string) => `Source for ${tool}, ${label.toLowerCase()}`;
+---
+<section id="compare" class:list={['compare', { 'scene sheet home-compare': heading }]} aria-labelledby={heading ? 'compare-title' : undefined} data-light={heading ? 'day' : undefined}>
+  <div class="wrap">
+    {heading && (
+      <div class="head">
+        <h2 id="compare-title" class="claim">Keep your launcher.</h2>
+        <p class="lede">
+          Apropos does not launch apps, search files or keep your clipboard. Raycast, Alfred and Spotlight do that well,
+          and Apropos sits next to any of them. It answers a narrower question: what can I do here, right now.
+        </p>
+      </div>
+    )}
+
+    <div class="wide" data-scan>
+      <span class="scan" aria-hidden="true"></span>
+      <table>
+        <caption class="visually-hidden">Apropos compared with Raycast, Spotlight, Alfred and the Help menu</caption>
+        <thead>
+          <tr>
+            <td class="corner"></td>
+            {tools.map((t) => (
+              <th scope="col" class:list={['tool', { us: t.id === 'apropos' }]}>
+                <span class="tool-mark">
+                  {icons[t.id] ? (
+                    <Image src={icons[t.id]!} alt="" width={40} height={40} densities={[1, 2]} />
+                  ) : (
+                    <svg class="help-glyph" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="9" fill="currentColor" opacity=".12" /><path d="M7 11h26" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><rect x="13" y="15" width="18" height="17" rx="3" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M17 20.5h10M17 26.5h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                  )}
+                </span>
+                <span class="tool-name">{t.short}</span>
+                <span class="tool-best">{t.bestAt}</span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        {groups.map((g) => (
+          <tbody>
+            <tr class="group">
+              <th scope="rowgroup" colspan={tools.length + 1}>{g === 'Does' ? 'What it does' : 'Setup and price'}</th>
+            </tr>
+            {rows
+              .filter((r) => r.group === g)
+              .map((row) => (
+                <tr>
+                  <th scope="row">{row.label}</th>
+                  {tools.map((t) => {
+                    const c = row.cells[t.id];
+                    return (
+                      <td class:list={{ us: t.id === 'apropos' }}>
+                        <span class:list={['cell', { plain: !c.mark }]}>
+                          {c.mark && (
+                            <span class:list={['mark', `m-${c.mark}`]}>
+                              <span class="visually-hidden">{markWord[c.mark]}: </span>
+                            </span>
+                          )}
+                          <span class="body">
+                            <span class="txt">{c.text}</span>
+                            {c.source && (
+                              <a class="src" href={c.source} rel="noopener" aria-label={sourceOf(t.short, row.label)} title="Source">
+                                <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5h5v5M9.5 2.5 3 9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                              </a>
+                            )}
+                          </span>
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+          </tbody>
+        ))}
+      </table>
+    </div>
+
+    <div class="narrow" data-tabs>
+      <p class="pick-label">Compare Apropos with</p>
+      <div class="pick" role="tablist" aria-label="Compare Apropos with">
+        {others.map((t, i) => (
+          <button type="button" role="tab" id={`cmp-tab-${t.id}`} aria-controls={`cmp-${t.id}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} data-tab>
+            {icons[t.id] ? <Image src={icons[t.id]!} alt="" width={22} height={22} densities={[1, 2]} /> : <svg class="help-glyph small-glyph" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="9" fill="currentColor" opacity=".12" /><path d="M7 11h26" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><rect x="13" y="15" width="18" height="17" rx="3" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M17 20.5h10M17 26.5h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>}
+            {t.short}
+          </button>
+        ))}
+      </div>
+      {others.map((t, i) => (
+        <div class="pair" id={`cmp-${t.id}`} role="tabpanel" aria-labelledby={`cmp-tab-${t.id}`} hidden={i !== 0} data-panel>
+          {rows.map((row) => (
+            <div class="pair-row">
+              <p class="pair-label">{row.label}</p>
+              <div class="pair-cells">
+                {(['apropos', t.id] as ToolId[]).map((id) => {
+                  const c = row.cells[id];
+                  return (
+                    <p class:list={['pair-cell', { us: id === 'apropos' }]}>
+                      <span class="pair-who">{id === 'apropos' ? 'Apropos' : t.short}</span>
+                      <span class:list={['cell', { plain: !c.mark }]}>
+                        {c.mark && (
+                          <span class:list={['mark', `m-${c.mark}`]}>
+                            <span class="visually-hidden">{markWord[c.mark]}: </span>
+                          </span>
+                        )}
+                        <span class="body">
+                          <span class="txt">{c.text}</span>
+                          {c.source && (
+                            <a class="src" href={c.source} rel="noopener" aria-label={sourceOf(t.short, row.label)} title="Source">
+                              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5h5v5M9.5 2.5 3 9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                            </a>
+                          )}
+                        </span>
+                      </span>
+                    </p>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+
+    <div class="legend">
+      <ul class="keys" aria-hidden="true">
+        <li><span class="mark m-yes"></span>Does it</li>
+        <li><span class="mark m-some"></span>Partly, or with an add-on or a paid plan</li>
+        <li><span class="mark m-no"></span>Does not</li>
+      </ul>
+      <p class="small note">
+        Checked on 20 October 2026 against each tool’s own pages and, for Spotlight’s menu search, a MacMost review. The
+        arrow after a fact opens its source. More on <a href="/compare/raycast/">Raycast</a>,
+        <a href="/compare/spotlight/">Spotlight</a> and <a href="/compare/alfred/">Alfred</a>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  th,
+  td {
+    padding: 16px 16px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .corner {
+    width: 14%;
+  }
+  tbody tr:not(.group) > * {
+    border-top: 1px solid var(--line);
+  }
+  tbody th[scope='row'] {
+    font-weight: 600;
+    color: var(--ink);
+  }
+  td {
+    color: var(--ink-2);
+  }
+
+  /* Tool headers: the real icon, the name, what it is best at. */
+  .tool {
+    vertical-align: bottom;
+    padding-bottom: 20px;
+  }
+  .tool-mark {
+    display: block;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 14px;
+  }
+  .tool-mark :global(img) {
+    width: 40px;
+    height: 40px;
+    border-radius: 22%;
+  }
+  .help-glyph {
+    width: 40px;
+    height: 40px;
+    color: var(--ink-2);
+  }
+  .tool-name {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .tool-best {
+    display: block;
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--ink-3);
+  }
+
+  /* The Apropos column is raised: its own card from the header to the last row. */
+  .us {
+    background: var(--card);
+    box-shadow:
+      inset 1px 0 0 var(--line-2),
+      inset -1px 0 0 var(--line-2);
+  }
+  thead .us {
+    border-radius: 20px 20px 0 0;
+    box-shadow:
+      inset 1px 0 0 var(--line-2),
+      inset -1px 0 0 var(--line-2),
+      inset 0 1px 0 var(--line-2);
+  }
+  tbody:last-of-type tr:last-child .us {
+    border-radius: 0 0 20px 20px;
+    box-shadow:
+      inset 1px 0 0 var(--line-2),
+      inset -1px 0 0 var(--line-2),
+      inset 0 -1px 0 var(--line-2);
+  }
+  td.us {
+    color: var(--ink);
+  }
+  .group th {
+    padding-top: 34px;
+    padding-bottom: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-3);
+  }
+  .group .us,
+  .group th {
+    background: none;
+  }
+
+  /* A cell is two columns: the mark, centred on the first line, and the words, every line starting at the same edge. */
+  .cell {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    column-gap: 10px;
+    align-items: start;
+    line-height: 22px;
+  }
+  .cell.plain {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mark {
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    border-radius: 50%;
+  }
+  .m-yes {
+    background: var(--mint);
+  }
+  .m-yes::after {
+    content: '';
+    width: 7px;
+    height: 4px;
+    margin-top: -2px;
+    border-left: 1.8px solid var(--card);
+    border-bottom: 1.8px solid var(--card);
+    transform: rotate(-45deg);
+  }
+  .m-some {
+    background: conic-gradient(var(--ink-3) 0 50%, transparent 50% 100%);
+    box-shadow: inset 0 0 0 1.5px var(--ink-3);
+  }
+  .m-no {
+    box-shadow: inset 0 0 0 1.5px var(--line-2);
+  }
+  .m-no::after {
+    content: '';
+    width: 7px;
+    height: 1.6px;
+    border-radius: 1px;
+    background: var(--ink-3);
+  }
+  .src {
+    display: inline-grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    margin-left: 2px;
+    border-radius: 6px;
+    color: var(--ink-3);
+    vertical-align: -5px;
+  }
+  .src svg {
+    width: 11px;
+    height: 11px;
+  }
+  .src:hover {
+    color: var(--mint);
+    background: var(--mint-wash);
+  }
+
+  /* Pointing at a column lights it from top to bottom (motion.ts sets .col-on). */
+  .home-compare {
+    margin-top: 16px;
+    padding-block: clamp(96px, 11vw, 160px) clamp(72px, 8vw, 120px);
+  }
+  .head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 30em);
+    gap: 24px 64px;
+    align-items: end;
+    margin-bottom: clamp(48px, 6vw, 88px);
+  }
+  .head .claim {
+    font-size: clamp(44px, 7vw, 104px);
+    max-width: 8ch;
+  }
+  @media (max-width: 860px) {
+    .head {
+      grid-template-columns: 1fr;
+    }
+  }
+  :global(.col-on):not(.us) {
+    background: color-mix(in srgb, var(--paper-2) 70%, transparent);
+  }
+  /* The scan: the first time the table comes into view a mint line passes down it and leaves the table behind it, and
+     each row's marks pop as the line passes them. It runs on its own clock, so once in view the table is always whole,
+     wherever the scroll stops. Without motion the table is simply there. */
+  .wide {
+    position: relative;
+  }
+  .scan {
+    display: none;
+  }
+  :global(html.live) .wide:not(:global(.scanned)) table {
+    clip-path: inset(0 0 100% 0);
+  }
+  :global(html.live) .wide:global(.scanning) table {
+    animation: reveal 1.3s var(--ease) both;
+  }
+  @keyframes reveal {
+    from {
+      clip-path: inset(0 0 100% 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+  :global(html.live) .wide:global(.scanning) .scan {
+    display: block;
+    position: absolute;
+    left: -12px;
+    right: -12px;
+    top: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--mint);
+    box-shadow: 0 0 14px var(--mint-wash);
+    pointer-events: none;
+    animation: scan 1.3s var(--ease) both;
+  }
+  @keyframes scan {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    to {
+      transform: translateY(var(--scan-h, 600px));
+      opacity: 0;
+    }
+  }
+  :global(html.live) .wide .mark {
+    transform: scale(0);
+    transition: transform 420ms var(--spring) calc(var(--r, 0) * 110ms + 120ms);
+  }
+  :global(html.live) .wide:global(.scanned) .mark {
+    transform: none;
+  }
+  .legend {
+    display: grid;
+    gap: 12px;
+    margin-top: 28px;
+  }
+  /* Each mark sits on the centre line of its words, with the same gap everywhere. */
+  .keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    font-size: 14px;
+    line-height: 18px;
+    color: var(--ink-2);
+  }
+  .keys li {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .keys .mark {
+    flex: none;
+    margin-top: 0;
+  }
+  @media (max-width: 600px) {
+    .keys {
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+  .note {
+    max-width: 60ch;
+  }
+
+  /* Phones: pick a tool, read it against Apropos. */
+  .narrow {
+    display: none;
+  }
+  /* Under 1280 px the five columns would fall below about 170 px each, so the table becomes one tool at a time. */
+  @media (max-width: 1279px) {
+    .wide {
+      display: none;
+    }
+    .narrow {
+      display: grid;
+      gap: 14px;
+    }
+    .pick-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-3);
+    }
+    .pick {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      scroll-snap-type: x proximity;
+      scroll-padding-inline: 4px;
+      padding: 2px 32px 2px 2px;
+      margin-right: calc(var(--gutter) * -1);
+      /* The strip runs past the edge; the fade says there is more. */
+      mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
+    }
+    .pick button {
+      scroll-snap-align: start;
+    }
+    .pick button {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 14px 0 8px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--card);
+      box-shadow: 0 0 0 1px var(--line);
+      color: var(--ink-2);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .pick button[aria-selected='true'] {
+      background: var(--pill);
+      color: var(--pill-ink);
+      box-shadow: none;
+    }
+    .pick :global(img),
+    .small-glyph {
+      width: 22px;
+      height: 22px;
+      border-radius: 22%;
+    }
+    .pair[hidden] {
+      display: none;
+    }
+    .pair-row {
+      padding: 16px 0;
+      border-top: 1px solid var(--line);
+    }
+    .pair-label {
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .pair-cells {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .pair-cell {
+      display: grid;
+      gap: 4px;
+      align-content: start;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--paper-2);
+      font-size: 14px;
+      color: var(--ink-2);
+    }
+    .pair-cell.us {
+      background: var(--card);
+      box-shadow: 0 0 0 1px var(--line-2);
+      color: var(--ink);
+    }
+    .pair-who {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-3);
+    }
+  }
+  /* On narrow phones the two cards stack, so neither is squeezed under about 170 px. */
+  @media (max-width: 480px) {
+    .pair-cells {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  import { motion } from '../scripts/scenes';
+
+  // Phones: pick a tool, read it against Apropos.
+  for (const group of document.querySelectorAll<HTMLElement>('.compare [data-tabs]')) {
+    const tabs = [...group.querySelectorAll<HTMLButtonElement>('[data-tab]')];
+    const panels = [...group.querySelectorAll<HTMLElement>('[data-panel]')];
+    const pick = (i: number, focus = false) => {
+      tabs.forEach((t, k) => {
+        t.setAttribute('aria-selected', String(k === i));
+        t.tabIndex = k === i ? 0 : -1;
+      });
+      panels.forEach((p, k) => (p.hidden = k !== i));
+      if (focus) tabs[i]?.focus();
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => pick(i));
+      t.addEventListener('keydown', (e) => {
+        const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        pick((i + d + tabs.length) % tabs.length, true);
+      });
+    });
+  }
+
+  // Wide: the column under the pointer lights from top to bottom.
+  const table = document.querySelector<HTMLTableElement>('.compare .wide table');
+  if (table) {
+    table.addEventListener('pointerover', (e) => {
+      const cell = (e.target as HTMLElement).closest('td, th');
+      if (!cell || !(cell instanceof HTMLTableCellElement)) return;
+      const col = cell.cellIndex;
+      for (const row of table.rows) {
+        for (const c of row.cells) c.classList.toggle('col-on', col > 0 && c.cellIndex === col && row.cells.length > 2);
+      }
+    });
+    table.addEventListener('pointerleave', () => {
+      for (const c of table.querySelectorAll('.col-on')) c.classList.remove('col-on');
+    });
+  }
+
+  // The scan runs once, when the table first comes into view.
+  const wide = document.querySelector<HTMLElement>('.compare [data-scan]');
+  if (wide && table && motion) {
+    table.querySelectorAll<HTMLTableRowElement>('tbody tr').forEach((row, i) => row.style.setProperty('--r', String(i)));
+    new IntersectionObserver(
+      ([e], obs) => {
+        if (!e?.isIntersecting) return;
+        obs.disconnect();
+        wide.style.setProperty('--scan-h', `${wide.offsetHeight}px`);
+        wide.classList.add('scanning', 'scanned');
+        setTimeout(() => wide.classList.remove('scanning'), 1400);
+      },
+      { threshold: 0.12 },
+    ).observe(wide);
+  }
+</script>

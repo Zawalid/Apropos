@@ -1,0 +1,287 @@
+---
+/**
+ * Scene 0, Press. Two key caps fill the width with the headline on them. Scrolling presses them (so does Option-Space on
+ * your keyboard, or a click), a circle of night opens out of the space bar, and the real panel rises through it and
+ * types n, then f. When the circle covers the screen we are on the desk the captures were taken on.
+ * Without motion: the paper part, then the panel on the night desk under it.
+ */
+import Window from '../Window.astro';
+import Key from '../Key.astro';
+import { panelCrop } from '../../data/windows';
+import { links, site, version } from '../../data/site';
+---
+<section class="scene press" id="top" aria-labelledby="press-title" data-pin data-scene="press" data-light="night" data-light-now="day" style="--len: 330svh">
+  <div class="stage">
+    <div class="day" data-day>
+      <div class="day-in">
+        <h1 id="press-title" class="title display">Every command in every app, one key away.</h1>
+        <div class="keys" data-keys>
+          <Key as="button" type="button" wide={1.62} glyph="⌥" word="option" class="k-opt" data-press aria-label="Press Option-Space to open Apropos" />
+          <Key as="button" type="button" wide={5.1} class="k-space" data-press data-space tabindex="-1" aria-hidden="true" />
+        </div>
+        <div class="foot">
+          <p class="lede">
+            Press Option-Space in any Mac app. Apropos lists what that app can do, what you can do with what you selected,
+            and the commands you made yourself.
+          </p>
+          <div class="cta">
+            <a class="pill" href={links.download}>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v9m0 0L4.5 7M8 10.5 11.5 7M2.5 13.5h11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              Download for Mac
+            </a>
+            <p class="small">Version {version}, macOS {site.minimumMacOS} or later.<br />Or press the keys, here or on your keyboard.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lift night" data-lift>
+      <div class="frames" data-frames>
+        <div class="frame on" data-frame="0"><Window id="hero-open" width={780} eager phone={panelCrop} /></div>
+        <div class="frame" data-frame="1"><Window id="hero-n" width={780} decorative phone={panelCrop} /></div>
+        <div class="frame" data-frame="2"><Window id="hero-nf" width={780} decorative phone={panelCrop} /></div>
+      </div>
+      <p class="typed" aria-hidden="true">
+        <span class="kbd" data-cap="n">n</span><span class="kbd" data-cap="f">f</span>
+        <span class="say" data-say>New Folder, first.</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .press {
+    --u: min(9.2vw, 132px);
+  }
+  .day {
+    position: relative;
+    z-index: 1;
+    background: var(--paper);
+    border-radius: 0 0 var(--sheet-r) var(--sheet-r);
+    box-shadow: var(--sheet-shadow);
+  }
+  .day-in {
+    display: grid;
+    justify-items: center;
+    gap: clamp(28px, 4vh, 48px);
+    padding: clamp(104px, 15vh, 150px) var(--gutter) clamp(48px, 7vh, 80px);
+    text-align: center;
+  }
+  .title {
+    font-size: clamp(44px, 7.4vw, 108px);
+    max-width: 13ch;
+  }
+
+  /* The keys (Key.astro): pressed by scroll, a click or Option-Space on the keyboard. */
+  .keys {
+    /* Seen a little from above, like keys on a desk. */
+    transform: perspective(900px) rotateX(24deg);
+    transform-origin: 50% 100%;
+    display: flex;
+    gap: calc(var(--u) * 0.14);
+    padding-bottom: calc(var(--u) * 0.1);
+  }
+
+  .foot {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: clamp(20px, 4vw, 64px);
+    align-items: end;
+    width: min(100%, 1040px);
+    text-align: left;
+  }
+  .foot .lede {
+    max-width: 30em;
+  }
+  .cta {
+    display: grid;
+    gap: 12px;
+    justify-items: start;
+  }
+
+  /* The panel on the night desk. Without motion it simply sits under the paper. */
+  .lift {
+    display: grid;
+    justify-items: center;
+    gap: 22px;
+    padding: clamp(56px, 8vw, 96px) var(--gutter);
+  }
+  .frames {
+    display: grid;
+    width: min(100%, 780px);
+  }
+  .frame {
+    grid-area: 1 / 1;
+    opacity: 0;
+    transition: opacity 120ms linear;
+  }
+  .frame.on {
+    opacity: 1;
+  }
+  .lift:not(.live-lift) .frame[data-frame='2'] {
+    opacity: 1;
+  }
+  .lift:not(.live-lift) .frame[data-frame='0'] {
+    opacity: 0;
+  }
+  .typed {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 30px;
+  }
+  .typed .kbd {
+    transition: transform 90ms var(--ease);
+  }
+  .typed .kbd.hit {
+    transform: translateY(2px);
+    color: var(--night-mint);
+  }
+  .say {
+    margin-left: 10px;
+    font-size: 19px;
+    font-weight: 600;
+    transition: opacity 200ms var(--ease);
+    color: var(--on-night-2);
+  }
+
+  /* Live: pinned, the paper clipped by a widening circle, the panel rising out of the space bar. */
+  :global(html.live) .press .stage {
+    display: grid;
+  }
+  :global(html.live) .day {
+    position: absolute;
+    inset: 0;
+    border-radius: 0;
+    box-shadow: none;
+    display: grid;
+    align-items: center;
+  }
+  :global(html.live) .lift {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    align-content: center;
+    padding: 64px var(--gutter) 24px;
+    pointer-events: none;
+    opacity: 0;
+    transform-origin: var(--ox, 50%) var(--oy, 80%);
+  }
+  :global(html.live) .lift .frames {
+    width: min(100%, 780px, calc((100svh - 210px) * 1.5));
+  }
+
+  @media (max-width: 760px) {
+    .press {
+      --u: 15.4vw;
+    }
+    .keys :global(.k-opt) {
+      --kw: 1.4;
+    }
+    .keys :global(.k-space) {
+      --kw: 4;
+    }
+    .foot {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .day-in {
+      gap: 28px;
+      padding-top: 96px;
+    }
+  }
+</style>
+
+<script>
+  import { onScene, span, easeOut, easeInOut, scrollFor, motion } from '../../scripts/scenes';
+
+  const scene = document.querySelector<HTMLElement>('[data-scene="press"]');
+  const day = scene?.querySelector<HTMLElement>('[data-day]');
+  const lift = scene?.querySelector<HTMLElement>('[data-lift]');
+  const keys = scene?.querySelector<HTMLElement>('[data-keys]');
+  const space = scene?.querySelector<HTMLElement>('[data-space]');
+  const frames = [...(scene?.querySelectorAll<HTMLElement>('[data-frame]') ?? [])];
+  const caps = [...(scene?.querySelectorAll<HTMLElement>('[data-cap]') ?? [])];
+  const say = scene?.querySelector<HTMLElement>('[data-say]');
+
+  if (scene && day && lift && keys && space) {
+    if (motion) lift.classList.add('live-lift');
+
+    // Where the space bar is on the stage, measured before anything moves.
+    let cx = 0;
+    let cy = 0;
+    let w = 0;
+    let h = 0;
+    const measure = () => {
+      const stage = scene.querySelector<HTMLElement>('.stage');
+      if (!stage) return;
+      const s = stage.getBoundingClientRect();
+      const k = space.getBoundingClientRect();
+      w = s.width;
+      h = s.height;
+      cx = k.left - s.left + k.width / 2;
+      cy = k.top - s.top + k.height / 2;
+      lift.style.setProperty('--ox', `${cx}px`);
+      lift.style.setProperty('--oy', `${cy}px`);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+
+    let shown = -1;
+    const show = (i: number) => {
+      if (i === shown) return;
+      shown = i;
+      frames.forEach((f, n) => f.classList.toggle('on', n === i));
+      caps.forEach((c, n) => c.classList.toggle('hit', n < i));
+      if (say) say.style.opacity = i === 2 ? '1' : '0';
+    };
+
+    onScene(scene, (p) => {
+      // 0 to .1: the keys go down. .08 to .5: night opens from the space bar. .16 to .5: the panel rises.
+      const press = span(p, 0, 0.08);
+      keys.style.setProperty('--press', String(press));
+      const open = easeInOut(span(p, 0.08, 0.48));
+      const far = Math.hypot(Math.max(cx, w - cx), Math.max(cy, h - cy));
+      const r = open * far;
+      if (r <= 0.5) {
+        day.style.clipPath = '';
+      } else if (open >= 1) {
+        day.style.clipPath = 'inset(0 0 100% 0)';
+      } else {
+        day.style.clipPath = `path(evenodd, "M0 0H${w}V${h}H0Z M${cx - r} ${cy}a${r} ${r} 0 1 0 ${r * 2} 0a${r} ${r} 0 1 0 ${-r * 2} 0Z")`;
+      }
+      scene.dataset.lightNow = r > cy + 30 ? 'night' : 'day';
+
+      // The paper's words step back as the night takes them.
+      const back = span(p, 0.06, 0.4);
+      const dayIn = day.firstElementChild as HTMLElement | null;
+      if (dayIn) {
+        dayIn.style.transform = `scale(${(1 - back * 0.06).toFixed(4)})`;
+        dayIn.style.opacity = (1 - back * 0.7).toFixed(3);
+      }
+
+      const rise = easeOut(span(p, 0.2, 0.52));
+      lift.style.opacity = String(Math.min(1, rise * 2.2));
+      lift.style.transform = `scale(${(0.08 + 0.92 * rise).toFixed(4)})`;
+
+      show(p < 0.6 ? 0 : p < 0.74 ? 1 : 2);
+    });
+
+    // Pressing the keys, here or on the keyboard, plays the moment: scroll to where the panel has opened.
+    const go = () => {
+      keys.classList.add('down');
+      setTimeout(() => keys.classList.remove('down'), 160);
+      const target = motion ? scrollFor(scene, 0.86) : (lift.getBoundingClientRect().top + window.scrollY - 40);
+      window.scrollTo({ top: target, behavior: motion ? 'smooth' : 'auto' });
+    };
+    for (const b of scene.querySelectorAll<HTMLButtonElement>('[data-press]')) b.addEventListener('click', go);
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && e.altKey && !e.metaKey && !e.ctrlKey) {
+        const r = scene.getBoundingClientRect();
+        if (r.bottom < 0) return;
+        e.preventDefault();
+        go();
+      }
+    });
+  }
+</script>

@@ -1,0 +1,74 @@
+---
+import Base from '../../layouts/Base.astro';
+import Compare from '../../components/Compare.astro';
+import { tools } from '../../data/compare';
+---
+<Base
+  title="Apropos, Raycast, Spotlight and Alfred compared | Apropos"
+  description="What Apropos does next to Raycast, Spotlight, Alfred and the Help menu, row by row, with a source for every fact about the other tools."
+  path="/compare/"
+>
+  <section class="wrap intro">
+    <h1 class="display">Next to your launcher, not instead of it.</h1>
+    <p class="lede">
+      Apropos opens on the app in front: its menus, what you can do with your selection, and your own commands. Launchers
+      open on everything else. Most people will want both.
+    </p>
+    <dl class="best">
+      {tools.map((t) => (
+        <div>
+          <dt>{t.name}</dt>
+          <dd>{t.bestAt}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+  <Compare heading={false} />
+  <section class="wrap more">
+    <h2 class="claim">One tool at a time.</h2>
+    <ul>
+      <li><a href="/compare/raycast/">Apropos and Raycast</a></li>
+      <li><a href="/compare/spotlight/">Apropos and Spotlight</a></li>
+      <li><a href="/compare/alfred/">Apropos and Alfred</a></li>
+    </ul>
+  </section>
+</Base>
+
+<style>
+  .intro {
+    display: grid;
+    gap: 28px;
+    padding-top: clamp(48px, 7vw, 96px);
+  }
+  h1 {
+    font-size: clamp(44px, 7vw, 96px);
+    max-width: 13ch;
+  }
+  .best {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0 24px;
+    border-top: 1px solid var(--line);
+  }
+  .best div {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .best dt {
+    font-weight: 600;
+  }
+  .best dd {
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  .more {
+    display: grid;
+    gap: 24px;
+    padding-top: clamp(80px, 10vw, 140px);
+  }
+  .more ul {
+    display: grid;
+    gap: 10px;
+    font-size: 21px;
+  }
+</style>

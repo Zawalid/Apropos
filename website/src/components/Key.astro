@@ -1,0 +1,163 @@
+---
+/**
+ * A keycap drawn like a real one: a skirt (the sides you see below the top), a slightly dished top face set into it
+ * with light from above, legends where a Mac keyboard puts them, and a shadow on the desk under it. Its size is --u,
+ * the height of the key, set by whatever holds it; its width is `wide` keys, which a parent can change with --kw.
+ * Pressing moves only the top face and fades the shadow; a parent can press it too by setting --press from 0 to 1,
+ * or the class `down`.
+ */
+import type { HTMLAttributes } from 'astro/types';
+
+type Props = {
+  as?: 'button' | 'a' | 'span';
+  /** Width in key units: option is 1.6, the space bar about 5. */
+  wide?: number;
+  /** The symbol in the top right, like the option sign. */
+  glyph?: string;
+  /** The word in the bottom left, like "option". */
+  word?: string;
+  class?: string;
+} & HTMLAttributes<'button'> &
+  HTMLAttributes<'a'>;
+
+const { as: Tag = 'span', wide = 1, glyph, word, class: className, ...rest } = Astro.props;
+---
+<Tag class:list={['key', className]} style={`--kw0:${wide}`} {...rest}>
+  <span class="k-shadow" aria-hidden="true"></span>
+  <span class="k-base" aria-hidden="true"></span>
+  <span class="k-top">
+    {glyph && <span class="k-glyph" aria-hidden="true">{glyph}</span>}
+    {word && <span class="k-word" aria-hidden="true">{word}</span>}
+    <slot />
+  </span>
+</Tag>
+
+<style>
+  .key {
+    /* Light: a white key on a pale grey skirt. Dark and night: a space grey key. */
+    --kt1: #ffffff;
+    --kt2: #eef2f1;
+    --ks1: #edf1f0;
+    --ks2: #d3dbd8;
+    --ks3: #b9c3c0;
+    --kside: rgba(10, 24, 28, 0.08);
+    --kink: #2b3537;
+    --khi: rgba(255, 255, 255, 1);
+    --klip: rgba(255, 255, 255, 0.7);
+    --kedge: rgba(10, 24, 28, 0.12);
+    --kdrop: rgba(6, 11, 14, 0.3);
+    position: relative;
+    display: inline-block;
+    flex: none;
+    width: calc(var(--u, 64px) * var(--kw, var(--kw0)));
+    height: var(--u, 64px);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--kink);
+    font: inherit;
+    text-decoration: none;
+    vertical-align: middle;
+    -webkit-tap-highlight-color: transparent;
+  }
+  :global(.night) .key {
+    --kt1: #3d5059;
+    --kt2: #2a3b42;
+    --ks1: #2a3a41;
+    --ks2: #16222a;
+    --ks3: #091013;
+    --kside: rgba(0, 0, 0, 0.35);
+    --kink: #e3ecea;
+    --khi: rgba(255, 255, 255, 0.22);
+    --klip: rgba(255, 255, 255, 0.07);
+    --kedge: rgba(0, 0, 0, 0.55);
+    --kdrop: rgba(0, 0, 0, 0.65);
+  }
+  @media (prefers-color-scheme: dark) {
+    .key {
+      --kt1: #3d5059;
+      --kt2: #2a3b42;
+      --ks1: #2a3a41;
+      --ks2: #16222a;
+      --ks3: #091013;
+      --kside: rgba(0, 0, 0, 0.35);
+      --kink: #e3ecea;
+      --khi: rgba(255, 255, 255, 0.22);
+      --klip: rgba(255, 255, 255, 0.07);
+      --kedge: rgba(0, 0, 0, 0.55);
+      --kdrop: rgba(0, 0, 0, 0.65);
+    }
+  }
+  button.key,
+  a.key {
+    cursor: pointer;
+  }
+  .k-shadow,
+  .k-base,
+  .k-top {
+    position: absolute;
+    display: block;
+  }
+  /* The shadow on the desk: a soft one and a tight contact one, lighter once the key is down. */
+  .k-shadow {
+    inset: 20% 3% -3% 3%;
+    border-radius: calc(var(--u, 64px) * 0.24);
+    box-shadow:
+      0 calc(var(--u, 64px) * 0.22) calc(var(--u, 64px) * 0.4) calc(var(--u, 64px) * -0.04) var(--kdrop),
+      0 calc(var(--u, 64px) * 0.05) calc(var(--u, 64px) * 0.08) var(--kdrop);
+    opacity: calc(1 - var(--press, 0) * 0.45);
+    transition: opacity 90ms var(--ease);
+  }
+  /* The skirt: the four sides of the key. The front, facing you, is tall and catches light at its lower lip; the left
+     and right sides fall away darker; the back is a sliver. */
+  .k-base {
+    inset: 0;
+    border-radius: calc(var(--u, 64px) * 0.2);
+    background:
+      linear-gradient(90deg, var(--kside), transparent 9%, transparent 91%, var(--kside)),
+      linear-gradient(180deg, var(--ks1) 0%, var(--ks2) 62%, var(--ks3) 100%);
+    box-shadow:
+      0 0 0 1px var(--kedge),
+      inset 0 calc(var(--u, 64px) * -0.012) 0 var(--klip);
+  }
+  /* The top face: set in from the skirt, a faint dish, a lit back rim, and a soft shade where it meets the front. */
+  .k-top {
+    top: calc(var(--u, 64px) * 0.03);
+    left: calc(var(--u, 64px) * 0.07);
+    right: calc(var(--u, 64px) * 0.07);
+    bottom: calc(var(--u, 64px) * 0.19);
+    border-radius: calc(var(--u, 64px) * 0.14);
+    background:
+      radial-gradient(140% 120% at 50% 0%, var(--kt1) 0%, transparent 62%),
+      linear-gradient(180deg, var(--kt1), var(--kt2));
+    box-shadow:
+      inset 0 1px 0 var(--khi),
+      inset 0 calc(var(--u, 64px) * -0.025) calc(var(--u, 64px) * 0.05) rgba(0, 0, 0, 0.07),
+      0 0 0 1px var(--kedge),
+      0 calc(var(--u, 64px) * 0.02) calc(var(--u, 64px) * 0.04) rgba(0, 0, 0, 0.2);
+    transform: translateY(calc(var(--press, 0) * var(--u, 64px) * 0.09));
+    transition: transform 90ms var(--ease);
+  }
+  .key:active,
+  .key.down,
+  :global(.down) > .key {
+    --press: 1;
+  }
+  .k-glyph {
+    position: absolute;
+    top: calc(var(--u, 64px) * 0.1);
+    right: calc(var(--u, 64px) * 0.13);
+    font-size: max(13px, calc(var(--u, 64px) * 0.24));
+    font-weight: 400;
+    line-height: 1;
+  }
+  .k-word {
+    position: absolute;
+    left: calc(var(--u, 64px) * 0.13);
+    bottom: calc(var(--u, 64px) * 0.1);
+    font-size: max(12px, calc(var(--u, 64px) * 0.16));
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+</style>

@@ -1,0 +1,186 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import { fmt, iconFor, measurement, wallApps } from '../../data/apps';
+
+const apps = [...(measurement?.apps ?? [])].sort((a, b) => b.total - a.total);
+const total = apps.reduce((n, a) => n + a.total, 0);
+const title = apps.length ? `Menu commands of ${apps.length} Mac apps, measured | Apropos` : 'Apps Apropos reads | Apropos';
+const description = apps.length
+  ? `How many menu commands ${apps.length} Mac apps have, how many have a shortcut, and every command by name. Measured with Apropos on a real Mac.`
+  : 'Apropos reads the menu bar of any Mac app. The measured list of commands per app will appear here.';
+---
+<Base title={title} description={description} path="/apps/">
+  <section class="wrap page">
+    <h1 class="display">{apps.length ? `${fmt(total)} commands in ${apps.length} apps.` : 'Apps Apropos reads.'}</h1>
+    {measurement ? (
+      <p class="lede">
+        Each number is what Apropos lists when you press Option-Space in that app. Measured with apropos-probe, which reads
+        the menu bar and presses nothing, on a {measurement.mac} with macOS {measurement.macOS}, on {measurement.measuredOn}.
+        Menus change with the window and the selection, so your counts will differ a little.
+      </p>
+    ) : (
+      <p class="lede">Any app with a menu bar. The measured counts per app are not published yet.</p>
+    )}
+
+    {apps.length > 0 && (
+      <div class="search" data-command-search>
+        <label class="field">
+          <span class="visually-hidden">Search every measured command</span>
+          <input type="search" placeholder="Search every measured command, for example tab" autocomplete="off" />
+        </label>
+        <p class="small" aria-live="polite" data-command-count></p>
+        <ul class="results" data-command-results></ul>
+      </div>
+    )}
+
+    {apps.length > 0 ? (
+      <ul class="list">
+        {apps.map((app) => {
+          const icon = iconFor(app.name);
+          const top = Object.entries(app.menus).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([m]) => m);
+          return (
+            <li>
+              {icon && <Image src={icon} alt="" width={48} height={48} densities={[1, 2]} />}
+              <div>
+                <h2>{app.name}</h2>
+                <p>
+                  {fmt(app.total)} menu commands, {fmt(app.withShortcut)} with a keyboard shortcut and {fmt(app.withoutShortcut)} without.
+                  The biggest menus are {top.join(', ')}.
+                  {(app.kind === 'electron' || app.kind === 'web') && ' Built on web views, so Apropos lists its menu bar, not the controls inside its window.'}
+                </p>
+              </div>
+              <span class="n num">{fmt(app.total)}</span>
+            </li>
+          );
+        })}
+      </ul>
+    ) : (
+      <ul class="icons">
+        {wallApps.map((name) => {
+          const icon = iconFor(name);
+          return <li>{icon && <Image src={icon} alt="" width={56} height={56} densities={[1, 2]} />}<span>{name}</span></li>;
+        })}
+      </ul>
+    )}
+  </section>
+</Base>
+
+<style>
+  .page {
+    display: grid;
+    gap: 32px;
+    padding-block: clamp(48px, 7vw, 96px) 0;
+  }
+  h1 {
+    font-size: clamp(44px, 7vw, 96px);
+    max-width: 14ch;
+  }
+  .search {
+    display: grid;
+    gap: 12px;
+  }
+  .field input {
+    width: 100%;
+    height: 56px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--card);
+    box-shadow: 0 0 0 1px var(--line-2);
+    color: var(--ink);
+    font: inherit;
+    font-size: 18px;
+  }
+  .results {
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+  .results:empty {
+    display: none;
+  }
+  .results :global(li) {
+    display: grid;
+    grid-template-columns: 150px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .results :global(.r-app) {
+    color: var(--ink-3);
+    font-size: 14px;
+  }
+  .results :global(.r-title) {
+    display: grid;
+    font-weight: 500;
+  }
+  .results :global(.r-path) {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--ink-3);
+  }
+  .list {
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+  .list li {
+    display: grid;
+    grid-template-columns: 48px 1fr auto;
+    gap: 18px;
+    align-items: center;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .list img {
+    width: 48px;
+    height: 48px;
+  }
+  .list h2 {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .list p {
+    color: var(--ink-2);
+    max-width: 70ch;
+  }
+  .n {
+    font-family: var(--display);
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+  }
+  .icons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .icons li {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    width: 88px;
+    font-size: 12px;
+    color: var(--ink-3);
+    text-align: center;
+  }
+  .icons img {
+    width: 56px;
+    height: 56px;
+  }
+  @media (max-width: 640px) {
+    .results :global(li) {
+      grid-template-columns: 1fr auto;
+    }
+    .results :global(.r-app) {
+      grid-column: 1 / -1;
+    }
+    .n {
+      display: none;
+    }
+    .list li {
+      grid-template-columns: 40px 1fr;
+    }
+  }
+</style>

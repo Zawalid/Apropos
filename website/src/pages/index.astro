@@ -1,0 +1,38 @@
+---
+import Base from '../layouts/Base.astro';
+import Press from '../components/scenes/Press.astro';
+import Deep from '../components/scenes/Deep.astro';
+import Apps from '../components/scenes/Apps.astro';
+import Slip from '../components/scenes/Slip.astro';
+import Holding from '../components/scenes/Holding.astro';
+import Send from '../components/scenes/Send.astro';
+import Next from '../components/scenes/Next.astro';
+import Yours from '../components/scenes/Yours.astro';
+import Compare from '../components/Compare.astro';
+import Private from '../components/scenes/Private.astro';
+import Install from '../components/scenes/Install.astro';
+import { faq } from '../data/faq';
+
+const faqLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faq.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a.replace(/<[^>]+>/g, '') },
+  })),
+};
+---
+<Base home extraJsonLd={[faqLd]}>
+  <Press />
+  <Deep />
+  <Slip />
+  <Apps />
+  <Holding />
+  <Send />
+  <Next />
+  <Yours />
+  <Compare />
+  <Private />
+  <Install />
+</Base>

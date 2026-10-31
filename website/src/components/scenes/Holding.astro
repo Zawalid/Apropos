@@ -1,0 +1,518 @@
+---
+/**
+ * Scene 4, Holding. One big paragraph and nothing else. Select any words in it and a small action list opens at your
+ * selection; pick an action and the page's own words change in place, the old ones struck and lifted away. The
+ * functions are the app's (src/scripts/textTools.ts, ported from TextTools.swift). Before you select anything a phrase
+ * is marked for you. Under it, what the other kinds of selection give, beside the real panel holding a page and a
+ * selection in Safari. Every action name comes from the app's own pack.
+ */
+import Window from '../Window.astro';
+import { panelCrop } from '../../data/windows';
+import { actionCount, titlesFor } from '../../data/actions';
+
+const text = titlesFor('selectedText');
+const files = titlesFor('selectedFiles');
+const page = titlesFor('pageURL');
+const folder = [...titlesFor('folder'), ...titlesFor('gitRepo')];
+
+const kinds = [
+  { title: 'Files in Finder', action: 'Copy path', result: '~/Desktop/Invoices/2026-10.pdf', n: files.length, all: files },
+  { title: 'The page in your browser', action: 'Copy as Markdown link', result: '[Swift.org](https://swift.org)', n: page.length, all: page },
+  { title: 'A folder or a repository', action: 'Copy branch name', result: 'feature/send-to', n: folder.length, all: folder },
+];
+---
+<section class="scene holding sheet" id="holding" aria-labelledby="holding-title" data-scene="holding" data-light="day">
+  <div class="wrap">
+    <p class="count"><span class="num">{actionCount}</span> actions for what you selected. <span class="num">{text.length}</span> of them for text, and they work right here.</p>
+
+    <div class="essay" data-essay>
+      <h2 id="holding-title">Select a few words of this paragraph,</h2>{' '}
+      <p data-copytext>
+        the way you would in Mail or Safari. Apropos opens on what you selected with the actions that fit it, and the
+        result takes the place of your selection. These are the same text functions the app runs, so pick one and
+        watch the page change.
+      </p>
+    </div>
+
+    <div class="pop" data-pop role="group" aria-label="Actions for your selection">
+      <div class="pop-head">
+        <p class="pop-sel"><span class="pop-say">Selected</span> <span data-pop-sel>nothing yet</span></p>
+        <label class="visually-hidden" for="pop-search">Search the text actions</label>
+        <input id="pop-search" class="pop-search" type="search" placeholder={`Search ${text.length} text actions`} autocomplete="off" data-pop-search />
+      </div>
+      <ul class="pop-list" role="listbox" aria-label="Text actions" aria-orientation="horizontal" data-pop-list></ul>
+      <p class="pop-note" data-pop-note aria-live="polite"></p>
+    </div>
+
+    <p class="hint" data-hint>
+      <span>Select any words above, or use the marked phrase.</span>
+      <button type="button" class="quiet" data-reset hidden>Put the words back</button>
+    </p>
+
+    <div class="kinds">
+      <div class="holding-win">
+        <Window id="holding" width={760} phone={{ ...panelCrop, h: 0.66 }} />
+      </div>
+      <div class="kinds-list">
+        <h3>It reads more than text.</h3>
+        <dl>
+          {kinds.map((k) => (
+            <div class="kind">
+              <dt>{k.title} <span class="small">{k.n} actions</span></dt>
+              <dd class="k-act">{k.action}</dd>
+              <dd class="k-res"><code>{k.result}</code></dd>
+              <dd class="small k-all">{k.all.join(', ')}</dd>
+            </div>
+          ))}
+        </dl>
+        <p class="small safe">
+          Secure fields are never read, and password managers never give up their selection. Each kind of context can be
+          switched off, and apps can be listed that are never read. A selection never becomes code.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .holding {
+    margin-top: 16px;
+    padding-block: clamp(96px, 11vw, 160px) clamp(64px, 8vw, 120px);
+  }
+  .count {
+    font-size: clamp(16px, 1.3vw, 18px);
+    font-weight: 600;
+    color: var(--ink-2);
+    margin-bottom: clamp(24px, 3vw, 40px);
+  }
+  .count .num {
+    color: var(--ink);
+  }
+  .essay {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(30px, 4.4vw, 66px);
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+    max-width: 20em;
+    text-wrap: pretty;
+  }
+  .essay h2,
+  .essay p {
+    display: inline;
+    font: inherit;
+  }
+  .essay h2 {
+    color: var(--ink);
+  }
+  .essay p {
+    color: var(--ink-2);
+  }
+  .essay ::selection {
+    background: var(--mint-wash);
+    color: var(--ink);
+  }
+  :global(.sel-demo) {
+    background: var(--mint-wash);
+    color: var(--ink);
+    border-radius: 0.12em;
+    box-shadow: 0 0 0 0.06em var(--mint-wash);
+  }
+  /* A changed piece: the new words in place, the old ones struck and lifted away above them. */
+  :global(.changed) {
+    position: relative;
+    color: var(--ink);
+  }
+  :global(.changed .now) {
+    display: inline;
+    animation: now-in 420ms var(--ease) both;
+  }
+  :global(.changed .was) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    white-space: nowrap;
+    color: var(--ink-3);
+    pointer-events: none;
+    animation: was-out 900ms var(--ease) 120ms both;
+  }
+  :global(.changed .was::after) {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 55%;
+    height: 0.07em;
+    background: var(--pearl);
+    transform-origin: 0 50%;
+    animation: strike 260ms var(--ease) both;
+  }
+  @keyframes strike {
+    from {
+      transform: scaleX(0);
+    }
+  }
+  @keyframes was-out {
+    0%,
+    30% {
+      opacity: 1;
+      transform: none;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-0.9em);
+    }
+  }
+  @keyframes now-in {
+    from {
+      opacity: 0;
+    }
+  }
+  .hint {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 18px;
+    margin-top: 24px;
+    color: var(--ink-3);
+    font-size: 15px;
+  }
+  .hint .quiet {
+    min-height: 36px;
+    font-size: 15px;
+  }
+
+  /* The actions, docked under the paragraph so they never cover it: drawn by the page, in the panel's colours. */
+  .pop {
+    display: grid;
+    gap: 10px;
+    margin-top: clamp(28px, 3vw, 40px);
+    padding: 10px;
+    border-radius: 18px;
+    background: #0e1a1d;
+    color: #eaf3f1;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 24px 60px -24px rgba(6, 11, 14, 0.6);
+    font-size: 14px;
+    letter-spacing: -0.005em;
+  }
+  .pop-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding: 2px 4px 0 8px;
+  }
+  .pop-sel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #8cf2cc;
+    font-weight: 600;
+  }
+  .pop-say {
+    color: rgba(234, 243, 241, 0.62);
+    font-weight: 500;
+  }
+  .pop-search {
+    width: min(100%, 260px);
+    height: 36px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.07);
+    color: inherit;
+    font: inherit;
+  }
+  .pop-search::placeholder {
+    color: rgba(234, 243, 241, 0.55);
+  }
+  .pop-search:focus-visible {
+    outline-offset: 0;
+  }
+  .pop-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .pop-list :global(button) {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .pop-list :global(button[aria-selected='true']) {
+    background: rgba(255, 255, 255, 0.14);
+  }
+  .pop-list :global(button:disabled) {
+    color: rgba(234, 243, 241, 0.5);
+    cursor: default;
+  }
+  .pop-list :global(.need) {
+    font-size: 12px;
+    color: rgba(234, 243, 241, 0.58);
+  }
+  .pop-note {
+    padding: 2px 8px 4px;
+    color: #8cf2cc;
+    font-size: 14px;
+  }
+  .pop-note:empty {
+    display: none;
+  }
+  /* Phones: the actions are one row you swipe, fading at the edge. */
+  @media (max-width: 600px) {
+    .pop-list {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-right: 32px;
+      mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent);
+    }
+    .pop-list::-webkit-scrollbar {
+      display: none;
+    }
+    .pop-search {
+      width: 100%;
+    }
+  }
+
+  /* The other kinds: the real panel bleeding off the left edge, a spec list beside it. */
+  .kinds {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: clamp(32px, 5vw, 80px);
+    align-items: center;
+    margin-top: clamp(80px, 10vw, 140px);
+  }
+  .holding-win {
+    margin-left: calc(var(--gutter) * -1 - max(0px, (100vw - var(--max) - var(--gutter) * 2) / 2) - 8vw);
+  }
+  .kinds-list h3 {
+    font-family: var(--display);
+    font-size: clamp(26px, 2.6vw, 36px);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 20px;
+  }
+  .kind {
+    display: grid;
+    gap: 2px;
+    padding-block: 14px;
+    border-top: 1px solid var(--line);
+  }
+  dt {
+    font-weight: 600;
+  }
+  dt .small {
+    margin-left: 6px;
+  }
+  dd {
+    margin: 0;
+  }
+  .k-act {
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  .k-res code {
+    font: 500 15px/1.4 var(--mono);
+    color: var(--mint);
+    overflow-wrap: anywhere;
+  }
+  .k-all {
+    margin-top: 4px;
+  }
+  .safe {
+    margin-top: 18px;
+  }
+  @media (max-width: 600px) {
+    .holding-win {
+      margin: 0 !important;
+    }
+  }
+  @media (max-width: 860px) {
+    .kinds {
+      grid-template-columns: 1fr;
+    }
+    .holding-win {
+      margin-left: calc(var(--gutter) * -1);
+      margin-right: -30vw;
+    }
+  }
+</style>
+
+<script>
+  import { textActions } from '../../scripts/textTools';
+  import { motion } from '../../scripts/scenes';
+
+  // The actions are docked under the paragraph. A selection inside the paragraph (or the phrase marked for you) is
+  // what they act on; picking one replaces it in place, the old words struck and lifted away.
+  const scene = document.querySelector<HTMLElement>('[data-scene="holding"]');
+  const essay = scene?.querySelector<HTMLElement>('[data-essay]');
+  const list = scene?.querySelector<HTMLElement>('[data-pop-list]');
+  const search = scene?.querySelector<HTMLInputElement>('[data-pop-search]');
+  const selName = scene?.querySelector<HTMLElement>('[data-pop-sel]');
+  const note = scene?.querySelector<HTMLElement>('[data-pop-note]');
+  const reset = scene?.querySelector<HTMLButtonElement>('[data-reset]');
+
+  if (scene && essay && list && search && selName && note && reset) {
+    const original = essay.innerHTML;
+    let range: Range | null = null;
+    let active = 0;
+
+    const text = () => range?.toString() ?? '';
+
+    function render() {
+      const t = text();
+      const q = search!.value.trim().toLowerCase();
+      list!.replaceChildren();
+      const shown = textActions.filter((a) => a.title.toLowerCase().includes(q));
+      active = Math.min(active, Math.max(0, shown.length - 1));
+      shown.forEach((a, i) => {
+        const need = range ? (a.needs?.(t) ?? null) : 'Select some words first';
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.setAttribute('role', 'option');
+        b.setAttribute('aria-selected', String(i === active && !!range));
+        b.disabled = need !== null;
+        const name = document.createElement('span');
+        name.textContent = a.title;
+        b.append(name);
+        if (need && range) {
+          const n = document.createElement('span');
+          n.className = 'need';
+          n.textContent = need;
+          b.append(n);
+        }
+        // Keep the page's selection while a button is pressed.
+        b.addEventListener('mousedown', (e) => e.preventDefault());
+        b.addEventListener('click', () => apply(a.title));
+        b.addEventListener('mouseenter', () => {
+          active = i;
+          for (const o of list!.children) o.setAttribute('aria-selected', String(o === b));
+        });
+        list!.append(b);
+      });
+    }
+
+    function use(r: Range | null) {
+      range = r;
+      const t = text();
+      selName!.textContent = r ? `“${t.length > 48 ? t.slice(0, 48) + '…' : t}”` : 'nothing yet';
+      note!.textContent = '';
+      active = 0;
+      render();
+    }
+
+    function apply(title: string) {
+      const a = textActions.find((x) => x.title === title);
+      if (!a || !range) return;
+      const before = text();
+      const out = a.run(before);
+      if (out === null) return;
+      if (a.effect) {
+        note!.textContent = out;
+        return;
+      }
+      const span = document.createElement('span');
+      span.className = 'changed';
+      const now = document.createElement('span');
+      now.className = 'now';
+      now.textContent = out;
+      span.append(now);
+      if (motion) {
+        const was = document.createElement('span');
+        was.className = 'was';
+        was.setAttribute('aria-hidden', 'true');
+        was.textContent = before;
+        span.append(was);
+        was.addEventListener('animationend', (e) => {
+          if (e.animationName.includes('was-out')) was.remove();
+        });
+      }
+      range.deleteContents();
+      range.insertNode(span);
+      window.getSelection()?.removeAllRanges();
+      const mark = essay!.querySelector('.sel-demo');
+      if (mark) mark.replaceWith(...mark.childNodes);
+      use(null);
+      reset!.hidden = false;
+    }
+
+    // A phrase marked for you until you select something yourself.
+    function demo() {
+      const node = essay!.querySelector('h2')?.firstChild;
+      if (!node || node.nodeType !== Node.TEXT_NODE) return;
+      const phrase = 'a few words';
+      const at = (node.textContent ?? '').indexOf(phrase);
+      if (at < 0) return;
+      const r = document.createRange();
+      r.setStart(node, at);
+      r.setEnd(node, at + phrase.length);
+      const mark = document.createElement('span');
+      mark.className = 'sel-demo';
+      r.surroundContents(mark);
+      const inner = document.createRange();
+      inner.selectNodeContents(mark);
+      use(inner);
+    }
+
+    render();
+    let demoed = false;
+    new IntersectionObserver(
+      ([e]) => {
+        if (e?.isIntersecting && !demoed) {
+          demoed = true;
+          demo();
+        }
+      },
+      { threshold: 0.15 },
+    ).observe(essay);
+
+    document.addEventListener('selectionchange', () => {
+      const s = window.getSelection();
+      if (!s || s.isCollapsed || s.rangeCount === 0) return;
+      const r = s.getRangeAt(0);
+      if (!essay!.contains(r.commonAncestorContainer) || !r.toString().trim()) return;
+      // A real selection takes over from the marked phrase.
+      essay!.querySelector('.sel-demo')?.classList.remove('sel-demo');
+      use(r.cloneRange());
+    });
+
+    search.addEventListener('input', () => {
+      active = 0;
+      render();
+    });
+    search.addEventListener('keydown', (e) => {
+      const opts = [...list.querySelectorAll<HTMLButtonElement>('button')];
+      const step = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 0;
+      if (step && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || search.value === '')) {
+        e.preventDefault();
+        active = Math.max(0, Math.min(opts.length - 1, active + step));
+        opts.forEach((o, i) => o.setAttribute('aria-selected', String(i === active)));
+        opts[active]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const o = opts[active];
+        if (o && !o.disabled) o.click();
+      }
+    });
+
+    reset.addEventListener('click', () => {
+      essay.innerHTML = original;
+      reset.hidden = true;
+      use(null);
+      demo();
+    });
+  }
+</script>

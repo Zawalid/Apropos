@@ -1,0 +1,112 @@
+---
+import Base from '../../layouts/Base.astro';
+import { pairing, rows, tools, type ToolId } from '../../data/compare';
+
+export function getStaticPaths() {
+  return (['raycast', 'spotlight', 'alfred'] as const).map((tool) => ({ params: { tool } }));
+}
+
+const id = Astro.params.tool as Exclude<ToolId, 'apropos' | 'help'>;
+const tool = tools.find((t) => t.id === id);
+const pair = pairing[id];
+if (!tool) throw new Error(`unknown tool ${id}`);
+const short = tool.short;
+const descriptions: Record<typeof id, string> = {
+  raycast: 'How Apropos and Raycast differ, which keys to give them, and how a Raycast quicklink runs an Apropos command. Sourced, no spin.',
+  spotlight: 'How Apropos differs from Spotlight’s actions and menu search on macOS 26 and later, and how to use both. Every fact sourced.',
+  alfred: 'How Apropos and Alfred differ, why both default to Option-Space, and how an Alfred workflow runs an Apropos command. Sourced.',
+};
+---
+<Base title={`${pair.title}: what each does | Apropos`} description={descriptions[id]} path={`/compare/${id}/`}>
+  <article class="wrap pair">
+    <p class="crumb small"><a href="/compare/">All comparisons</a></p>
+    <h1 class="display">{pair.title}</h1>
+    <p class="lede">{pair.intro}</p>
+
+    <h2 class="sub">Use them together</h2>
+    <ul class="together">
+      {pair.together.map((line) => <li>{line}</li>)}
+    </ul>
+
+    <h2 class="sub">Side by side</h2>
+    <div class="table-wrap" tabindex="0" role="region" aria-label={`Apropos and ${short} side by side`}>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col"><span class="visually-hidden">Feature</span></th>
+            <th scope="col">Apropos</th>
+            <th scope="col">{short}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr>
+              <th scope="row">{row.label}</th>
+              <td>{row.cells.apropos.text}</td>
+              <td>{row.cells[id].source ? <a href={row.cells[id].source} rel="noopener">{row.cells[id].text}</a> : row.cells[id].text}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="small">Checked on 20 October 2026. Linked cells open their source. <a href="/#install">Download Apropos</a></p>
+  </article>
+</Base>
+
+<style>
+  .pair {
+    display: grid;
+    gap: 28px;
+    padding-top: clamp(48px, 7vw, 96px);
+    max-width: calc(880px + var(--gutter) * 2);
+  }
+  h1 {
+    font-size: clamp(44px, 6.4vw, 88px);
+  }
+  .sub {
+    margin-top: 28px;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.028em;
+  }
+  .together {
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+  .together li {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-2);
+  }
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: var(--r-frame);
+    box-shadow: 0 0 0 1px var(--line);
+    background: var(--card);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  th,
+  td {
+    padding: 14px 16px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--line);
+  }
+  tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+  tbody th {
+    font-weight: 600;
+    width: 30%;
+  }
+  td {
+    color: var(--ink-2);
+  }
+  td a {
+    color: inherit;
+  }
+</style>

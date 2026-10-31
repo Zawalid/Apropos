@@ -1,0 +1,297 @@
+---
+/**
+ * Scene 1, Deep. On the night desk, Xcode's menu path to one command opens as a staircase of type, each level lower,
+ * further right and larger: the camera dives down it. Then the whole staircase folds into one row of the real panel,
+ * where typing "clean" put it, path and all. The menu titles and the path are Xcode's own (the deep-xcode capture).
+ */
+import Window from '../Window.astro';
+import { panelCrop } from '../../data/windows';
+
+const bar = ['Xcode', 'File', 'Edit', 'View', 'Find', 'Navigate', 'Editor', 'Product', 'Debug', 'Integrate', 'Window', 'Help'];
+// Each level: the items seen in the capture under that menu, and the one the path goes through.
+const levels = [
+  { items: ['Breakpoints', 'Console', 'StoreKit', 'View Debugging'], on: 'View Debugging' },
+  { items: ['Rendering'], on: 'Rendering' },
+  { items: ['Color Hits Green and Misses Red'], on: 'Color Hits Green and Misses Red' },
+];
+---
+<section class="scene deep night" id="deep" aria-labelledby="deep-title" data-pin data-scene="deep" data-light="night" style="--len: 300svh">
+  <div class="stage">
+    <div class="words">
+      <h2 id="deep-title" class="claim">
+        <span class="t t1">Four menus down in Xcode.</span>
+        <span class="t t2" aria-hidden="true">Five letters away.</span>
+      </h2>
+      <p class="line">
+        Type <span class="kbd">c</span><span class="kbd">l</span><span class="kbd">e</span><span class="kbd">a</span><span class="kbd">n</span>
+        and commands from deep in the Debug menu come up next to the top ones, each with its path and its shortcut.
+      </p>
+    </div>
+
+    <div class="stair" data-stair aria-label="The menu path: Debug, View Debugging, Rendering, Color Hits Green and Misses Red" role="img">
+      <ol class="bar" aria-hidden="true">
+        {bar.map((m) => <li class:list={{ on: m === 'Debug' }}>{m}</li>)}
+      </ol>
+      {levels.map((l, i) => (
+        <ol class={`lvl lvl-${i + 1}`} style={`--i:${i + 1}`} aria-hidden="true">
+          {l.items.map((t) => <li class:list={{ on: t === l.on }}>{t}{t !== l.on || i < levels.length - 1 ? '' : ''}</li>)}
+        </ol>
+      ))}
+    </div>
+
+    <div class="panel" data-panel>
+      <Window id="deep-xcode" width={820} phone={{ ...panelCrop, w: 0.5, h: 0.7 }} />
+    </div>
+  </div>
+</section>
+
+<style>
+  .deep {
+    --cx: 0;
+  }
+  .stage {
+    display: grid;
+    gap: 48px;
+    padding: clamp(96px, 12vw, 160px) var(--gutter);
+  }
+  .words {
+    display: grid;
+    gap: 18px;
+    max-width: 640px;
+  }
+  .claim {
+    display: grid;
+    font-size: clamp(36px, 5vw, 68px);
+    max-width: none;
+  }
+  .t2 {
+    display: none;
+  }
+  .line {
+    color: var(--ink-2);
+    font-size: clamp(17px, 1.4vw, 20px);
+    max-width: 34em;
+  }
+  .line .kbd {
+    margin-right: 3px;
+  }
+  .line .kbd:nth-of-type(5) {
+    margin-right: 8px;
+  }
+
+  /* The staircase, in the page's own type: no menu chrome, only the path. */
+  .stair {
+    position: relative;
+    display: grid;
+    gap: 20px;
+    font-family: var(--display);
+    letter-spacing: -0.02em;
+  }
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+    font-size: clamp(15px, 1.3vw, 19px);
+    font-weight: 600;
+    color: var(--on-night-3);
+  }
+  .bar .on {
+    color: var(--on-night);
+  }
+  .lvl {
+    display: grid;
+    gap: 0.18em;
+    font-weight: 600;
+    color: var(--on-night-3);
+  }
+  .lvl .on {
+    color: var(--on-night);
+  }
+  .lvl-1 {
+    font-size: clamp(22px, 2.3vw, 34px);
+  }
+  .lvl-2 {
+    font-size: clamp(30px, 3.4vw, 50px);
+  }
+  .lvl-3 {
+    font-size: clamp(40px, 5vw, 76px);
+    line-height: 1.02;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+  }
+  .on {
+    position: relative;
+  }
+  .panel {
+    width: min(100%, 820px);
+    justify-self: center;
+  }
+
+  /* Live: the staircase is laid out on the stage, opens level by level, the camera follows, then it folds. */
+  :global(html.live) .deep .stage {
+    display: block;
+    padding: 0;
+  }
+  :global(html.live) .deep .words {
+    position: absolute;
+    left: var(--gutter);
+    bottom: clamp(32px, 8vh, 80px);
+    z-index: 2;
+    max-width: min(520px, 34vw);
+  }
+  :global(html.live) .deep .t {
+    grid-area: 1 / 1;
+    transition: opacity 260ms var(--ease), transform 260ms var(--ease);
+  }
+  :global(html.live) .deep .t2 {
+    display: block;
+    opacity: 0;
+    transform: translateY(0.3em);
+  }
+  :global(html.live) .deep.folded .t1 {
+    opacity: 0;
+    transform: translateY(-0.3em);
+  }
+  :global(html.live) .deep.folded .t2 {
+    opacity: 1;
+    transform: none;
+  }
+  :global(html.live) .deep .line {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 260ms var(--ease), transform 260ms var(--ease);
+  }
+  :global(html.live) .deep.folded .line {
+    opacity: 1;
+    transform: none;
+  }
+  :global(html.live) .deep .stair {
+    position: absolute;
+    inset: 0;
+    display: block;
+    transform-origin: 0 0;
+    will-change: transform, opacity;
+  }
+  :global(html.live) .deep .bar {
+    position: absolute;
+    left: var(--gutter);
+    top: 22vh;
+    flex-wrap: nowrap;
+    opacity: var(--a0, 0);
+  }
+  :global(html.live) .deep .lvl {
+    position: absolute;
+    left: calc(var(--gutter) + var(--step-x) * var(--i));
+    top: calc(22vh + var(--step-y) * var(--i));
+    opacity: var(--a, 0);
+    transform: translate(calc((1 - var(--a, 0)) * -24px), calc((1 - var(--a, 0)) * -12px));
+  }
+  :global(html.live) .deep .lvl-1 {
+    --a: var(--a1);
+  }
+  :global(html.live) .deep .lvl-2 {
+    --a: var(--a2);
+  }
+  :global(html.live) .deep .bar,
+  :global(html.live) .deep .lvl-1,
+  :global(html.live) .deep .lvl-2 {
+    opacity: calc(var(--a, var(--a0, 0)) * var(--rest, 1));
+  }
+  :global(html.live) .deep .lvl-3 {
+    --a: var(--a3);
+    /* Never past the right edge: the room left after three steps of the staircase. */
+    max-width: min(9.5em, calc(100vw - var(--gutter) * 2 - var(--step-x) * 3));
+  }
+  :global(html.live) .deep .stair {
+    --step-x: min(17vw, 250px);
+    --step-y: 10vh;
+  }
+  :global(html.live) .deep .panel {
+    position: absolute;
+    right: var(--gutter);
+    top: 50%;
+    width: min(820px, 58vw, calc((100svh - 150px) * 1.5));
+    translate: 0 -46%;
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  /* Under 900 px the levels stack instead of stepping right. */
+  @media (max-width: 900px) {
+    :global(html.live) .deep .stair {
+      --step-x: 7vw;
+      --step-y: 8vh;
+    }
+    :global(html.live) .deep .bar {
+      font-size: 13px;
+      gap: 12px;
+      top: 18vh;
+    }
+    :global(html.live) .deep .lvl-1 {
+      top: 23vh;
+    }
+    :global(html.live) .deep .lvl-2 {
+      top: calc(23vh + 150px);
+    }
+    :global(html.live) .deep .lvl-3 {
+      top: calc(23vh + 205px);
+    }
+    :global(html.live) .deep .words {
+      max-width: none;
+      right: var(--gutter);
+    }
+    :global(html.live) .deep .panel {
+      right: auto;
+      left: 50%;
+      top: 15vh;
+      width: 92vw;
+      translate: -50% 0;
+    }
+  }
+</style>
+
+<script>
+  import { onScene, span, easeOut, easeInOut } from '../../scripts/scenes';
+
+  const scene = document.querySelector<HTMLElement>('[data-scene="deep"]');
+  const stair = scene?.querySelector<HTMLElement>('[data-stair]');
+  const panel = scene?.querySelector<HTMLElement>('[data-panel]');
+  const deepest = scene?.querySelector<HTMLElement>('.lvl-3 .on');
+
+  onScene(scene ?? null, (p) => {
+    if (!scene || !stair || !panel || !deepest) return;
+    // .04 to .46: the bar, then each level opens. The camera drifts down and right with it.
+    stair.style.setProperty('--a0', String(span(p, 0.02, 0.1)));
+    stair.style.setProperty('--a1', String(easeOut(span(p, 0.1, 0.2))));
+    stair.style.setProperty('--a2', String(easeOut(span(p, 0.2, 0.3))));
+    stair.style.setProperty('--a3', String(easeOut(span(p, 0.3, 0.42))));
+    const dive = easeInOut(span(p, 0.06, 0.48));
+    const fold = easeInOut(span(p, 0.52, 0.72));
+
+    // The fold: the deepest item travels to its row in the panel (row 5, about 52% down, 8% in) and shrinks to its size.
+    // The picture itself, which on phones is larger than its frame.
+    const pr = (panel.querySelector('img') ?? panel).getBoundingClientRect();
+    const dr = deepest.getBoundingClientRect();
+    const camX = -dive * Math.min(window.innerWidth * 0.12, 160);
+    const camY = -dive * window.innerHeight * 0.12;
+    // Undo the current transform to find where the item sits at rest.
+    const cur = new DOMMatrix(getComputedStyle(stair).transform === 'none' ? undefined : getComputedStyle(stair).transform);
+    const restX = (dr.left - cur.e) / (cur.a || 1);
+    const restY = (dr.top - cur.f) / (cur.d || 1);
+    const rowX = pr.left + pr.width * 0.085;
+    const rowY = pr.top + pr.height * 0.505;
+    const endScale = Math.max(0.12, (pr.width * 0.017) / parseFloat(getComputedStyle(deepest).fontSize));
+    const s = 1 + (endScale - 1) * fold;
+    const tx = camX * (1 - fold) + (rowX - restX * endScale) * fold;
+    const ty = camY * (1 - fold) + (rowY - restY * endScale) * fold;
+    stair.style.transform = `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(${s.toFixed(4)})`;
+    // It fades as it shrinks, so its words are never on screen too small to read.
+    stair.style.opacity = String(1 - span(p, 0.6, 0.7));
+    stair.style.setProperty('--rest', String(1 - span(p, 0.52, 0.6)));
+
+    const show = easeOut(span(p, 0.6, 0.78));
+    panel.style.opacity = String(show);
+    panel.style.transform = `scale(${(1.18 - 0.18 * show).toFixed(4)})`;
+    panel.style.transformOrigin = '8.5% 50.5%';
+    scene.classList.toggle('folded', p > 0.62);
+  });
+</script>
