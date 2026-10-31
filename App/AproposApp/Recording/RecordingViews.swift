@@ -147,6 +147,11 @@ struct RecordingPermissionView: View {
                 .foregroundStyle(Brand.text2)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 8)
+            Text("Early: this version records menu picks and keyboard shortcuts only, not clicks on buttons or typed text.")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Brand.text)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
 
             VStack(spacing: 0) {
                 ForEach(Array(RecordingPermissionKind.allCases.enumerated()), id: \.element) { index, kind in
@@ -330,7 +335,7 @@ struct RecordingReviewView: View {
 
     private var subtitle: String {
         let steps = "\(review.stepCount) step\(review.stepCount == 1 ? "" : "s")"
-        var text = "\(steps). Fix what is off, then save it as a command."
+        var text = "\(steps). Fix what is off, then save it as a command. Early: only menu picks and shortcuts are recorded."
         if review.textEntryCount > 0 { text += " What you typed was not recorded and will be left out." }
         return text
     }

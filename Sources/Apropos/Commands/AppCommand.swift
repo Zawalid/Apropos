@@ -40,7 +40,7 @@ public enum AppCommand: String, Sendable, Hashable, CaseIterable {
         switch self {
         case .newCommand: "In Apropos: make a command of your own"
         case .yourCommands: "In Apropos: see and edit the commands you made"
-        case .record: "In Apropos: do something once and keep it as steps"
+        case .record: "Early: records menu picks and shortcuts, not buttons or typing"
         }
     }
 

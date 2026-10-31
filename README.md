@@ -40,14 +40,16 @@ public source release.
 
 ## Status
 
-Apropos is early. There is no release yet.
+Apropos is early. Version 0.1.0 is out on the [Releases page](https://github.com/Zawalid/Apropos/releases).
 
-- There is no downloadable build. Today you build it from source, see below.
-- The first builds will not be notarized, because there is no Apple Developer account behind the project yet. macOS
-  will ask you to confirm the first launch. [docs/install.md](docs/install.md) says exactly how and why.
-- Automatic updates are not wired up yet.
-- Recording a command by doing it once is a first version and has not been verified on a real Mac yet. Treat
-  it as experimental, and see [docs/recorder.md](docs/recorder.md) for how it works.
+- Download the DMG, or install with Homebrew (`brew trust zawalid/apropos`, then
+  `brew install --cask zawalid/apropos/apropos`). You can also build from source, see below.
+- The build is not notarized, because there is no Apple Developer account behind the project. macOS will ask you to
+  confirm the first launch once. [docs/install.md](docs/install.md) says exactly how and why.
+- In-app updates exist and are off until you turn them on in Settings, Updates.
+- **Recording a command by doing it once is early.** It records menu picks and keyboard shortcuts only, not clicks on
+  buttons or typed text, so it will not cover most tasks yet. It is marked Early in the app, and
+  [docs/recorder.md](docs/recorder.md) explains how it works.
 - Settings and file formats can still change before 1.0.
 
 What is shipped and what is not is tracked in [CHANGELOG.md](CHANGELOG.md), nothing else is claimed here.

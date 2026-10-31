@@ -106,15 +106,23 @@ struct CommandsPage: View {
                     Button {
                         controller.startRecording()
                     } label: {
-                        Label("Record", systemImage: "record.circle")
-                            .font(.system(size: 12.5, weight: .semibold))
-                            .foregroundStyle(Brand.text)
-                            .padding(.horizontal, 12)
-                            .frame(height: 28)
-                            .background(Capsule().fill(Brand.raised))
+                        HStack(spacing: 7) {
+                            Label("Record", systemImage: "record.circle")
+                                .font(.system(size: 12.5, weight: .semibold))
+                                .foregroundStyle(Brand.text)
+                            Text("Early")
+                                .font(.system(size: 10.5, weight: .semibold))
+                                .foregroundStyle(Brand.text2)
+                                .padding(.horizontal, 6)
+                                .frame(height: 16)
+                                .background(Capsule().fill(Brand.line))
+                        }
+                        .padding(.horizontal, 12)
+                        .frame(height: 28)
+                        .background(Capsule().fill(Brand.raised))
                     }
                     .buttonStyle(.plain)
-                    .help("Do something once in another app, and keep it as steps")
+                    .help("Early: do something once in another app and keep it as steps. Records menu picks and shortcuts only.")
                     Button {
                         creating = true
                     } label: {

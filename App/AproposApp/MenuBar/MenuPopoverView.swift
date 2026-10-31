@@ -213,7 +213,7 @@ struct MenuPopoverView: View {
     private var footer: some View {
         HStack(spacing: 2) {
             FooterButton(symbol: "command", label: "Commands", action: actions.commands)
-            FooterButton(symbol: "record.circle", label: "Record a command", action: actions.record)
+            FooterButton(symbol: "record.circle", label: "Record a command (early)", action: actions.record)
             FooterButton(symbol: "gearshape", label: "Settings", action: actions.settings)
             FooterButton(symbol: "sparkles", label: "Welcome guide", action: actions.welcomeGuide)
             FooterButton(symbol: "arrow.triangle.2.circlepath", label: "Check for updates", action: actions.checkForUpdates)
