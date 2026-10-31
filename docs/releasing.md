@@ -51,20 +51,33 @@ and regenerate it with `node scripts/dmg/render-background.mjs` (needs `npm i --
 
 ## Signing and notarization
 
-Today the app is ad hoc signed, so users do the one-time first-launch step in [install.md](install.md). To remove it you
-need an Apple Developer Program membership (99 USD a year) and a **Developer ID Application** certificate. Add these
-repository secrets and the same workflow signs and notarizes with no other change:
+There are three levels, and each needs only repository secrets, no workflow change.
+
+1. **Ad hoc (no secrets).** What a build gets by default. It runs, but its signature is only a hash of that one build, so
+   macOS treats every update as a different app and **drops the Accessibility grant**. People also do the first-launch
+   step in [install.md](install.md).
+2. **A stable certificate (free, recommended now).** Run `scripts/make-signing-cert.sh` once. It makes a self-signed code
+   signing certificate in `~/.apropos-secrets/` and prints the three `gh secret set` commands. Every release is then signed
+   with the same certificate, the app keeps its identity (`identifier ... and certificate leaf = ...`), and the
+   Accessibility grant survives updates. The first-launch step stays, because the certificate is not Apple's. The workflow
+   trusts the certificate on the runner for code signing and prints the app's designated requirement so you can see it.
+3. **Developer ID and notarization (later).** Needs an Apple Developer Program membership (99 USD a year). Use that
+   certificate in the same three secrets and add the notarization secrets. The first-launch step goes away.
 
 | Secret | What |
 |---|---|
-| `DEVELOPER_ID_P12` | the certificate and private key exported as a `.p12`, base64 encoded |
-| `DEVELOPER_ID_P12_PASSWORD` | the `.p12` password |
-| `DEVELOPER_ID_NAME` | `Developer ID Application: Your Name (TEAMID)` |
-| `NOTARY_KEY_P8` | an App Store Connect API key (`.p8`), base64 encoded |
-| `NOTARY_KEY_ID`, `NOTARY_ISSUER_ID` | that key's id and the issuer id |
+| `SIGNING_P12` | the certificate and private key as a `.p12`, base64 encoded |
+| `SIGNING_P12_PASSWORD` | the `.p12` password |
+| `SIGNING_IDENTITY` | the certificate's name, for example `Apropos Release` or `Developer ID Application: Your Name (TEAMID)` |
+| `NOTARY_KEY_P8` | an App Store Connect API key (`.p8`), base64 encoded (level 3 only) |
+| `NOTARY_KEY_ID`, `NOTARY_ISSUER_ID` | that key's id and the issuer id (level 3 only) |
 
-The signing and notarization steps have not been run yet; the first signed release is the test, so cut a pre-release
-(`0.2.0-beta.1`) first.
+Keep the certificate's private key like the Sparkle key: it lives in the secrets and in an offline backup. If it is lost, a
+new certificate is a new identity and every install re-grants Accessibility once. Switching from ad hoc to a certificate
+does the same, once. Library validation stays off (see [updates.md](updates.md)) until a Developer ID certificate is used.
+
+None of the signing steps has run yet. Try them with a draft: set the secrets, run the Release workflow by hand, download
+the DMG and check `codesign -d -r- Apropos.app` shows the certificate and not a cdhash.
 
 ## Homebrew
 
@@ -91,6 +104,8 @@ publishes, just with no update feed. Check after a release that `releases/latest
 
 ## The first release, in order
 
+0. Run `scripts/make-signing-cert.sh` and set the three signing secrets (see above), so the first release already keeps
+   its identity across updates.
 1. Generate the Sparkle key pair and put the public key in `App/project.yml` (see [updates.md](updates.md)).
 2. Add `SPARKLE_ED_PRIVATE_KEY` as a repository secret, and keep an offline backup of the key.
 3. Run the workflow by hand once for a draft pre-release and download the DMG on a clean Mac or user account.
