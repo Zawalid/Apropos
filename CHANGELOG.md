@@ -6,6 +6,8 @@ work lands.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-31
+
 ### Changed (recording is marked Early)
 - Recording a command is labeled Early everywhere it appears: the panel row, the menu bar popover, the Record button on the
   Commands page, the permission screen and the review window. Each says it records menu picks and keyboard shortcuts only,

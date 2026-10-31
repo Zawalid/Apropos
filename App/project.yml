@@ -59,7 +59,7 @@ targets:
         PRODUCT_NAME: Apropos
         PRODUCT_MODULE_NAME: AproposApp
         PRODUCT_BUNDLE_IDENTIFIER: com.zawalid.apropos
-        MARKETING_VERSION: 0.1.0
+        MARKETING_VERSION: 0.1.1
         CURRENT_PROJECT_VERSION: 1
         # One signed binary: a separate debug dylib signed differently from the app fails to load under hardened runtime.
         ENABLE_DEBUG_DYLIB: NO
