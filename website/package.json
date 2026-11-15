@@ -17,7 +17,8 @@
     "check:ui": "node scripts/check-ui.mjs",
     "check:a11y": "node scripts/check-a11y.mjs",
     "ring": "node scripts/render-ring.mjs",
-    "harvest": "node scripts/harvest-apps.mjs"
+    "harvest": "node scripts/harvest-apps.mjs",
+    "indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {
     "astro": "^7.4.0"

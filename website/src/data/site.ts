@@ -36,7 +36,7 @@ export const links = {
   issues: `${repo}/issues`,
   design: `${repo}/blob/main/docs/design.md`,
   safetyDoc: `${repo}/blob/main/docs/context-actions.md#safety-rules`,
-  author: 'https://zawalid.com',
+  author: 'https://www.zawalid.com',
   github: 'https://github.com/Zawalid',
   x: 'https://x.com/Zawaalid',
 };
