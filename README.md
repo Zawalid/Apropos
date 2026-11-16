@@ -223,6 +223,10 @@ Questions and ideas fit in [Discussions](https://github.com/Zawalid/Apropos/disc
 
 Details, the first-release checklist and the notarization secrets are in [docs/releasing.md](docs/releasing.md).
 
+## Author
+
+Made by [Walid Zakan](https://zawalid.com) &nbsp;·&nbsp; [GitHub](https://github.com/Zawalid) &nbsp;·&nbsp; [X](https://x.com/Zawaalid) &nbsp;·&nbsp; [More Mac apps](https://mac.zawalid.com)
+
 ## License
 
 [MIT](LICENSE), copyright 2026 Walid Zakan.
